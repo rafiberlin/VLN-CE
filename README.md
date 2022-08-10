@@ -27,6 +27,11 @@ VLN-CE uses [Habitat-Sim](https://github.com/facebookresearch/habitat-sim/tree/v
 ```bash
 conda install -c aihabitat -c conda-forge habitat-sim=0.1.7 headless
 ```
+or if conda seems to be stuck (scanning the conda-forge channel might be very slow...)
+
+```bash
+conda install -c aihabitat habitat-sim=0.1.7 headless
+```
 
 Then install [Habitat-Lab](https://github.com/facebookresearch/habitat-lab/tree/v0.1.7):
 
