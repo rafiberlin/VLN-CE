@@ -70,6 +70,16 @@ Try to run the following:
 sudo apt install libegl1-mesa libegl1
 ```
 
+If you encounter error messages running the code, such as:
+
+`ImportError: libOpenGL.so.0: cannot open shared object file: No such file or directory`
+
+Try to run the following:
+
+```bash
+sudo apt install libopengl0
+```
+
 ### Data
 
 #### Scenes: Matterport3D
