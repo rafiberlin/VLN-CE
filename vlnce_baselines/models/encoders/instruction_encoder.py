@@ -76,6 +76,9 @@ class InstructionEncoder(nn.Module):
 
         lengths = (instruction != 0.0).long().sum(dim=2)
         lengths = (lengths != 0.0).long().sum(dim=1)
+        # See https://github.com/jacobkrantz/VLN-CE/issues/21
+        # and also https://github.com/pytorch/pytorch/issues/43227
+        lengths = lengths.cpu()
 
         packed_seq = nn.utils.rnn.pack_padded_sequence(
             instruction, lengths, batch_first=True, enforce_sorted=False
