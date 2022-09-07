@@ -24,6 +24,9 @@ _C.VIDEO_OPTION = []  # options: "disk", "tensorboard"
 _C.VIDEO_DIR = "data/videos/debug"
 _C.TENSORBOARD_DIR = "data/tensorboard_dirs/debug"
 _C.RESULTS_DIR = "data/checkpoints/pretrained/evals"
+# Enables debugging for Pycharm. Default value is "forkserver".
+# https://youtrack.jetbrains.com/issue/PY-52273/Debugger-multiprocessing-hangs-pycharm-20213
+_C.MULTIPROCESSING = "forkserver"  # Set to 'spawn' when debugging with Pycharm,
 
 # ----------------------------------------------------------------------------
 # EVAL CONFIG
