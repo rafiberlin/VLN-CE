@@ -75,7 +75,7 @@ docs/_build/
 target/
 
 # Jupyter Notebook
-.ipynb_checkpoints
+*.ipynb_checkpoints
 
 # IPython
 profile_default/
@@ -145,3 +145,6 @@ stats_*.json
 
 # custom slurm utils
 sbatch_scripts
+
+visualisation/ML/
+
