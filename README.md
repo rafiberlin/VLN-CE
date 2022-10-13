@@ -40,6 +40,19 @@ python -m pip install -r habitat_baselines/rl/ddppo/requirements.txt
 python setup.py develop --all
 ```
 
+Depending on the version of OpenAiGym you use, you might need to amend follow file from habitat-lab:
+
+`habitat-lab/habitat/tasks/vln/vln.py`
+
+line 60, amend
+ 
+`self.observation_space = spaces.Discrete(0)`
+
+to
+
+`self.observation_space = spaces.Discrete(4)`
+
+
 Now you can install VLN-CE:
 
 ```bash
