@@ -48,6 +48,38 @@ cd VLN-CE
 python -m pip install -r requirements.txt
 ```
 
+Remark:
+
+If you encounter error messages running the code, such as:
+
+`ImportError: libGL.so.1: cannot open shared object file: No such file or directory`
+
+Try to run the following (found in [Stackoverflow](https://stackoverflow.com/questions/55313610/importerror-libgl-so-1-cannot-open-shared-object-file-no-such-file-or-directo)):
+
+```bash
+sudo apt install libgl1-mesa-glx libgl1
+```
+
+If you encounter error messages running the code, such as:
+
+`ImportError: libEGL.so.1: cannot open shared object file: No such file or directory`
+
+Try to run the following:
+
+```bash
+sudo apt install libegl1-mesa libegl1
+```
+
+If you encounter error messages running the code, such as:
+
+`ImportError: libOpenGL.so.0: cannot open shared object file: No such file or directory`
+
+Try to run the following:
+
+```bash
+sudo apt install libopengl0
+```
+
 ### Data
 
 #### Scenes: Matterport3D
