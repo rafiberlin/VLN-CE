@@ -237,7 +237,33 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
         self.lmdb_features_dir = config.IL.DAGGER.lmdb_features_dir.format(
             split=config.TASK_CONFIG.DATASET.SPLIT
         )
+        #
+        self.rewards = {"point_goal_nav_reward": {
+            "step_penalty": config.IL.DECISION_TRANSFORMER.POINT_GOAL_NAV_REWARD.step_penalty,
+            "success": config.IL.DECISION_TRANSFORMER.POINT_GOAL_NAV_REWARD.success},
+            "sparse_reward": {
+                "step_penalty": config.IL.DECISION_TRANSFORMER.SPARSE_REWARD.step_penalty,
+                "success": config.IL.DECISION_TRANSFORMER.SPARSE_REWARD.success},
+        }
+
         super().__init__(config)
+
+    def calculate_return_to_go(self, traj_obs: dict, reward_type: str, observation_type: str):
+        """
+        Calculate the return to go. For a given step, sum of all rewards to come
+        :param traj_obs:
+        :param reward_type:
+        :param observation_type:
+        :return:
+        """
+        assert (reward_type in self.rewards.keys())
+        assert (observation_type in traj_obs.keys())
+        rewards = traj_obs[observation_type]
+        rewards = rewards + self.rewards[reward_type]["step_penalty"]
+        rewards[-1] = rewards[-1] + self.rewards[reward_type]["success"]
+        rewards = np.flip(np.flip(rewards).cumsum())
+        traj_obs[observation_type] = rewards
+
 
     def _make_dirs(self) -> None:
         self._make_ckpt_dir()
@@ -252,7 +278,7 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
 
         envs = construct_envs(self.config, get_env_class(self.config.ENV_NAME))
         expert_uuid = self.config.IL.DAGGER.expert_policy_sensor_uuid
-
+        distance_left_uuid = self.config.IL.DECISION_TRANSFORMER.sensor_uuid
         rnn_states = torch.zeros(
             envs.num_envs,
             self.policy.net.num_recurrent_layers,
@@ -348,7 +374,19 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                             traj_obs[k] = v.numpy()
                             if self.config.IL.DAGGER.lmdb_fp16:
                                 traj_obs[k] = traj_obs[k].astype(np.float16)
-
+                        # First step: calculate the difference between 2 consecutive time steps.
+                        # We add the initial distance to the goal to calculate the first differential reward
+                        #traj_obs["point_nav_reward_to_go"] = np.diff(
+                        #    np.concatenate(([current_episodes[i].info["geodesic_distance"]], traj_obs[distance_left_uuid])), axis=0)
+                        # We add the final distance to the goal once again because on th elast step,
+                        # the STOP action is called
+                        traj_obs["point_nav_reward_to_go"] = np.diff(
+                            np.concatenate((traj_obs[distance_left_uuid], [traj_obs[distance_left_uuid][-1]])), axis=0) * -1.0
+                        # PReparing entries for sparse rewards
+                        traj_obs["sparse_reward_to_go"] = np.zeros_like(traj_obs["point_nav_reward_to_go"])
+                        del traj_obs[distance_left_uuid]
+                        self.calculate_return_to_go(traj_obs, "point_goal_nav_reward", "point_nav_reward_to_go")
+                        self.calculate_return_to_go(traj_obs, "sparse_reward", "sparse_reward_to_go")
                         transposed_ep = [
                             traj_obs,
                             np.array([step[1] for step in ep], dtype=np.int64),
@@ -442,7 +480,7 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                 prev_actions.copy_(actions)
 
                 outputs = envs.step([a[0].item() for a in actions])
-                observations, _, dones, _ = [list(x) for x in zip(*outputs)]
+                observations, _, dones, infos = [list(x) for x in zip(*outputs)]
                 observations = extract_instruction_tokens(
                     observations,
                     self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID,
@@ -608,3 +646,5 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                         f"ckpt.{dagger_it * self.config.IL.epochs + epoch}.pth"
                     )
                 AuxLosses.deactivate()
+
+
