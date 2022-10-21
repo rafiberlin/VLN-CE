@@ -26,7 +26,7 @@ class DecisionTransformerPolicy(ILPolicy):
         model_config: Config,
     ):
         super().__init__(
-            Seq2SeqNet(
+            DecisionTransformerNet(
                 observation_space=observation_space,
                 model_config=model_config,
                 num_actions=action_space.n,
@@ -49,7 +49,7 @@ class DecisionTransformerPolicy(ILPolicy):
         )
 
 
-class Seq2SeqNet(Net):
+class DecisionTransformerNet(Net):
     """A baseline sequence to sequence network that performs single modality
     encoding of the instruction, RGB, and depth observations. These encodings
     are concatentated and fed to an RNN. Finally, a distribution over discrete

@@ -1,8 +1,9 @@
 import json
 import gzip
 import statistics
-
-
+import argparse
+from string import Template
+import os
 def read_compressed_json_file(path):
     """
     Reading a compressed json file
@@ -70,9 +71,33 @@ def filter_preprocessed_data(data, filter: list):
 
 if __name__ == "__main__":
     print("Reading...")
-    file1 = "../data/datasets/R2R_VLNCE_v1-3_preprocessed/train/train.json.gz"
-    file2 = "../data/datasets/R2R_VLNCE_v1-3_preprocessed/train/train_gt.json.gz"
-    train_file = read_compressed_json_file(file1)
-    train_file_gt = read_compressed_json_file(file2)
+
+    parser = argparse.ArgumentParser(
+        description="Reduce the train file annotation with a list of episodes.")
+    parser.add_argument(
+        "--split",
+        default="train",
+        metavar="",
+        help="Name of the splits: train, val_seen, val_unseen",
+        type=str,
+    )
+
+    args = parser.parse_args()
+    split = args.split
+
+    directory = '../data/datasets/R2R_VLNCE_v1-3_preprocessed/$split/'
+    split_template = Template(directory + "$split.json.gz")
+    split_template_gt = Template(directory + '$split')
+    # work around, as the template sees the underscore as Regex character
+    suffix = "_gt.json.gz"
+
+    file1 = split_template.substitute(split=split)
+    file2 = split_template_gt.substitute(split=split) +suffix
+    if os.path.exists(file1):
+        print("Reading:", file1)
+        train_file = read_compressed_json_file(file1)
+    if os.path.exists(file2):
+        print("Reading:", file2)
+        train_file_gt = read_compressed_json_file(file2)
     output_vlnce_r2r_statistics()
     print("Done!")

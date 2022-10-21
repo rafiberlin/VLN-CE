@@ -262,7 +262,7 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
         rewards = rewards + self.rewards[reward_type]["step_penalty"]
         rewards[-1] = rewards[-1] + self.rewards[reward_type]["success"]
         rewards = np.flip(np.flip(rewards).cumsum())
-        traj_obs[observation_type] = rewards
+        traj_obs[observation_type] = np.float32(rewards)
 
 
     def _make_dirs(self) -> None:
