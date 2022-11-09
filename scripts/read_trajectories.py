@@ -37,9 +37,12 @@ def output_vlnce_r2r_statistics():
         print(str(len(trajectories)) + " trajectories.")  # Each trajectory has 3 different navigation instructions
         print(str(len(scenes)) + " scenes.")
         print(str(vocab["num_vocab"]) + " words.")
+
         # 0 is use for padding, we count the number of tokens that are not 0
-        print("Average instruction length: " + str(statistics.mean(
-            [len(list(filter(lambda x: x != 0, e["instruction"]["instruction_tokens"]))) for e in episodes])))
+        instruction_lengths = [len(list(filter(lambda x: x != 0, e["instruction"]["instruction_tokens"]))) for e in episodes]
+        print("Average instruction length: " + str(statistics.mean(instruction_lengths)))
+        print("Max instruction length:", max(instruction_lengths))
+        print("Min instruction length:", min(instruction_lengths))
 
 
 def save_compressed_json_file(data, path):
@@ -99,5 +102,8 @@ if __name__ == "__main__":
     if os.path.exists(file2):
         print("Reading:", file2)
         train_file_gt = read_compressed_json_file(file2)
+        list_episode_lengths = [ len(train_file_gt[k]["actions"]) for k in train_file_gt.keys() ]
+        print("Longest episode:", max(list_episode_lengths))
+        print("Shortest episode:", min(list_episode_lengths))
     output_vlnce_r2r_statistics()
     print("Done!")
