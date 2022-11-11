@@ -75,8 +75,9 @@ def collate_fn(batch):
     max_traj_len = max(ele.size(0) for ele in prev_actions_batch)
     for bid in range(B):
         for sensor in observations_batch:
+            fill = 0.0 if "_reward_to_go" in sensor else 1.0
             observations_batch[sensor][bid] = _pad_helper(
-                observations_batch[sensor][bid], max_traj_len, fill_val=1.0
+                observations_batch[sensor][bid], max_traj_len, fill_val=fill
             )
 
         prev_actions_batch[bid] = _pad_helper(
@@ -111,6 +112,88 @@ def collate_fn(batch):
         not_done_masks.view(-1, 1),
         corrected_actions_batch,
         weights_batch,
+    )
+
+
+def collate_fn_decision(batch):
+    """Each sample in batch: (
+        obs,
+        prev_actions,
+        oracle_actions,
+        inflec_weight,
+    )
+    """
+
+    def _pad_helper(t, max_len, fill_val=0):
+        pad_amount = max_len - t.size(0)
+        if pad_amount == 0:
+            return t
+
+        pad = torch.full_like(t[0:1], fill_val).expand(
+            pad_amount, *t.size()[1:]
+        )
+        return torch.cat([t, pad], dim=0)
+
+    transposed = list(zip(*batch))
+
+    observations_batch = list(transposed[0])
+    prev_actions_batch = list(transposed[1])
+    corrected_actions_batch = list(transposed[2])
+    weights_batch = list(transposed[3])
+    batch_size = len(prev_actions_batch)
+
+    new_observations_batch = defaultdict(list)
+    for sensor in observations_batch[0]:
+        for bid in range(batch_size):
+            new_observations_batch[sensor].append(
+                observations_batch[bid][sensor]
+            )
+
+    observations_batch = new_observations_batch
+
+    max_traj_len = max(ele.size(0) for ele in prev_actions_batch)
+    for bid in range(batch_size):
+        for sensor in observations_batch:
+            fill = 0.0 if "_reward_to_go" in sensor else 1.0
+            observations_batch[sensor][bid] = _pad_helper(
+                observations_batch[sensor][bid], max_traj_len, fill_val=fill
+            )
+
+        prev_actions_batch[bid] = _pad_helper(
+            prev_actions_batch[bid], max_traj_len
+        )
+        corrected_actions_batch[bid] = _pad_helper(
+            corrected_actions_batch[bid], max_traj_len
+        )
+        weights_batch[bid] = _pad_helper(weights_batch[bid], max_traj_len)
+
+    stack_dimension = 0
+
+    for sensor in observations_batch:
+        observations_batch[sensor] = torch.stack(observations_batch[sensor], dim=stack_dimension)
+        # observations_batch[sensor] = observations_batch[sensor].view(
+        #     -1, *observations_batch[sensor].size()[2:]
+        # )
+
+    prev_actions_batch = torch.stack(prev_actions_batch, dim=stack_dimension)
+    corrected_actions_batch = torch.stack(corrected_actions_batch, dim=stack_dimension)
+
+    weights_batch = torch.stack(weights_batch, dim=1)
+    not_done_masks = torch.ones_like(
+        corrected_actions_batch, dtype=torch.uint8
+    )
+    not_done_masks[0] = 0
+    # shape batch size time max episode length
+    timesteps = torch.arange(0, max_traj_len).repeat(batch_size, 1)
+    observations_batch["timesteps"] = timesteps
+    observations_batch = ObservationsDict(observations_batch)
+
+    return (
+        observations_batch,
+        prev_actions_batch,
+        not_done_masks,
+        corrected_actions_batch,
+        weights_batch
     )
 
 
@@ -574,7 +657,7 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                     collate_fn=collate_fn,
                     pin_memory=False,
                     drop_last=True,  # drop last batch if smaller
-                    num_workers=3,
+                    num_workers=1,
                 )
 
                 AuxLosses.activate()

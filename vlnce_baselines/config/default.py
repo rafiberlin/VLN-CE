@@ -287,6 +287,15 @@ _C.MODEL.WAYPOINT.max_offset_var = 0.0685  # stddev of (range / 2)
 _C.MODEL.WAYPOINT.discrete_offsets = 7
 _C.MODEL.WAYPOINT.offset_temperature = 1.0
 
+# ----------------------------------------------------------------------------
+# DECISION TRANSFORMER CONFIG
+# ----------------------------------------------------------------------------
+_C.MODEL.DECISION_TRANSFORMER = CN()
+_C.MODEL.DECISION_TRANSFORMER.hidden_dim = 128
+# the max in the training split.
+_C.MODEL.DECISION_TRANSFORMER.episode_horizon = 183
+_C.MODEL.DECISION_TRANSFORMER.reward_type = "POINT_GOAL_NAV_REWARD"  # POINT_GOAL_NAV_REWARD or SPARSE_REWARD
+
 
 def purge_keys(config: CN, keys: List[str]) -> None:
     for k in keys:

@@ -113,9 +113,26 @@ class DecisionTransformerNet(Net):
             num_layers=1,
         )
 
+        # size due to concatenation of instruction, depth, and rgb features
+        input_state_size = self.instruction_encoder.output_size \
+                           + model_config.DEPTH_ENCODER.output_size\
+                            + model_config.RGB_ENCODER.output_size
+
+        assert model_config.DECISION_TRANSFORMER.reward_type in ["POINT_GOAL_NAV_REWARD", "SPARSE_REWARD"]
+        self.reward_type = model_config.DECISION_TRANSFORMER.reward_type
+
+        self.embed_timestep = nn.Embedding(model_config.DECISION_TRANSFORMER.episode_horizon, model_config.DECISION_TRANSFORMER.hidden_dim)
+        self.embed_return = nn.Linear(1, model_config.DECISION_TRANSFORMER.hidden_dim)
+        self.embed_state = nn.Linear(input_state_size, model_config.DECISION_TRANSFORMER.hidden_dim)
+        #TODO: What do you want to use, linear or embedding? I guess it should be embedding...
+        self.embed_action = nn.Embedding(1, model_config.DECISION_TRANSFORMER.hidden_dim)
+
+
         self.progress_monitor = nn.Linear(
             self.model_config.STATE_ENCODER.hidden_size, 1
         )
+
+
 
         self._init_layers()
 
@@ -140,6 +157,7 @@ class DecisionTransformerNet(Net):
         nn.init.constant_(self.progress_monitor.bias, 0)
 
     def forward(self, observations, rnn_states, prev_actions, masks):
+
         instruction_embedding = self.instruction_encoder(observations)
         depth_embedding = self.depth_encoder(observations)
         rgb_embedding = self.rgb_encoder(observations)
@@ -151,29 +169,26 @@ class DecisionTransformerNet(Net):
         if self.model_config.ablate_rgb:
             rgb_embedding = rgb_embedding * 0
 
-        x = torch.cat(
+        states = torch.cat(
             [instruction_embedding, depth_embedding, rgb_embedding], dim=1
         )
 
-        if self.model_config.SEQ2SEQ.use_prev_action:
-            prev_actions_embedding = self.prev_action_embedding(
-                ((prev_actions.float() + 1) * masks).long().view(-1)
-            )
-            x = torch.cat([x, prev_actions_embedding], dim=1)
+        #TODO init correctly form the observations
+        actions = prev_actions
+        returns_to_go = observations["point_nav_reward_to_go"] if self.reward_type == "POINT_GOAL_NAV_REWARD" else observations["sparse_reward_to_go"]
+        timesteps = None
 
-        x, rnn_states_out = self.state_encoder(x, rnn_states, masks)
+        # embed each modality with a different head
+        state_embeddings = self.embed_state(states)
+        action_embeddings = self.embed_action(actions)
+        returns_embeddings = self.embed_return(returns_to_go)
+        time_embeddings = self.embed_timestep(timesteps)
 
-        if self.model_config.PROGRESS_MONITOR.use and AuxLosses.is_active():
-            progress_hat = torch.tanh(self.progress_monitor(x))
-            progress_loss = F.mse_loss(
-                progress_hat.squeeze(1),
-                observations["progress"],
-                reduction="none",
-            )
-            AuxLosses.register_loss(
-                "progress_monitor",
-                progress_loss,
-                self.model_config.PROGRESS_MONITOR.alpha,
-            )
+        # time embeddings are treated similar to positional embeddings
+        state_embeddings = state_embeddings + time_embeddings
+        action_embeddings = action_embeddings + time_embeddings
+        returns_embeddings = returns_embeddings + time_embeddings
 
-        return x, rnn_states_out
+
+
+        return states
