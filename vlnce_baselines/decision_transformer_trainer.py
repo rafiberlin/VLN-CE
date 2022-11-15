@@ -28,6 +28,7 @@ with warnings.catch_warnings():
     import tensorflow as tf  # noqa: F401
 
 
+
 class ObservationsDict(dict):
     def pin_memory(self):
         for k, v in self.items():
@@ -88,13 +89,22 @@ def collate_fn(batch):
         )
         weights_batch[bid] = _pad_helper(weights_batch[bid], max_traj_len)
 
+    # timesteps = torch.arange(0, max_traj_len).repeat(B, 1)
+    observations_batch["timesteps"] = [ torch.arange(0, max_traj_len,dtype=torch.long) for _ in range(B) ]
+
     for sensor in observations_batch:
+        #Warning: because it is stacked on the dim 1, if you want oget the shape back
+        # you will need to do: observations_batch["timesteps"].reshape(-1,B) (B0 batch size)
         observations_batch[sensor] = torch.stack(
             observations_batch[sensor], dim=1
         )
+
         observations_batch[sensor] = observations_batch[sensor].view(
             -1, *observations_batch[sensor].size()[2:]
         )
+        if "_reward_to_go" in sensor:
+            observations_batch[sensor] = observations_batch[sensor].unsqueeze(-1)
+
 
     prev_actions_batch = torch.stack(prev_actions_batch, dim=1)
     corrected_actions_batch = torch.stack(corrected_actions_batch, dim=1)
@@ -115,7 +125,7 @@ def collate_fn(batch):
     )
 
 
-def collate_fn_decision(batch):
+def collate_fn_(batch):
     """Each sample in batch: (
         obs,
         prev_actions,
@@ -174,6 +184,10 @@ def collate_fn_decision(batch):
         # observations_batch[sensor] = observations_batch[sensor].view(
         #     -1, *observations_batch[sensor].size()[2:]
         # )
+
+    observations_batch["instruction"] = observations_batch["instruction"].view(
+        -1, *observations_batch["instruction"].size()[2:]
+    )
 
     prev_actions_batch = torch.stack(prev_actions_batch, dim=stack_dimension)
     corrected_actions_batch = torch.stack(corrected_actions_batch, dim=stack_dimension)
@@ -679,11 +693,11 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                         ) = batch
 
                         observations_batch = {
-                            k: v.to(
+                            k: (v.to(
                                 device=self.device,
-                                dtype=torch.float32,
                                 non_blocking=True,
-                            )
+                            ) if v.dtype == torch.long else v.to(device=self.device, dtype=torch.float32,
+                                                                 non_blocking=True))
                             for k, v in observations_batch.items()
                         }
 

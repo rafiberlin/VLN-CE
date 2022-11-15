@@ -56,6 +56,7 @@ class DecisionTransformerNet(Net):
     actions (FWD, L, R, STOP) is produced.
     """
 
+
     def __init__(
         self, observation_space: Space, model_config: Config, num_actions: int
     ):
@@ -125,7 +126,7 @@ class DecisionTransformerNet(Net):
         self.embed_return = nn.Linear(1, model_config.DECISION_TRANSFORMER.hidden_dim)
         self.embed_state = nn.Linear(input_state_size, model_config.DECISION_TRANSFORMER.hidden_dim)
         #TODO: What do you want to use, linear or embedding? I guess it should be embedding...
-        self.embed_action = nn.Embedding(1, model_config.DECISION_TRANSFORMER.hidden_dim)
+        self.embed_action = nn.Embedding(num_actions+1, model_config.DECISION_TRANSFORMER.hidden_dim)
 
 
         self.progress_monitor = nn.Linear(
@@ -176,7 +177,7 @@ class DecisionTransformerNet(Net):
         #TODO init correctly form the observations
         actions = prev_actions
         returns_to_go = observations["point_nav_reward_to_go"] if self.reward_type == "POINT_GOAL_NAV_REWARD" else observations["sparse_reward_to_go"]
-        timesteps = None
+        timesteps = observations["timesteps"]
 
         # embed each modality with a different head
         state_embeddings = self.embed_state(states)
@@ -191,4 +192,4 @@ class DecisionTransformerNet(Net):
 
 
 
-        return states
+        return state_embeddings, state_embeddings
