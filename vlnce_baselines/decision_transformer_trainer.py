@@ -105,7 +105,8 @@ def collate_fn(batch):
         if "_reward_to_go" in sensor:
             observations_batch[sensor] = observations_batch[sensor].unsqueeze(-1)
 
-
+    original_batch_shape = torch.zeros((max_traj_len, B))
+    observations_batch["original_batch_shape"] = original_batch_shape
     prev_actions_batch = torch.stack(prev_actions_batch, dim=1)
     corrected_actions_batch = torch.stack(corrected_actions_batch, dim=1)
     weights_batch = torch.stack(weights_batch, dim=1)
