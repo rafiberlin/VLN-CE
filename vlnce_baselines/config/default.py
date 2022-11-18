@@ -295,6 +295,17 @@ _C.MODEL.DECISION_TRANSFORMER.hidden_dim = 128
 # the max in the training split.
 _C.MODEL.DECISION_TRANSFORMER.episode_horizon = 183
 _C.MODEL.DECISION_TRANSFORMER.reward_type = "POINT_GOAL_NAV_REWARD"  # POINT_GOAL_NAV_REWARD or SPARSE_REWARD
+_C.MODEL.DECISION_TRANSFORMER.model_type = None
+_C.MODEL.DECISION_TRANSFORMER.n_layer = 2
+_C.MODEL.DECISION_TRANSFORMER.n_head = 1
+_C.MODEL.DECISION_TRANSFORMER.n_embd = 128
+# these options must be filled in externally
+_C.MODEL.DECISION_TRANSFORMER.vocab_size = 4
+_C.MODEL.DECISION_TRANSFORMER.block_size = 183 #TODO is the block_size really the horizon
+# dropout hyperparameters
+_C.MODEL.DECISION_TRANSFORMER.embd_pdrop = 0.1
+_C.MODEL.DECISION_TRANSFORMER.resid_pdrop = 0.1
+_C.MODEL.DECISION_TRANSFORMER.attn_pdrop = 0.1
 
 
 def purge_keys(config: CN, keys: List[str]) -> None:

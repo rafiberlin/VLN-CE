@@ -8,7 +8,7 @@ from habitat_baselines.rl.models.rnn_state_encoder import (
     build_rnn_state_encoder,
 )
 from habitat_baselines.rl.ppo.policy import Net
-
+from vlnce_baselines.models.encoders.min_gpt import GPT
 from vlnce_baselines.common.aux_losses import AuxLosses
 from vlnce_baselines.models.encoders import resnet_encoders
 from vlnce_baselines.models.encoders.instruction_encoder import (
@@ -80,6 +80,8 @@ class DecisionTransformerNet(Net):
             trainable=model_config.DEPTH_ENCODER.trainable,
         )
 
+        self.gpt_encoder = GPT(self.model_config.DECISION_TRANSFORMER)
+
         # Init the RGB visual encoder
         assert model_config.RGB_ENCODER.cnn_type in [
             "TorchVisionResNet18",
@@ -131,12 +133,15 @@ class DecisionTransformerNet(Net):
         #  and for action 3, you will have a 1 in the 4th row and zero otherwise.
         self.embed_action = nn.Embedding(num_actions+1, model_config.DECISION_TRANSFORMER.hidden_dim)
 
+        self.embed_ln = nn.LayerNorm(model_config.DECISION_TRANSFORMER.hidden_dim)
 
         self.progress_monitor = nn.Linear(
             self.model_config.STATE_ENCODER.hidden_size, 1
         )
 
-
+        self.predict_action = nn.Sequential(
+            *([nn.Linear(model_config.DECISION_TRANSFORMER.hidden_dim, num_actions+1)] + ([nn.Tanh()]))
+        )
 
         self._init_layers()
 
@@ -225,6 +230,16 @@ class DecisionTransformerNet(Net):
             .reshape(batch_size, 3 * seq_length, -1)
         )
 
-        #TODO feed the input to the GPT backbone
+        stacked_inputs = self.embed_ln(stacked_inputs)
+        output = self.gpt_encoder(stacked_inputs)
 
-        return state_embeddings, state_embeddings
+        # reshape back to original.
+        # In the third dimension (dim=2), returns (0), states (1), or actions (2)
+        # i.e. x[:,1,t] is the token for s_t
+        output = output.reshape(batch_size, seq_length, 3, -1).permute(0, 2, 1, 3)
+
+        # get predictions => TODO Actually, shouldn't we use the reward as well??
+        # we should probably use  self.predict_action(output[:, 0:1]
+        action_preds = self.predict_action(output[:, 1])  # predict next action given state
+
+        return action_preds, state_embeddings
