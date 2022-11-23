@@ -147,9 +147,18 @@ class DecisionTransformerNet(Net):
 
         self.train()
 
+    def _create_timesteps(self,sequence_length, batch_size):
+
+        timesteps = [torch.arange(0, sequence_length, dtype=torch.long) for _ in range(batch_size)]
+
+        timesteps = torch.stack(timesteps, dim=1)
+        timesteps = timesteps.view(-1, *timesteps.size()[2:]).unsqueeze(-1).to(self.embed_ln.weight.device)
+
+        return timesteps
+
     @property
     def output_size(self):
-        return self.model_config.STATE_ENCODER.hidden_size
+        return self.model_config.DECISION_TRANSFORMER.hidden_dim
 
     @property
     def is_blind(self):
@@ -166,12 +175,12 @@ class DecisionTransformerNet(Net):
         nn.init.constant_(self.progress_monitor.bias, 0)
 
     def forward(self, observations, rnn_states, prev_actions, masks):
-
-        original_batch_shape = observations["original_batch_shape"].shape
-        seq_length ,  batch_size = original_batch_shape
         depth_embedding = self.depth_encoder(observations)
         rgb_embedding = self.rgb_encoder(observations)
         instruction_embedding = self.instruction_encoder(observations)
+
+        original_batch_shape = observations["original_batch_shape"].shape if "original_batch_shape" in observations.keys() else (1,1)
+        seq_length ,  batch_size = original_batch_shape
 
         if self.model_config.ablate_instruction:
             instruction_embedding = instruction_embedding * 0
@@ -194,18 +203,35 @@ class DecisionTransformerNet(Net):
 
         #TODO init correctly form the observations
         actions = prev_actions
-        returns_to_go = observations["point_nav_reward_to_go"] if self.reward_type == "POINT_GOAL_NAV_REWARD" else \
-        observations["sparse_reward_to_go"]
-        timesteps = observations["timesteps"].unsqueeze(-1)
+
+
+        if "point_nav_reward_to_go" in observations.keys():
+            returns_to_go = observations["point_nav_reward_to_go"]\
+                if self.reward_type == "POINT_GOAL_NAV_REWARD" else \
+                            observations["sparse_reward_to_go"]
+        else:
+            # If we don t have any rewards from the environment, just take one
+            # as mentioned in the paper during evaluation.
+            returns_to_go = torch.ones_like(prev_actions, dtype=torch.float)
+        if "timesteps" in observations.keys():
+            timesteps = observations["timesteps"].unsqueeze(-1)
+        else:
+            timesteps = self._create_timesteps(seq_length, batch_size)
 
         states = resize_tensor(states)
         # squeeze to output the same shape as other embeddings
         # after  the operation with embedding layer
-        actions = resize_tensor(actions).squeeze()
+        #actions = resize_tensor(actions).squeeze()
+        actions = resize_tensor(actions)
+        if len(actions.shape)> 2:
+            actions = actions.squeeze(-1)
         returns_to_go = resize_tensor(returns_to_go)
         # squeeze to output the same shape as other embeddings
         # after  the operation with embedding layer
-        timesteps = resize_tensor(timesteps).squeeze()
+        #timesteps = resize_tensor(timesteps).squeeze()
+        timesteps = resize_tensor(timesteps)
+        if len(timesteps.shape)> 2:
+            timesteps = timesteps.squeeze(-1)
 
         #The following  comes from https://github.com/huggingface/transformers/blob/main/src/transformers/models/decision_transformer/modeling_decision_transformer.py
         # https://github.com/huggingface/transformers/commit/707b12a353b69feecf11557e13d3041982bf023f
@@ -240,6 +266,6 @@ class DecisionTransformerNet(Net):
 
         # get predictions => TODO Actually, shouldn't we use the reward as well??
         # we should probably use  self.predict_action(output[:, 0:1]
-        action_preds = self.predict_action(output[:, 1])  # predict next action given state
-
-        return action_preds, state_embeddings
+        #action_preds = self.predict_action(output[:, 1])  # predict next action given state
+        action_preds = output[:, 1]
+        return action_preds.view(seq_length*batch_size, -1), state_embeddings
