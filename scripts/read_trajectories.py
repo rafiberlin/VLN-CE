@@ -4,6 +4,8 @@ import statistics
 import argparse
 from string import Template
 import os
+
+
 def read_compressed_json_file(path):
     """
     Reading a compressed json file
@@ -39,7 +41,8 @@ def output_vlnce_r2r_statistics():
         print(str(vocab["num_vocab"]) + " words.")
 
         # 0 is use for padding, we count the number of tokens that are not 0
-        instruction_lengths = [len(list(filter(lambda x: x != 0, e["instruction"]["instruction_tokens"]))) for e in episodes]
+        instruction_lengths = [len(list(filter(lambda x: x != 0, e["instruction"]["instruction_tokens"]))) for e in
+                               episodes]
         print("Average instruction length: " + str(statistics.mean(instruction_lengths)))
         print("Max instruction length:", max(instruction_lengths))
         print("Min instruction length:", min(instruction_lengths))
@@ -95,15 +98,16 @@ if __name__ == "__main__":
     suffix = "_gt.json.gz"
 
     file1 = split_template.substitute(split=split)
-    file2 = split_template_gt.substitute(split=split) +suffix
+    file2 = split_template_gt.substitute(split=split) + suffix
     if os.path.exists(file1):
         print("Reading:", file1)
         train_file = read_compressed_json_file(file1)
     if os.path.exists(file2):
         print("Reading:", file2)
         train_file_gt = read_compressed_json_file(file2)
-        list_episode_lengths = [ len(train_file_gt[k]["actions"]) for k in train_file_gt.keys() ]
-        print("Longest episode:", max(list_episode_lengths))
-        print("Shortest episode:", min(list_episode_lengths))
+        list_episode_lengths = {k: len(train_file_gt[k]["actions"]) for k in train_file_gt.keys()}
+        sorted_list_episode_lengths = sorted(list_episode_lengths.items(), key=lambda kv: kv[1])
+        print("Longest episode:", sorted_list_episode_lengths[-1])
+        print("Shortest episode:", sorted_list_episode_lengths[0])
     output_vlnce_r2r_statistics()
     print("Done!")
