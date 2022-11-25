@@ -16,7 +16,7 @@ from vlnce_baselines.models.encoders.instruction_encoder import (
 )
 from vlnce_baselines.models.policy import ILPolicy
 
-
+from torch import Tensor
 @BaselineRegistry.register_policy
 class DecisionTransformerPolicy(ILPolicy):
     def __init__(
@@ -147,6 +147,17 @@ class DecisionTransformerNet(Net):
 
         self.train()
 
+    def _flatten_batch(self, observations: Tensor, sensor_type: str):
+
+        #quit silently
+        if not sensor_type in observations.keys():
+            return
+
+        dims = observations[sensor_type].size()
+        if len(dims) > 2:
+            observations[sensor_type] = observations[sensor_type].view(-1, *dims[2:])
+
+
     def _create_timesteps(self,sequence_length, batch_size):
 
         timesteps = [torch.arange(0, sequence_length, dtype=torch.long) for _ in range(batch_size)]
@@ -175,12 +186,22 @@ class DecisionTransformerNet(Net):
         nn.init.constant_(self.progress_monitor.bias, 0)
 
     def forward(self, observations, rnn_states, prev_actions, masks):
+
+        original_batch_shape = observations["instruction"].shape[0:2]#excluding the embedding dimentions
+        batch_size, seq_length = original_batch_shape
+        # for all the following keys, we need tto merge the first 2 dimensions
+        # [batch, sequence length, all other dimensions] to [batch * sequence length, all other dimensions]
+        self._flatten_batch(observations, "rgb")
+        self._flatten_batch(observations, "depth")
+        self._flatten_batch(observations, "rgb_features")
+        self._flatten_batch(observations, "depth_features")
+        self._flatten_batch(observations, "instruction")
+
         depth_embedding = self.depth_encoder(observations)
         rgb_embedding = self.rgb_encoder(observations)
         instruction_embedding = self.instruction_encoder(observations)
 
-        original_batch_shape = observations["original_batch_shape"].shape if "original_batch_shape" in observations.keys() else (1,1)
-        seq_length ,  batch_size = original_batch_shape
+
 
         if self.model_config.ablate_instruction:
             instruction_embedding = instruction_embedding * 0
@@ -195,7 +216,8 @@ class DecisionTransformerNet(Net):
         shape = lambda tensor : tuple([s for s in original_batch_shape] + [s for s in tensor.shape[1:]])
 
         # Transpose dimension 0 and 1 and let the last one untouched
-        resize_tensor = lambda tensor: tensor.reshape(shape(tensor)).permute(1,0,-1).contiguous()
+        #resize_tensor = lambda tensor: tensor.reshape(shape(tensor)).permute(1,0,-1).contiguous()
+        resize_tensor = lambda tensor: tensor.reshape(shape(tensor))
 
         states = torch.cat(
             [instruction_embedding, depth_embedding, rgb_embedding], dim=1
@@ -214,7 +236,7 @@ class DecisionTransformerNet(Net):
             # as mentioned in the paper during evaluation.
             returns_to_go = torch.ones_like(prev_actions, dtype=torch.float)
         if "timesteps" in observations.keys():
-            timesteps = observations["timesteps"].unsqueeze(-1)
+            timesteps = observations["timesteps"]
         else:
             timesteps = self._create_timesteps(seq_length, batch_size)
 
@@ -222,14 +244,14 @@ class DecisionTransformerNet(Net):
         # squeeze to output the same shape as other embeddings
         # after  the operation with embedding layer
         #actions = resize_tensor(actions).squeeze()
-        actions = resize_tensor(actions)
-        if len(actions.shape)> 2:
-            actions = actions.squeeze(-1)
-        returns_to_go = resize_tensor(returns_to_go)
+        # actions = resize_tensor(actions)
+        # if len(actions.shape)> 2:
+        #     actions = actions.squeeze(-1)
+        # returns_to_go = resize_tensor(returns_to_go)
         # squeeze to output the same shape as other embeddings
         # after  the operation with embedding layer
         #timesteps = resize_tensor(timesteps).squeeze()
-        timesteps = resize_tensor(timesteps)
+        # timesteps = resize_tensor(timesteps)
         if len(timesteps.shape)> 2:
             timesteps = timesteps.squeeze(-1)
 
@@ -268,4 +290,5 @@ class DecisionTransformerNet(Net):
         # we should probably use  self.predict_action(output[:, 0:1]
         #action_preds = self.predict_action(output[:, 1])  # predict next action given state
         action_preds = output[:, 1]
-        return action_preds.view(seq_length*batch_size, -1), state_embeddings
+        #return action_preds.view(seq_length*batch_size, -1), state_embeddings
+        return action_preds, state_embeddings

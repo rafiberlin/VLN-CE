@@ -26,7 +26,7 @@ from vlnce_baselines.common.utils import extract_instruction_tokens
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=FutureWarning)
     import tensorflow as tf  # noqa: F401
-
+import torch.nn.functional as F
 
 
 class ObservationsDict(dict):
@@ -37,7 +37,7 @@ class ObservationsDict(dict):
         return self
 
 
-def collate_fn(batch):
+def collate_fn__(batch):
     """Each sample in batch: (
         obs,
         prev_actions,
@@ -126,7 +126,7 @@ def collate_fn(batch):
     )
 
 
-def collate_fn_(batch):
+def collate_fn(batch):
     """Each sample in batch: (
         obs,
         prev_actions,
@@ -150,7 +150,7 @@ def collate_fn_(batch):
     observations_batch = list(transposed[0])
     prev_actions_batch = list(transposed[1])
     corrected_actions_batch = list(transposed[2])
-    weights_batch = list(transposed[3])
+    weights_batch = list(transposed[3])#to make it batch * seq length
     batch_size = len(prev_actions_batch)
 
     new_observations_batch = defaultdict(list)
@@ -185,15 +185,16 @@ def collate_fn_(batch):
         # observations_batch[sensor] = observations_batch[sensor].view(
         #     -1, *observations_batch[sensor].size()[2:]
         # )
-
-    observations_batch["instruction"] = observations_batch["instruction"].view(
-        -1, *observations_batch["instruction"].size()[2:]
-    )
+        if "_reward_to_go" in sensor:
+            observations_batch[sensor] = observations_batch[sensor].unsqueeze(-1)
+    # observations_batch["instruction"] = observations_batch["instruction"].view(
+    #     -1, *observations_batch["instruction"].size()[2:]
+    # )
 
     prev_actions_batch = torch.stack(prev_actions_batch, dim=stack_dimension)
     corrected_actions_batch = torch.stack(corrected_actions_batch, dim=stack_dimension)
 
-    weights_batch = torch.stack(weights_batch, dim=1)
+    weights_batch = torch.stack(weights_batch, dim=stack_dimension)
     not_done_masks = torch.ones_like(
         corrected_actions_batch, dtype=torch.uint8
     )
@@ -981,3 +982,60 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                 AuxLosses.deactivate()
 
 
+
+    def _update_agent(
+        self,
+        observations,
+        prev_actions,
+        not_done_masks,
+        corrected_actions,
+        weights,
+        step_grad: bool = True,
+        loss_accumulation_scalar: int = 1,
+    ):
+        T, N = corrected_actions.size()
+
+        recurrent_hidden_states = torch.zeros(
+            N,
+            self.policy.net.num_recurrent_layers,
+            self.config.MODEL.STATE_ENCODER.hidden_size,
+            device=self.device,
+        )
+
+        AuxLosses.clear()
+
+        distribution = self.policy.build_distribution(
+            observations, recurrent_hidden_states, prev_actions, not_done_masks
+        )
+
+        logits = distribution.logits
+        # you provide the batch in the correct shape already
+        # tensor shape of size Batch * Sequence Length * Number of classes
+        #logits = logits.view(T, N, -1)
+
+        # action_loss = F.cross_entropy(
+        #     logits.permute(0, 2, 1), corrected_actions, reduction="none"
+        # )
+
+        #The permutation allows to keep the expected input shape (Btach times Classes)
+        # the third dimension gets interpreted as a sequence correctly, as the target actons
+        # have the correct shape
+        action_loss = F.cross_entropy(
+            logits.permute(0, 2, 1), corrected_actions, reduction="none"
+        )
+        action_loss = ((weights * action_loss).sum(0) / weights.sum(0)).mean()
+
+        aux_mask = (weights > 0).view(-1)
+        aux_loss = AuxLosses.reduce(aux_mask)
+
+        loss = action_loss + aux_loss
+        loss = loss / loss_accumulation_scalar
+        loss.backward()
+
+        if step_grad:
+            self.optimizer.step()
+            self.optimizer.zero_grad()
+
+        if isinstance(aux_loss, torch.Tensor):
+            aux_loss = aux_loss.item()
+        return loss.item(), action_loss.item(), aux_loss
