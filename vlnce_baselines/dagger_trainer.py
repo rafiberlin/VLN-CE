@@ -437,7 +437,7 @@ class DaggerTrainer(BaseVLNCETrainer):
                 skips = batch[expert_uuid].long() == -1
                 actions = torch.where(
                     skips, torch.zeros_like(actions), actions
-                )
+                )# when you have to skip an environment, (no new episode loaded, fill the actions with zero, otherwise, take the value from the actions)
                 skips = skips.squeeze(-1).to(device="cpu", non_blocking=True)
                 prev_actions.copy_(actions)
 

@@ -192,11 +192,12 @@ class BaseVLNCETrainer(BaseILTrainer):
         # pausing envs with no new episode
         if len(envs_to_pause) > 0:
             state_index = list(range(envs.num_envs))
-            for idx in reversed(envs_to_pause):
+            for idx in reversed(envs_to_pause):#The envs to paused as to be done so in reverse order, otherwise, you mess up the index...
                 state_index.pop(idx)
                 envs.pause_at(idx)
 
-            # indexing along the batch dimensions
+            # indexing along the batch dimensions => because we removed the environement to pause in
+            # the previous step from the state_index list, we just keep everything related to the active environments
             recurrent_hidden_states = recurrent_hidden_states[state_index]
             not_done_masks = not_done_masks[state_index]
             prev_actions = prev_actions[state_index]

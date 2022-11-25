@@ -369,7 +369,241 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
         if self.config.EVAL.SAVE_RESULTS:
             self._make_results_dir()
 
+    def _prepare_observation(self, observations):
+
+        observations = extract_instruction_tokens(
+            observations, self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID
+        )
+        batch = batch_obs(observations, self.device)
+        batch = apply_obs_transforms_batch(batch, self.obs_transforms)
+
+        return observations, batch
+
     def _update_dataset(self, data_it):
+        if torch.cuda.is_available():
+            with torch.cuda.device(self.device):
+                torch.cuda.empty_cache()
+
+        envs = construct_envs(self.config, get_env_class(self.config.ENV_NAME))
+        expert_uuid = self.config.IL.DAGGER.expert_policy_sensor_uuid
+        distance_left_uuid = self.config.IL.DECISION_TRANSFORMER.sensor_uuid
+        hidden_states = torch.zeros(envs.num_envs, 1,
+                                    dtype=torch.float)  # more of a placeholder, we don t need it for the transformer
+        prev_actions = torch.zeros(
+            envs.num_envs,
+            1,
+            device=self.device,
+            dtype=torch.long,
+        )
+        not_done_masks = torch.zeros(
+            envs.num_envs, 1, dtype=torch.uint8, device=self.device
+        )
+
+        observations = envs.reset()
+        observations, batch = self._prepare_observation(observations)
+        # initialize at dim 1 for sequences of frames etc...
+        observations_sequence = {k:v.unsqueeze(1) for k,v in batch.items()}
+        episodes = [[] for _ in range(envs.num_envs)]
+        skips = [False for _ in range(envs.num_envs)]
+        # Populate dones with False initially
+        dones = [False for _ in range(envs.num_envs)]
+
+        # https://arxiv.org/pdf/1011.0686.pdf
+        # Theoretically, any beta function is fine so long as it converges to
+        # zero as data_it -> inf. The paper suggests starting with beta = 1 and
+        # exponential decay.
+        p = self.config.IL.DAGGER.p
+        # in Python 0.0 ** 0.0 == 1.0, but we want 0.0
+        beta = 0.0 if p == 0.0 else p ** data_it
+
+        ensure_unique_episodes = beta == 1.0
+
+        def hook_builder(tgt_tensor):
+            def hook(m, i, o):
+                tgt_tensor.set_(o.cpu())
+
+            return hook
+
+        rgb_features = None
+        rgb_hook = None
+        if not self.config.MODEL.RGB_ENCODER.trainable:
+            rgb_features = torch.zeros((1,), device="cpu")
+            rgb_hook = self.policy.net.rgb_encoder.cnn.register_forward_hook(
+                hook_builder(rgb_features)
+            )
+
+        depth_features = None
+        depth_hook = None
+        if not self.config.MODEL.DEPTH_ENCODER.trainable:
+            depth_features = torch.zeros((1,), device="cpu")
+            depth_hook = self.policy.net.depth_encoder.visual_encoder.register_forward_hook(
+                hook_builder(depth_features)
+            )
+
+        collected_eps = 0
+        ep_ids_collected = None
+        if ensure_unique_episodes:
+            ep_ids_collected = {
+                ep.episode_id for ep in envs.current_episodes()
+            }
+
+        with tqdm.tqdm(
+            total=self.config.IL.DAGGER.update_size, dynamic_ncols=True
+        ) as pbar, lmdb.open(
+            self.lmdb_features_dir,
+            map_size=int(self.config.IL.DAGGER.lmdb_map_size),
+        ) as lmdb_env, torch.no_grad():
+            start_id = lmdb_env.stat()["entries"]
+            txn = lmdb_env.begin(write=True)
+
+            while collected_eps < self.config.IL.DAGGER.update_size:
+                current_episodes = None
+                envs_to_pause = None
+                if ensure_unique_episodes:
+                    envs_to_pause = []
+                    current_episodes = envs.current_episodes()
+
+                for i in range(envs.num_envs):
+                    if dones[i] and not skips[i]:
+                        ep = episodes[i]
+                        traj_obs = batch_obs(
+                            [step[0] for step in ep],
+                            device=torch.device("cpu"),
+                        )
+                        del traj_obs[expert_uuid]
+                        for k, v in traj_obs.items():
+                            traj_obs[k] = v.numpy()
+                            if self.config.IL.DAGGER.lmdb_fp16:
+                                traj_obs[k] = traj_obs[k].astype(np.float16)
+                        # First step: calculate the difference between 2 consecutive time steps.
+                        # We add the initial distance to the goal to calculate the first differential reward
+                        #traj_obs["point_nav_reward_to_go"] = np.diff(
+                        #    np.concatenate(([current_episodes[i].info["geodesic_distance"]], traj_obs[distance_left_uuid])), axis=0)
+                        # We add the final distance to the goal once again because on th elast step,
+                        # the STOP action is called
+                        traj_obs["point_nav_reward_to_go"] = np.diff(
+                            np.concatenate((traj_obs[distance_left_uuid], [traj_obs[distance_left_uuid][-1]])), axis=0) * -1.0
+                        # PReparing entries for sparse rewards
+                        traj_obs["sparse_reward_to_go"] = np.zeros_like(traj_obs["point_nav_reward_to_go"])
+                        del traj_obs[distance_left_uuid]
+                        self.calculate_return_to_go(traj_obs, "point_goal_nav_reward", "point_nav_reward_to_go")
+                        self.calculate_return_to_go(traj_obs, "sparse_reward", "sparse_reward_to_go")
+                        transposed_ep = [
+                            traj_obs,
+                            np.array([step[1] for step in ep], dtype=np.int64),
+                            np.array([step[2] for step in ep], dtype=np.int64),
+                        ]
+                        txn.put(
+                            str(start_id + collected_eps).encode(),
+                            msgpack_numpy.packb(
+                                transposed_ep, use_bin_type=True
+                            ),
+                        )
+
+                        pbar.update()
+                        collected_eps += 1
+
+                        if (
+                            collected_eps
+                            % self.config.IL.DAGGER.lmdb_commit_frequency
+                        ) == 0:
+                            txn.commit()
+                            txn = lmdb_env.begin(write=True)
+
+                        if ensure_unique_episodes:
+                            if (
+                                current_episodes[i].episode_id
+                                in ep_ids_collected
+                            ):
+                                envs_to_pause.append(i)
+                            else:
+                                ep_ids_collected.add(
+                                    current_episodes[i].episode_id
+                                )
+
+                    if dones[i]:
+                        episodes[i] = []
+
+                if ensure_unique_episodes:
+                    (
+                        envs,
+                        hidden_states,
+                        not_done_masks,
+                        prev_actions,
+                        batch,
+                        _,
+                    ) = self._pause_envs(
+                        envs_to_pause,
+                        envs,
+                        hidden_states,
+                        not_done_masks,
+                        prev_actions,
+                        batch,
+                    )
+                    if envs.num_envs == 0:
+                        break
+
+                actions, _ = self.policy.act(
+                    batch,
+                    hidden_states,
+                    prev_actions,
+                    not_done_masks,
+                    deterministic=False,
+                )
+                # actions.shape[0] == number of active enviroments
+                hidden_states = torch.zeros(actions.shape[0], 1, dtype=torch.float)
+
+                actions = torch.where(
+                    torch.rand_like(actions, dtype=torch.float) < beta,
+                    batch[expert_uuid].long(),
+                    actions,
+                )
+
+                for i in range(envs.num_envs):
+                    if rgb_features is not None:
+                        observations[i]["rgb_features"] = rgb_features[i]
+                        del observations[i]["rgb"]
+
+                    if depth_features is not None:
+                        observations[i]["depth_features"] = depth_features[i]
+                        del observations[i]["depth"]
+
+                    episodes[i].append(
+                        (
+                            observations[i],
+                            prev_actions[i].item(),
+                            batch[expert_uuid][i].item(),
+                        )
+                    )
+
+                skips = batch[expert_uuid].long() == -1# looks like the short path sensor return -1 if there is a problem,, hence you need to skip an environment
+                actions = torch.where(
+                    skips, torch.zeros_like(actions), actions
+                )
+                skips = skips.squeeze(-1).to(device="cpu", non_blocking=True)
+                prev_actions.copy_(actions)
+
+                outputs = envs.step([a[0].item() for a in actions])
+                observations, _, dones, infos = [list(x) for x in zip(*outputs)]
+                observations, batch = self._prepare_observation(observations)
+
+                not_done_masks = torch.tensor(
+                    [[0] if done else [1] for done in dones],
+                    dtype=torch.uint8,
+                    device=self.device,
+                )
+
+            txn.commit()
+
+        envs.close()
+        envs = None
+
+        if rgb_hook is not None:
+            rgb_hook.remove()
+        if depth_hook is not None:
+            depth_hook.remove()
+
+    def _update_dataset_original(self, data_it):
         if torch.cuda.is_available():
             with torch.cuda.device(self.device):
                 torch.cuda.empty_cache()
@@ -601,6 +835,7 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
             rgb_hook.remove()
         if depth_hook is not None:
             depth_hook.remove()
+
 
     def train(self) -> None:
         """Main method for training DAgger."""
