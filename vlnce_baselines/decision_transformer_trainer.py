@@ -440,6 +440,13 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
             depth_hook = self.policy.net.depth_encoder.visual_encoder.register_forward_hook(
                 hook_builder(depth_features)
             )
+        rgb_encoder = self.policy.net.rgb_encoder
+        depth_encoder = self.policy.net.depth_encoder
+        # rgb_features or depth_features
+        image_sequence = lambda episodes, feature_key: torch.stack(
+            [torch.stack([obs[0][feature_key] for obs in ep], dim=0) for env, ep in enumerate(episodes)], dim=0)
+
+        are_episodes_empty = lambda episodes: sum([len(e) > 0 for e in episodes]) != 0
 
         collected_eps = 0
         ep_ids_collected = None
@@ -544,6 +551,33 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                     if envs.num_envs == 0:
                         break
 
+                #caching the outputs of the cnn on one image only
+                rgb_encoder(observations)
+                depth_encoder(observations)
+                for i in range(envs.num_envs):
+                    if rgb_features is not None:
+                        observations[i]["rgb_features"] = rgb_features[i]
+                        del observations[i]["rgb"]
+
+                    if depth_features is not None:
+                        observations[i]["depth_features"] = depth_features[i]
+                        del observations[i]["depth"]
+
+
+                if not are_episodes_empty:
+                    # preparing the past images as a sequence
+                    rgb_seq = image_sequence(episodes, "rgb_features")
+                    depth_seq = image_sequence(episodes, "depth_features")
+                    # adding the current image to the end of the sequence
+                    rgb_seq = torch.cat((rgb_seq, rgb_features.unsqueeze(1)), dim=1)
+                    depth_seq = torch.cat((depth_seq, depth_features.unsqueeze(1)), dim=1)
+                else:
+                    rgb_seq = rgb_features.unsqueeze(1)
+                    depth_seq = depth_features.unsqueeze(1)
+                # setting it here to not trigger the hook another time and increase processing time
+                batch["rgb_features"] = rgb_seq
+                batch["depth_features"] = depth_seq
+
                 actions, _ = self.policy.act(
                     batch,
                     hidden_states,
@@ -559,16 +593,9 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                     batch[expert_uuid].long(),
                     actions,
                 )
-
+                # We gathered images, actions, and sensor feedback for current timestep
+                # time to save the timestep
                 for i in range(envs.num_envs):
-                    if rgb_features is not None:
-                        observations[i]["rgb_features"] = rgb_features[i]
-                        del observations[i]["rgb"]
-
-                    if depth_features is not None:
-                        observations[i]["depth_features"] = depth_features[i]
-                        del observations[i]["depth"]
-
                     episodes[i].append(
                         (
                             observations[i],
