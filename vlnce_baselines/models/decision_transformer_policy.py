@@ -34,6 +34,19 @@ class DecisionTransformerPolicy(ILPolicy):
             action_space.n,
         )
 
+    def act(
+        self,
+        observations,
+        rnn_states,
+        prev_actions,
+        masks,
+        deterministic=False,
+    ):
+
+        actions, rnn_states = super().act(observations, rnn_states, prev_actions, masks, deterministic)
+        #We just want to return the last action of the transformer sequence...
+        return actions[:,-1,:], rnn_states
+
     @classmethod
     def from_config(
         cls, config: Config, observation_space: Space, action_space: Space
@@ -162,8 +175,8 @@ class DecisionTransformerNet(Net):
 
         timesteps = [torch.arange(0, sequence_length, dtype=torch.long) for _ in range(batch_size)]
 
-        timesteps = torch.stack(timesteps, dim=1)
-        timesteps = timesteps.view(-1, *timesteps.size()[2:]).unsqueeze(-1).to(self.embed_ln.weight.device)
+        timesteps = torch.stack(timesteps, dim=0).to(self.embed_ln.weight.device)
+        #timesteps = timesteps.view(-1, *timesteps.size()[2:]).unsqueeze(-1).to(self.embed_ln.weight.device)
 
         return timesteps
 
@@ -234,7 +247,7 @@ class DecisionTransformerNet(Net):
         else:
             # If we don t have any rewards from the environment, just take one
             # as mentioned in the paper during evaluation.
-            returns_to_go = torch.ones_like(prev_actions, dtype=torch.float)
+            returns_to_go = torch.ones_like(prev_actions, dtype=torch.float).unsqueeze(dim=-1)
         if "timesteps" in observations.keys():
             timesteps = observations["timesteps"]
         else:
@@ -265,6 +278,7 @@ class DecisionTransformerNet(Net):
         returns_embeddings = self.embed_return(returns_to_go)
         time_embeddings = self.embed_timestep(timesteps)
 
+        #print(state_embeddings.shape, action_embeddings.shape, returns_embeddings.shape, time_embeddings.shape)
         # time embeddings are treated similar to positional embeddings
         state_embeddings = state_embeddings + time_embeddings
         action_embeddings = action_embeddings + time_embeddings

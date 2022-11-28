@@ -390,12 +390,13 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
         distance_left_uuid = self.config.IL.DECISION_TRANSFORMER.sensor_uuid
         hidden_states = torch.zeros(envs.num_envs, 1,
                                     dtype=torch.float)  # more of a placeholder, we don t need it for the transformer
-        prev_actions = torch.zeros(
-            envs.num_envs,
-            1,
-            device=self.device,
-            dtype=torch.long,
-        )
+        # prev_actions = torch.zeros(
+        #     envs.num_envs,
+        #     1,
+        #     device=self.device,
+        #     dtype=torch.long,
+        # )
+        prev_actions = None
         not_done_masks = torch.zeros(
             envs.num_envs, 1, dtype=torch.uint8, device=self.device
         )
@@ -444,9 +445,9 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
         depth_encoder = self.policy.net.depth_encoder
         # rgb_features or depth_features
         image_sequence = lambda episodes, feature_key: torch.stack(
-            [torch.stack([obs[0][feature_key] for obs in ep], dim=0) for env, ep in enumerate(episodes)], dim=0)
+            [torch.stack([obs[0][feature_key] for obs in ep], dim=0) for env, ep in enumerate(episodes) if len(ep) > 0], dim=0)
 
-        are_episodes_empty = lambda episodes: sum([len(e) > 0 for e in episodes]) != 0
+        are_episodes_empty = lambda episodes: sum([len(e) > 0 for e in episodes]) == 0
 
         collected_eps = 0
         ep_ids_collected = None
@@ -454,7 +455,7 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
             ep_ids_collected = {
                 ep.episode_id for ep in envs.current_episodes()
             }
-
+        #count = 0
         with tqdm.tqdm(
             total=self.config.IL.DAGGER.update_size, dynamic_ncols=True
         ) as pbar, lmdb.open(
@@ -552,8 +553,8 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                         break
 
                 #caching the outputs of the cnn on one image only
-                rgb_encoder(observations)
-                depth_encoder(observations)
+                rgb_encoder(batch)
+                depth_encoder(batch)
                 for i in range(envs.num_envs):
                     if rgb_features is not None:
                         observations[i]["rgb_features"] = rgb_features[i]
@@ -562,21 +563,31 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                     if depth_features is not None:
                         observations[i]["depth_features"] = depth_features[i]
                         del observations[i]["depth"]
-
-
-                if not are_episodes_empty:
+                #count += 1
+                #print(count)
+                if not are_episodes_empty(episodes):
                     # preparing the past images as a sequence
                     rgb_seq = image_sequence(episodes, "rgb_features")
                     depth_seq = image_sequence(episodes, "depth_features")
                     # adding the current image to the end of the sequence
-                    rgb_seq = torch.cat((rgb_seq, rgb_features.unsqueeze(1)), dim=1)
-                    depth_seq = torch.cat((depth_seq, depth_features.unsqueeze(1)), dim=1)
+                    rgb_seq = torch.cat((rgb_seq, rgb_features.unsqueeze(dim=1)), dim=1)
+                    depth_seq = torch.cat((depth_seq, depth_features.unsqueeze(dim=1)), dim=1)
                 else:
-                    rgb_seq = rgb_features.unsqueeze(1)
-                    depth_seq = depth_features.unsqueeze(1)
+                    # we unsqueeze at dim = 1 to create a shape of of batch, sequence (of size 1 at the beginning), and all other dim
+                    rgb_seq = rgb_features.unsqueeze(dim=1)
+                    depth_seq = depth_features.unsqueeze(dim=1)
+                    prev_actions = torch.zeros(
+                        envs.num_envs,
+                        1,
+                        device=self.device,
+                        dtype=torch.long,
+                    )
+                seq_length = rgb_seq.shape[1]
+                # just repeat the instructions for each time step
+                batch["instruction"] = batch["instruction"].unsqueeze(dim=1).repeat(1, seq_length, 1)
                 # setting it here to not trigger the hook another time and increase processing time
-                batch["rgb_features"] = rgb_seq
-                batch["depth_features"] = depth_seq
+                batch["rgb_features"] = rgb_seq.to(self.device)
+                batch["depth_features"] = depth_seq.to(self.device)
 
                 actions, _ = self.policy.act(
                     batch,
@@ -599,7 +610,7 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                     episodes[i].append(
                         (
                             observations[i],
-                            prev_actions[i].item(),
+                            prev_actions[i,-1].item(),# this is a sequence of actions, we take the last action
                             batch[expert_uuid][i].item(),
                         )
                     )
@@ -609,7 +620,9 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                     skips, torch.zeros_like(actions), actions
                 )
                 skips = skips.squeeze(-1).to(device="cpu", non_blocking=True)
-                prev_actions.copy_(actions)
+                #add the last actions to the sequence of previous actions
+                prev_actions = torch.cat([prev_actions, actions], dim=1).to(self.device)
+                #prev_actions.copy_(actions)
 
                 outputs = envs.step([a[0].item() for a in actions])
                 observations, _, dones, infos = [list(x) for x in zip(*outputs)]

@@ -301,7 +301,7 @@ _C.MODEL.DECISION_TRANSFORMER.n_head = 1
 _C.MODEL.DECISION_TRANSFORMER.n_embd = 128
 # these options must be filled in externally
 _C.MODEL.DECISION_TRANSFORMER.vocab_size = 4
-_C.MODEL.DECISION_TRANSFORMER.block_size = 183 #TODO is the block_size really the horizon
+_C.MODEL.DECISION_TRANSFORMER.block_size = _C.MODEL.DECISION_TRANSFORMER.episode_horizon *3 #We multiply by three because at each time step, we use [reward, action, state]
 # dropout hyperparameters
 _C.MODEL.DECISION_TRANSFORMER.embd_pdrop = 0.1
 _C.MODEL.DECISION_TRANSFORMER.resid_pdrop = 0.1
