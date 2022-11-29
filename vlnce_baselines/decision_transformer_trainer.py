@@ -1,32 +1,12 @@
 import gc
-import os
 import random
 import warnings
-from collections import defaultdict
 
 import lmdb
 import msgpack_numpy
 import numpy as np
-import torch
-import tqdm
-from habitat import logger
-from habitat_baselines.common.baseline_registry import baseline_registry
-from habitat_baselines.common.environments import get_env_class
-from habitat_baselines.common.obs_transformers import (
-    apply_obs_transforms_batch,
-)
-from habitat_baselines.common.tensorboard_utils import TensorboardWriter
-from habitat_baselines.utils.common import batch_obs
-
-from vlnce_baselines.common.aux_losses import AuxLosses
 from vlnce_baselines.common.base_il_trainer import BaseVLNCETrainer
 from vlnce_baselines.common.env_utils import construct_envs
-from vlnce_baselines.common.utils import extract_instruction_tokens
-
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=FutureWarning)
-    import tensorflow as tf  # noqa: F401
-import torch.nn.functional as F
 
 from torch import Tensor
 
@@ -35,22 +15,15 @@ import os
 import time
 import warnings
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Tuple
-
-import jsonlines
 import torch
 import torch.nn.functional as F
 import tqdm
-from gym import Space
 from habitat import Config, logger
 from habitat.utils.visualizations.utils import append_text_to_image
-from habitat_baselines.common.base_il_trainer import BaseILTrainer
 from habitat_baselines.common.baseline_registry import baseline_registry
 from habitat_baselines.common.environments import get_env_class
 from habitat_baselines.common.obs_transformers import (
     apply_obs_transforms_batch,
-    apply_obs_transforms_obs_space,
-    get_active_obs_transforms,
 )
 from habitat_baselines.common.tensorboard_utils import TensorboardWriter
 from habitat_baselines.rl.ddppo.algo.ddp_utils import is_slurm_batch_job
@@ -72,95 +45,6 @@ class ObservationsDict(dict):
             self[k] = v.pin_memory()
 
         return self
-
-
-def collate_fn__(batch):
-    """Each sample in batch: (
-        obs,
-        prev_actions,
-        oracle_actions,
-        inflec_weight,
-    )
-    """
-
-    def _pad_helper(t, max_len, fill_val=0):
-        pad_amount = max_len - t.size(0)
-        if pad_amount == 0:
-            return t
-
-        pad = torch.full_like(t[0:1], fill_val).expand(
-            pad_amount, *t.size()[1:]
-        )
-        return torch.cat([t, pad], dim=0)
-
-    transposed = list(zip(*batch))
-
-    observations_batch = list(transposed[0])
-    prev_actions_batch = list(transposed[1])
-    corrected_actions_batch = list(transposed[2])
-    weights_batch = list(transposed[3])
-    B = len(prev_actions_batch)
-
-    new_observations_batch = defaultdict(list)
-    for sensor in observations_batch[0]:
-        for bid in range(B):
-            new_observations_batch[sensor].append(
-                observations_batch[bid][sensor]
-            )
-
-    observations_batch = new_observations_batch
-
-    max_traj_len = max(ele.size(0) for ele in prev_actions_batch)
-    for bid in range(B):
-        for sensor in observations_batch:
-            fill = 0.0 if "_reward_to_go" in sensor else 1.0
-            observations_batch[sensor][bid] = _pad_helper(
-                observations_batch[sensor][bid], max_traj_len, fill_val=fill
-            )
-
-        prev_actions_batch[bid] = _pad_helper(
-            prev_actions_batch[bid], max_traj_len
-        )
-        corrected_actions_batch[bid] = _pad_helper(
-            corrected_actions_batch[bid], max_traj_len
-        )
-        weights_batch[bid] = _pad_helper(weights_batch[bid], max_traj_len)
-
-    # timesteps = torch.arange(0, max_traj_len).repeat(B, 1)
-    observations_batch["timesteps"] = [ torch.arange(0, max_traj_len,dtype=torch.long) for _ in range(B) ]
-
-    for sensor in observations_batch:
-        #Warning: because it is stacked on the dim 1, if you want oget the shape back
-        # you will need to do: observations_batch["timesteps"].reshape(-1,B) (B0 batch size)
-        observations_batch[sensor] = torch.stack(
-            observations_batch[sensor], dim=1
-        )
-
-        observations_batch[sensor] = observations_batch[sensor].view(
-            -1, *observations_batch[sensor].size()[2:]
-        )
-        if "_reward_to_go" in sensor:
-            observations_batch[sensor] = observations_batch[sensor].unsqueeze(-1)
-
-    original_batch_shape = torch.zeros((max_traj_len, B))
-    observations_batch["original_batch_shape"] = original_batch_shape
-    prev_actions_batch = torch.stack(prev_actions_batch, dim=1)
-    corrected_actions_batch = torch.stack(corrected_actions_batch, dim=1)
-    weights_batch = torch.stack(weights_batch, dim=1)
-    not_done_masks = torch.ones_like(
-        corrected_actions_batch, dtype=torch.uint8
-    )
-    not_done_masks[0] = 0
-
-    observations_batch = ObservationsDict(observations_batch)
-
-    return (
-        observations_batch,
-        prev_actions_batch.view(-1, 1),
-        not_done_masks.view(-1, 1),
-        corrected_actions_batch,
-        weights_batch,
-    )
 
 
 def collate_fn(batch):
@@ -187,7 +71,7 @@ def collate_fn(batch):
     observations_batch = list(transposed[0])
     prev_actions_batch = list(transposed[1])
     corrected_actions_batch = list(transposed[2])
-    weights_batch = list(transposed[3])#to make it batch * seq length
+    weights_batch = list(transposed[3])  # to make it batch * seq length
     batch_size = len(prev_actions_batch)
 
     new_observations_batch = defaultdict(list)
@@ -251,7 +135,7 @@ def collate_fn(batch):
 
 
 def _block_shuffle(lst, block_size):
-    blocks = [lst[i : i + block_size] for i in range(0, len(lst), block_size)]
+    blocks = [lst[i: i + block_size] for i in range(0, len(lst), block_size)]
     random.shuffle(blocks)
 
     return [ele for block in blocks for ele in block]
@@ -400,7 +284,6 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
         rewards = np.flip(np.flip(rewards).cumsum())
         traj_obs[observation_type] = np.float32(rewards)
 
-
     def _make_dirs(self) -> None:
         self._make_ckpt_dir()
         os.makedirs(self.lmdb_features_dir, exist_ok=True)
@@ -422,7 +305,8 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
 
         return observations, batch
 
-    def _modify_batch_for_transformer(self, episodes: list, batch: ObservationsDict, rgb_features: Tensor, depth_features: Tensor,  envs, prev_actions, rgb_key, depth_key):
+    def _modify_batch_for_transformer(self, episodes: list, batch: ObservationsDict, rgb_features: Tensor,
+                                      depth_features: Tensor, envs, prev_actions, rgb_key, depth_key):
         """
         This function help to prepare the input needed by the transformer model.
         Habitat Sim provides one image / observation per time step, we need the whole serie for the transformer model.
@@ -467,7 +351,7 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
 
         return prev_actions
 
-    def _create_sequence(self, episodes:list, feature_key: str):
+    def _create_sequence(self, episodes: list, feature_key: str):
         '''
         Returns a tensor corresponding to the sequence of features. It has a shape
         number of environments * sequence length * all the remaining dimensions
@@ -478,14 +362,24 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
         return torch.stack(
             [torch.stack([obs[0][feature_key] for obs in ep], dim=0) for env, ep in enumerate(episodes) if len(ep) > 0],
             dim=0)
-    def _are_episodes_empty(self, episodes:list):
+
+    def _are_episodes_empty(self, episodes: list):
         '''
         Check if the current list of steps is empty or not.
         :param episodes:
         :return:
         '''
         return sum([len(e) > 0 for e in episodes]) == 0
+
     def _update_dataset(self, data_it):
+        """
+        Cache the whole dataset. Data Aggregation can be used, the trained model
+        can output some action for time steps at a given probability. As the whole Task rely on an Oracle that
+        can output the best decision to reach the next trajectory node, even a bad decision of the model can be recovered
+        (imagine backtracking...), hence effectively implementing DAGGER.
+        :param data_it:
+        :return:
+        """
         if torch.cuda.is_available():
             with torch.cuda.device(self.device):
                 torch.cuda.empty_cache()
@@ -549,16 +443,13 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
         rgb_encoder = self.policy.net.rgb_encoder
         depth_encoder = self.policy.net.depth_encoder
 
-
-
-
         collected_eps = 0
         ep_ids_collected = None
         if ensure_unique_episodes:
             ep_ids_collected = {
                 ep.episode_id for ep in envs.current_episodes()
             }
-        #count = 0
+        # count = 0
         with tqdm.tqdm(
             total=self.config.IL.DAGGER.update_size, dynamic_ncols=True
         ) as pbar, lmdb.open(
@@ -589,12 +480,13 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                                 traj_obs[k] = traj_obs[k].astype(np.float16)
                         # First step: calculate the difference between 2 consecutive time steps.
                         # We add the initial distance to the goal to calculate the first differential reward
-                        #traj_obs["point_nav_reward_to_go"] = np.diff(
+                        # traj_obs["point_nav_reward_to_go"] = np.diff(
                         #    np.concatenate(([current_episodes[i].info["geodesic_distance"]], traj_obs[distance_left_uuid])), axis=0)
                         # We add the final distance to the goal once again because on th elast step,
                         # the STOP action is called
                         traj_obs["point_nav_reward_to_go"] = np.diff(
-                            np.concatenate((traj_obs[distance_left_uuid], [traj_obs[distance_left_uuid][-1]])), axis=0) * -1.0
+                            np.concatenate((traj_obs[distance_left_uuid], [traj_obs[distance_left_uuid][-1]])),
+                            axis=0) * -1.0
                         # PReparing entries for sparse rewards
                         traj_obs["sparse_reward_to_go"] = np.zeros_like(traj_obs["point_nav_reward_to_go"])
                         del traj_obs[distance_left_uuid]
@@ -655,7 +547,7 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                     if envs.num_envs == 0:
                         break
 
-                #caching the outputs of the cnn on one image only
+                # caching the outputs of the cnn on one image only
                 rgb_encoder(batch)
                 depth_encoder(batch)
                 for i in range(envs.num_envs):
@@ -667,8 +559,9 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                         observations[i]["depth_features"] = depth_features[i]
                         del observations[i]["depth"]
 
-                prev_actions = self._modify_batch_for_transformer(episodes, batch, rgb_features, depth_features, envs, prev_actions,
-                                                   "rgb_features", "depth_features")
+                prev_actions = self._modify_batch_for_transformer(episodes, batch, rgb_features, depth_features, envs,
+                                                                  prev_actions,
+                                                                  "rgb_features", "depth_features")
 
                 actions, _ = self.policy.act(
                     batch,
@@ -691,19 +584,20 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                     episodes[i].append(
                         (
                             observations[i],
-                            prev_actions[i,-1].item(),# this is a sequence of actions, we take the last action
+                            prev_actions[i, -1].item(),  # this is a sequence of actions, we take the last action
                             batch[expert_uuid][i].item(),
                         )
                     )
 
-                skips = batch[expert_uuid].long() == -1# looks like the short path sensor return -1 if there is a problem,, hence you need to skip an environment
+                skips = batch[
+                            expert_uuid].long() == -1  # looks like the short path sensor return -1 if there is a problem,, hence you need to skip an environment
                 actions = torch.where(
                     skips, torch.zeros_like(actions), actions
                 )
                 skips = skips.squeeze(-1).to(device="cpu", non_blocking=True)
-                #add the last actions to the sequence of previous actions
+                # add the last actions to the sequence of previous actions
                 prev_actions = torch.cat([prev_actions, actions], dim=1).to(self.device)
-                #prev_actions.copy_(actions)
+                # prev_actions.copy_(actions)
 
                 outputs = envs.step([a[0].item() for a in actions])
                 observations, _, dones, infos = [list(x) for x in zip(*outputs)]
@@ -789,7 +683,7 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
         observations = envs.reset()
         observations, batch = self._prepare_observation(observations)
 
-        hidden_states =  torch.zeros(envs.num_envs, 1, dtype=torch.float)
+        hidden_states = torch.zeros(envs.num_envs, 1, dtype=torch.float)
 
         prev_actions = None
         not_done_masks = torch.zeros(
@@ -825,7 +719,8 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                 if batch["depth"] is not None:
                     observations[i]["depth"] = batch["depth"][i]
 
-            prev_actions = self._modify_batch_for_transformer(episodes, batch, batch["rgb"], batch["depth"], envs, prev_actions, "rgb", "depth")
+            prev_actions = self._modify_batch_for_transformer(episodes, batch, batch["rgb"], batch["depth"], envs,
+                                                              prev_actions, "rgb", "depth")
 
             with torch.no_grad():
                 actions, hidden_states = self.policy.act(
@@ -836,7 +731,7 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                     deterministic=not config.EVAL.SAMPLE,
                 )
                 prev_actions = torch.cat([prev_actions, actions], dim=1).to(self.device)
-                #prev_actions.copy_(actions)
+                # prev_actions.copy_(actions)
 
             outputs = envs.step([a[0].item() for a in actions])
             observations, _, dones, infos = [list(x) for x in zip(*outputs)]
@@ -856,14 +751,14 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                     )
                     rgb_frames[i].append(frame)
                 # This helps us to generate the transformer sequence
-                episodes[i].append((cleaned_observations[i], prev_actions[i,-1].item()))
+                episodes[i].append((cleaned_observations[i], prev_actions[i, -1].item()))
                 if not dones[i]:
                     continue
                 episodes[i] = []
                 ep_id = current_episodes[i].episode_id
                 stats_episodes[ep_id] = infos[i]
                 observations[i] = envs.reset_at(i)[0]
-                #prev_actions[i] = torch.zeros(1, dtype=torch.long)
+                # prev_actions[i] = torch.zeros(1, dtype=torch.long)
 
                 if config.use_pbar:
                     pbar.update()
@@ -1079,8 +974,6 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                     )
                 AuxLosses.deactivate()
 
-
-
     def _update_agent(
         self,
         observations,
@@ -1091,6 +984,17 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
         step_grad: bool = True,
         loss_accumulation_scalar: int = 1,
     ):
+        """
+        Returns the agent loss in the training loop
+        :param observations:
+        :param prev_actions:
+        :param not_done_masks:
+        :param corrected_actions:
+        :param weights:
+        :param step_grad:
+        :param loss_accumulation_scalar:
+        :return:
+        """
         T, N = corrected_actions.size()
 
         recurrent_hidden_states = torch.zeros(
@@ -1109,13 +1013,13 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
         logits = distribution.logits
         # you provide the batch in the correct shape already
         # tensor shape of size Batch * Sequence Length * Number of classes
-        #logits = logits.view(T, N, -1)
+        # logits = logits.view(T, N, -1)
 
         # action_loss = F.cross_entropy(
         #     logits.permute(0, 2, 1), corrected_actions, reduction="none"
         # )
 
-        #The permutation allows to keep the expected input shape (Btach times Classes)
+        # The permutation allows to keep the expected input shape (Btach times Classes)
         # the third dimension gets interpreted as a sequence correctly, as the target actons
         # have the correct shape
         action_loss = F.cross_entropy(
