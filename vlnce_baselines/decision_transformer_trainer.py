@@ -37,7 +37,7 @@ from vlnce_baselines.common.utils import extract_instruction_tokens
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=FutureWarning)
     import tensorflow as tf  # noqa: F401
-
+import copy
 
 class ObservationsDict(dict):
     def pin_memory(self):
@@ -342,6 +342,9 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                 device=self.device,
                 dtype=torch.long,
             )
+        #store the last images
+        for i in range(envs.num_envs):
+            episodes[i].append({rgb_key: rgb_seq[i][-1], depth_key: depth_seq[i][-1]})
         seq_length = rgb_seq.shape[1]
         # just repeat the instructions for each time step
         batch["instruction"] = batch["instruction"].unsqueeze(dim=1).repeat(1, seq_length, 1)
@@ -360,7 +363,7 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
         :return:
         '''
         return torch.stack(
-            [torch.stack([obs[0][feature_key] for obs in ep], dim=0) for env, ep in enumerate(episodes) if len(ep) > 0],
+            [torch.stack([obs[feature_key] for obs in ep], dim=0) for env, ep in enumerate(episodes) if len(ep) > 0],
             dim=0)
 
     def _are_episodes_empty(self, episodes: list):
@@ -708,16 +711,17 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
             " [Time elapsed (s): {time}]"
         )
         start_time = time.time()
+        count = 1
+
+        # if all envs finishes at the same time, the operation is equal to 1.
+        # if all env are still processing, the operation is simply zero...
+        has_env_finished_early = lambda envs_that_needs_to_wait : sum(envs_that_needs_to_wait.values()) / len(envs_that_needs_to_wait) > 0
 
         while envs.num_envs > 0 and len(stats_episodes) < num_eps:
             current_episodes = envs.current_episodes()
+            print("count", count)
+            count += 1
 
-            # This loop replaces the rgb / dpth observations in NDarray with Tensors
-            for i in range(envs.num_envs):
-                if batch["rgb"] is not None:
-                    observations[i]["rgb"] = batch["rgb"][i]
-                if batch["depth"] is not None:
-                    observations[i]["depth"] = batch["depth"][i]
 
             prev_actions = self._modify_batch_for_transformer(episodes, batch, batch["rgb"], batch["depth"], envs,
                                                               prev_actions, "rgb", "depth")
@@ -735,7 +739,8 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
 
             outputs = envs.step([a[0].item() for a in actions])
             observations, _, dones, infos = [list(x) for x in zip(*outputs)]
-            cleaned_observations, batch = self._prepare_observation(observations)
+            # need to use a deep copy, otherwise, observations would be the same as cleaned_observations
+            cleaned_observations, batch = self._prepare_observation(copy.deepcopy(observations))
             not_done_masks = torch.tensor(
                 [[0] if done else [1] for done in dones],
                 dtype=torch.uint8,
@@ -743,6 +748,7 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
             )
 
             # reset envs and observations if necessary
+            envs_that_needs_to_wait = {}
             for i in range(envs.num_envs):
                 if len(config.VIDEO_OPTION) > 0:
                     frame = observations_to_image(observations[i], infos[i])
@@ -751,14 +757,19 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                     )
                     rgb_frames[i].append(frame)
                 # This helps us to generate the transformer sequence
-                episodes[i].append((cleaned_observations[i], prev_actions[i, -1].item()))
+                #episodes[i].append((cleaned_observations[i], prev_actions[i, -1].item()))
                 if not dones[i]:
+                    envs_that_needs_to_wait[i] = False
                     continue
+                envs_that_needs_to_wait[i] = True
+                del episodes[i]
                 episodes[i] = []
                 ep_id = current_episodes[i].episode_id
                 stats_episodes[ep_id] = infos[i]
                 observations[i] = envs.reset_at(i)[0]
                 # prev_actions[i] = torch.zeros(1, dtype=torch.long)
+                #todo PROBABLY NOT NEEDED?
+                cleaned_observations, batch = self._prepare_observation(copy.deepcopy(observations))
 
                 if config.use_pbar:
                     pbar.update()
@@ -792,7 +803,9 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
             for i in range(envs.num_envs):
                 if next_episodes[i].episode_id in stats_episodes:
                     envs_to_pause.append(i)
-
+                if has_env_finished_early(envs_that_needs_to_wait):
+                    if envs_that_needs_to_wait[i] and i not in envs_to_pause:
+                        envs_to_pause.append(i)
             (
                 envs,
                 hidden_states,
@@ -800,6 +813,7 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                 prev_actions,
                 batch,
                 rgb_frames,
+                episodes
             ) = self._pause_envs(
                 envs_to_pause,
                 envs,
@@ -808,6 +822,7 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                 prev_actions,
                 batch,
                 rgb_frames,
+                episodes
             )
 
         envs.close()
@@ -1019,8 +1034,8 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
         #     logits.permute(0, 2, 1), corrected_actions, reduction="none"
         # )
 
-        # The permutation allows to keep the expected input shape (Btach times Classes)
-        # the third dimension gets interpreted as a sequence correctly, as the target actons
+        # The permutation allows to keep the expected input shape (batch times classes)
+        # the third dimension gets interpreted as a sequence correctly, as the target actions
         # have the correct shape
         action_loss = F.cross_entropy(
             logits.permute(0, 2, 1), corrected_actions, reduction="none"

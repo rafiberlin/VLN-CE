@@ -188,6 +188,7 @@ class BaseVLNCETrainer(BaseILTrainer):
         prev_actions,
         batch,
         rgb_frames=None,
+        episodes=None
     ):
         # pausing envs with no new episode
         if len(envs_to_pause) > 0:
@@ -207,6 +208,8 @@ class BaseVLNCETrainer(BaseILTrainer):
 
             if rgb_frames is not None:
                 rgb_frames = [rgb_frames[i] for i in state_index]
+            if episodes is not None:
+                episodes = [episodes[i] for i in state_index]
 
         return (
             envs,
@@ -215,6 +218,7 @@ class BaseVLNCETrainer(BaseILTrainer):
             prev_actions,
             batch,
             rgb_frames,
+            episodes
         )
 
     def _eval_checkpoint(
