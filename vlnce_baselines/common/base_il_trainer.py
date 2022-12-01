@@ -188,7 +188,10 @@ class BaseVLNCETrainer(BaseILTrainer):
         prev_actions,
         batch,
         rgb_frames=None,
-        episodes=None
+        episodes=None,
+        rgb_features=None,
+        depth_features=None
+
     ):
         # pausing envs with no new episode
         if len(envs_to_pause) > 0:
@@ -202,7 +205,10 @@ class BaseVLNCETrainer(BaseILTrainer):
             recurrent_hidden_states = recurrent_hidden_states[state_index]
             not_done_masks = not_done_masks[state_index]
             prev_actions = prev_actions[state_index]
-
+            if rgb_features is not None:
+                rgb_features = rgb_features[state_index]
+            if depth_features is not None:
+                depth_features = depth_features[state_index]
             for k, v in batch.items():
                 batch[k] = v[state_index]
 
@@ -218,7 +224,9 @@ class BaseVLNCETrainer(BaseILTrainer):
             prev_actions,
             batch,
             rgb_frames,
-            episodes
+            episodes,
+            rgb_features,
+            depth_features
         )
 
     def _eval_checkpoint(

@@ -268,6 +268,40 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
 
         super().__init__(config)
 
+    def _create_feature_hooks(self):
+        self.rgb_features = None
+        self.rgb_hook = None
+
+        def hook_builder(tgt_tensor):
+            def hook(m, i, o):
+                tgt_tensor.set_(o.cpu())
+
+            return hook
+
+
+        if not self.config.MODEL.RGB_ENCODER.trainable:
+            self.rgb_features = torch.zeros((1,), device="cpu")
+            self.rgb_hook = self.policy.net.rgb_encoder.cnn.register_forward_hook(
+                hook_builder(self.rgb_features)
+            )
+
+        self.depth_features = None
+        self.depth_hook = None
+        if not self.config.MODEL.DEPTH_ENCODER.trainable:
+            self.depth_features = torch.zeros((1,), device="cpu")
+            self.depth_hook = self.policy.net.depth_encoder.visual_encoder.register_forward_hook(
+                hook_builder(self.depth_features)
+            )
+
+    def _release_hook(self):
+
+        if self.rgb_hook is not None:
+            self.rgb_hook.remove()
+        if self.depth_hook is not None:
+            self.depth_hook.remove()
+        self.rgb_features = torch.zeros((1,), device="cpu")
+        self.depth_features = torch.zeros((1,), device="cpu")
+
     def calculate_return_to_go(self, traj_obs: dict, reward_type: str, observation_type: str):
         """
         Calculate the return to go. For a given step, sum of all rewards to come
@@ -683,6 +717,10 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
         )
         self.policy.eval()
 
+        self._create_feature_hooks()
+        rgb_encoder = self.policy.net.rgb_encoder
+        depth_encoder = self.policy.net.depth_encoder
+
         observations = envs.reset()
         observations, batch = self._prepare_observation(observations)
 
@@ -722,9 +760,15 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
             print("count", count)
             count += 1
 
-
-            prev_actions = self._modify_batch_for_transformer(episodes, batch, batch["rgb"], batch["depth"], envs,
-                                                              prev_actions, "rgb", "depth")
+            # caching the outputs of the cnn on one image only
+            rgb_encoder(batch)
+            depth_encoder(batch)
+            del batch["rgb"]
+            del batch["depth"]
+            rgb_key = "rgb_features"
+            depth_key = "depth_features"
+            prev_actions = self._modify_batch_for_transformer(episodes, batch, self.rgb_features, self.depth_features, envs,
+                                                              prev_actions, rgb_key, depth_key)
 
             with torch.no_grad():
                 actions, hidden_states = self.policy.act(
@@ -737,10 +781,15 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                 prev_actions = torch.cat([prev_actions, actions], dim=1).to(self.device)
                 # prev_actions.copy_(actions)
 
+            horizon = prev_actions.shape[1]
+            # if the max steps of the transform model is reached, force to end the game
+            if horizon == 183:
+                actions[:, -1] = 0
+
             outputs = envs.step([a[0].item() for a in actions])
             observations, _, dones, infos = [list(x) for x in zip(*outputs)]
             # need to use a deep copy, otherwise, observations would be the same as cleaned_observations
-            cleaned_observations, batch = self._prepare_observation(copy.deepcopy(observations))
+            observations, batch = self._prepare_observation(observations)
             not_done_masks = torch.tensor(
                 [[0] if done else [1] for done in dones],
                 dtype=torch.uint8,
@@ -762,14 +811,11 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                     envs_that_needs_to_wait[i] = False
                     continue
                 envs_that_needs_to_wait[i] = True
-                del episodes[i]
                 episodes[i] = []
                 ep_id = current_episodes[i].episode_id
                 stats_episodes[ep_id] = infos[i]
                 observations[i] = envs.reset_at(i)[0]
-                # prev_actions[i] = torch.zeros(1, dtype=torch.long)
-                #todo PROBABLY NOT NEEDED?
-                cleaned_observations, batch = self._prepare_observation(copy.deepcopy(observations))
+
 
                 if config.use_pbar:
                     pbar.update()
@@ -795,8 +841,6 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                     del stats_episodes[ep_id]["top_down_map_vlnce"]
                     rgb_frames[i] = []
 
-            observations = cleaned_observations
-
             envs_to_pause = []
             next_episodes = envs.current_episodes()
 
@@ -813,7 +857,9 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                 prev_actions,
                 batch,
                 rgb_frames,
-                episodes
+                episodes,
+                self.rgb_features,
+                self.depth_features
             ) = self._pause_envs(
                 envs_to_pause,
                 envs,
@@ -822,10 +868,13 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                 prev_actions,
                 batch,
                 rgb_frames,
-                episodes
+                episodes,
+                self.rgb_features,
+                self.depth_features
             )
 
         envs.close()
+        self._release_hook()
         if config.use_pbar:
             pbar.close()
 
