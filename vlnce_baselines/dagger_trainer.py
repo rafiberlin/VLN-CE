@@ -393,6 +393,9 @@ class DaggerTrainer(BaseVLNCETrainer):
                         prev_actions,
                         batch,
                         _,
+                        _,
+                        _,
+                        _
                     ) = self._pause_envs(
                         envs_to_pause,
                         envs,
