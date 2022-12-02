@@ -7,18 +7,18 @@ TENSORBOARD_DIR: data/tensorboard_dirs/decision_transformer
 CHECKPOINT_FOLDER: data/checkpoints/decision_transformer
 EVAL_CKPT_PATH_DIR: data/checkpoints/decision_transformer
 RESULTS_DIR: data/checkpoints/decision_transformer/evals
-MULTIPROCESSING: spawn  # default is forkserver, Set to 'spawn' when debugging with Pycharm,
+MULTIPROCESSING: forkserver  # default is forkserver, Set to 'spawn' when debugging with Pycharm,
 ENV_NAME: VLNCEDecisionTransformerEnv
 
 
 EVAL:
   USE_CKPT_CONFIG: False
-  SPLIT: val_unseen
+  SPLIT: val_seen
   EPISODE_COUNT: -1
 
 IL:
   epochs: 15
-  batch_size: 3
+  batch_size: 10
 
   RECOLLECT_TRAINER:
     gt_file:
@@ -31,10 +31,12 @@ IL:
     SPARSE_REWARD:
       step_penalty: -0.01
       success: 10.0
-
+    n_layer: 2
+    n_head: 1
+    n_embd: 128
   DAGGER:
     iterations: 1
-    update_size: 20
+    update_size: 10819
     p: 1.0
     preload_lmdb_features: False
     lmdb_features_dir: data/trajectories_dirs/decision_transformer/trajectories.lmdb

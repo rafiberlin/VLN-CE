@@ -7,7 +7,7 @@ TENSORBOARD_DIR: data/tensorboard_dirs/seq2seq
 CHECKPOINT_FOLDER: data/checkpoints/seq2seq
 EVAL_CKPT_PATH_DIR: data/checkpoints/seq2seq
 RESULTS_DIR: data/checkpoints/seq2seq/evals
-MULTIPROCESSING: spawn # default is forkserver, Set to 'spawn' when debugging with Pycharm,
+MULTIPROCESSING: forkserver # default is forkserver, Set to 'spawn' when debugging with Pycharm,
 
 
 EVAL:
@@ -25,7 +25,7 @@ IL:
 
   DAGGER:
     iterations: 1
-    update_size: 15
+    update_size: 10819
     p: 1.0
     preload_lmdb_features: False
     lmdb_features_dir: data/trajectories_dirs/seq2seq/trajectories.lmdb
