@@ -302,7 +302,7 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
         self.rgb_features = torch.zeros((1,), device="cpu")
         self.depth_features = torch.zeros((1,), device="cpu")
 
-    def calculate_return_to_go(self, traj_obs: dict, reward_type: str, observation_type: str):
+    def _calculate_return_to_go(self, traj_obs: dict, reward_type: str, observation_type: str):
         """
         Calculate the return to go. For a given step, sum of all rewards to come
         :param traj_obs:
@@ -442,6 +442,7 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
         # initialize at dim 1 for sequences of frames etc...
 
         episodes = [[] for _ in range(envs.num_envs)]
+        episode_features = [[] for _ in range(envs.num_envs)]
         skips = [False for _ in range(envs.num_envs)]
         # Populate dones with False initially
         dones = [False for _ in range(envs.num_envs)]
@@ -456,27 +457,8 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
 
         ensure_unique_episodes = beta == 1.0
 
-        def hook_builder(tgt_tensor):
-            def hook(m, i, o):
-                tgt_tensor.set_(o.cpu())
+        self._create_feature_hooks()
 
-            return hook
-
-        rgb_features = None
-        rgb_hook = None
-        if not self.config.MODEL.RGB_ENCODER.trainable:
-            rgb_features = torch.zeros((1,), device="cpu")
-            rgb_hook = self.policy.net.rgb_encoder.cnn.register_forward_hook(
-                hook_builder(rgb_features)
-            )
-
-        depth_features = None
-        depth_hook = None
-        if not self.config.MODEL.DEPTH_ENCODER.trainable:
-            depth_features = torch.zeros((1,), device="cpu")
-            depth_hook = self.policy.net.depth_encoder.visual_encoder.register_forward_hook(
-                hook_builder(depth_features)
-            )
         rgb_encoder = self.policy.net.rgb_encoder
         depth_encoder = self.policy.net.depth_encoder
 
@@ -486,7 +468,7 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
             ep_ids_collected = {
                 ep.episode_id for ep in envs.current_episodes()
             }
-        # count = 0
+
         with tqdm.tqdm(
             total=self.config.IL.DAGGER.update_size, dynamic_ncols=True
         ) as pbar, lmdb.open(
@@ -499,6 +481,7 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
             while collected_eps < self.config.IL.DAGGER.update_size:
                 current_episodes = None
                 envs_to_pause = None
+                # reset envs and observations if necessary
                 if ensure_unique_episodes:
                     envs_to_pause = []
                     current_episodes = envs.current_episodes()
@@ -527,8 +510,8 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                         # PReparing entries for sparse rewards
                         traj_obs["sparse_reward_to_go"] = np.zeros_like(traj_obs["point_nav_reward_to_go"])
                         del traj_obs[distance_left_uuid]
-                        self.calculate_return_to_go(traj_obs, "point_goal_nav_reward", "point_nav_reward_to_go")
-                        self.calculate_return_to_go(traj_obs, "sparse_reward", "sparse_reward_to_go")
+                        self._calculate_return_to_go(traj_obs, "point_goal_nav_reward", "point_nav_reward_to_go")
+                        self._calculate_return_to_go(traj_obs, "sparse_reward", "sparse_reward_to_go")
                         transposed_ep = [
                             traj_obs,
                             np.array([step[1] for step in ep], dtype=np.int64),
@@ -562,8 +545,12 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                                     current_episodes[i].episode_id
                                 )
 
+
+                    # In opposition to the RNN logic, where only one state per time step is handled,
+                    # We need this to force all sequences in the current batch to finish...
                     if dones[i]:
-                        episodes[i] = []
+                        if i not in envs_to_pause:
+                            envs_to_pause.append(i)
 
                 if ensure_unique_episodes:
                     (
@@ -573,6 +560,9 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                         prev_actions,
                         batch,
                         _,
+                        episode_features,
+                        self.rgb_features,
+                        self.depth_features
                     ) = self._pause_envs(
                         envs_to_pause,
                         envs,
@@ -580,6 +570,10 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                         not_done_masks,
                         prev_actions,
                         batch,
+                        None,
+                        episode_features,
+                        self.rgb_features,
+                        self.depth_features,
                     )
                     if envs.num_envs == 0:
                         break
@@ -588,15 +582,15 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
                 rgb_encoder(batch)
                 depth_encoder(batch)
                 for i in range(envs.num_envs):
-                    if rgb_features is not None:
-                        observations[i]["rgb_features"] = rgb_features[i]
+                    if self.rgb_features is not None:
+                        observations[i]["rgb_features"] = self.rgb_features[i]
                         del observations[i]["rgb"]
 
-                    if depth_features is not None:
-                        observations[i]["depth_features"] = depth_features[i]
+                    if self.depth_features is not None:
+                        observations[i]["depth_features"] = self.depth_features[i]
                         del observations[i]["depth"]
 
-                prev_actions = self._modify_batch_for_transformer(episodes, batch, rgb_features, depth_features, envs,
+                prev_actions = self._modify_batch_for_transformer(episode_features, batch, self.rgb_features, self.depth_features, envs,
                                                                   prev_actions,
                                                                   "rgb_features", "depth_features")
 
@@ -651,10 +645,7 @@ class DecisionTransformerTrainer(BaseVLNCETrainer):
         envs.close()
         envs = None
 
-        if rgb_hook is not None:
-            rgb_hook.remove()
-        if depth_hook is not None:
-            depth_hook.remove()
+        self._release_hook()
 
     def _eval_checkpoint(
         self,
