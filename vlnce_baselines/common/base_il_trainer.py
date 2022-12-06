@@ -202,9 +202,12 @@ class BaseVLNCETrainer(BaseILTrainer):
 
             # indexing along the batch dimensions => because we removed the environement to pause in
             # the previous step from the state_index list, we just keep everything related to the active environments
-            recurrent_hidden_states = recurrent_hidden_states[state_index]
-            not_done_masks = not_done_masks[state_index]
-            prev_actions = prev_actions[state_index]
+            if recurrent_hidden_states is not None:
+                recurrent_hidden_states = recurrent_hidden_states[state_index]
+            if not_done_masks is not None:
+                not_done_masks = not_done_masks[state_index]
+            if prev_actions is not None:
+                prev_actions = prev_actions[state_index]
             if rgb_features is not None:
                 rgb_features = rgb_features[state_index]
             if depth_features is not None:

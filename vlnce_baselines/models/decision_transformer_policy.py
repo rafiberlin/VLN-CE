@@ -202,6 +202,7 @@ class DecisionTransformerNet(Net):
 
         original_batch_shape = observations["instruction"].shape[0:2]#excluding the embedding dimentions
         batch_size, seq_length = original_batch_shape
+
         # for all the following keys, we need tto merge the first 2 dimensions
         # [batch, sequence length, all other dimensions] to [batch * sequence length, all other dimensions]
         self._flatten_batch(observations, "rgb")
@@ -280,20 +281,20 @@ class DecisionTransformerNet(Net):
 
         #print(state_embeddings.shape, action_embeddings.shape, returns_embeddings.shape, time_embeddings.shape)
         # time embeddings are treated similar to positional embeddings
-        state_embeddings = state_embeddings + time_embeddings
-        action_embeddings = action_embeddings + time_embeddings
-        returns_embeddings = returns_embeddings + time_embeddings
+        state_embeddings2 = state_embeddings + time_embeddings
+        action_embeddings2 = action_embeddings + time_embeddings
+        returns_embeddings2 = returns_embeddings + time_embeddings
 
 
         # this makes the sequence look like (R_1, s_1, a_1, R_2, s_2, a_2, ...)
         stacked_inputs = (
-            torch.stack((returns_embeddings, state_embeddings, action_embeddings), dim=1)
+            torch.stack((returns_embeddings2, state_embeddings2, action_embeddings2), dim=1)
             .permute(0, 2, 1, 3)
             .reshape(batch_size, 3 * seq_length, -1)
         )
 
-        stacked_inputs = self.embed_ln(stacked_inputs)
-        output = self.gpt_encoder(stacked_inputs)
+        stacked_inputs2 = self.embed_ln(stacked_inputs)
+        output = self.gpt_encoder(stacked_inputs2)
 
         # reshape back to original.
         # In the third dimension (dim=2), returns (0), states (1), or actions (2)
@@ -305,4 +306,30 @@ class DecisionTransformerNet(Net):
         #action_preds = self.predict_action(output[:, 1])  # predict next action given state
         action_preds = output[:, 1]
         #return action_preds.view(seq_length*batch_size, -1), state_embeddings
+
+        # id = 0
+        # if "id" in observations.keys():
+        #     id = observations["id"]
+
+        # if id == "773" and seq_length == -1:
+        #     print("stacked_input")
+        #     print("0,0", stacked_inputs[0, 0])
+        #     print("0,1", stacked_inputs[0, 1])
+        #     print("0,2", stacked_inputs[0, 2])
+        #     print("state_embeddings")
+        #     print(state_embeddings[0,0])
+        #     print("action_embeddings")
+        #     print(action_embeddings[0, 0])
+        #     print("return_embeddings")
+        #     print(returns_embeddings[0, 0])
+        #     print("depth")
+        #     print(depth_embedding[0])
+        #     print("rgb")
+        #     print(rgb_embedding[0])
+        #     print("instruction")
+        #     print(instruction_embedding[0])
+        #
+        #     raise Exception("stop")
+
+
         return action_preds, state_embeddings

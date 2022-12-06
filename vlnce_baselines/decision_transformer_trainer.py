@@ -303,12 +303,13 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         self.rgb_features = torch.zeros((1,), device="cpu")
         self.depth_features = torch.zeros((1,), device="cpu")
 
-    def _calculate_return_to_go(self, traj_obs: dict, reward_type: str, observation_type: str):
+    def _calculate_return_to_go(self, traj_obs: dict, reward_type: str, observation_type: str, scaling_factor=1.0):
         """
         Calculate the return to go. For a given step, sum of all rewards to come
         :param traj_obs:
         :param reward_type:
         :param observation_type:
+        :param scaling_factor: scale the rewards down, proportinally to the sequence length
         :return:
         """
         assert (reward_type in self.rewards.keys())
@@ -317,7 +318,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         rewards = rewards + self.rewards[reward_type]["step_penalty"]
         rewards[-1] = rewards[-1] + self.rewards[reward_type]["success"]
         rewards = np.flip(np.flip(rewards).cumsum())
-        traj_obs[observation_type] = np.float32(rewards)
+        traj_obs[observation_type] = np.float32(rewards/scaling_factor)
 
     def _make_dirs(self) -> None:
         self._make_ckpt_dir()
@@ -470,16 +471,19 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 ep.episode_id for ep in envs.current_episodes()
             }
 
+        dataset_episodes = sum(envs.number_of_episodes)
+        collect_size =  dataset_episodes if self.config.IL.DAGGER.update_size > dataset_episodes else self.config.IL.DAGGER.update_size
+
         with tqdm.tqdm(
-            total=self.config.IL.DAGGER.update_size, dynamic_ncols=True
+            total=collect_size, dynamic_ncols=True
         ) as pbar, lmdb.open(
             self.lmdb_features_dir,
-            map_size=int(self.config.IL.DAGGER.lmdb_map_size),
+            map_size=int(collect_size),
         ) as lmdb_env, torch.no_grad():
             start_id = lmdb_env.stat()["entries"]
             txn = lmdb_env.begin(write=True)
 
-            while collected_eps < self.config.IL.DAGGER.update_size:
+            while collected_eps < collect_size:
                 current_episodes = None
                 envs_to_pause = None
                 # reset envs and observations if necessary
@@ -511,8 +515,9 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         # PReparing entries for sparse rewards
                         traj_obs["sparse_reward_to_go"] = np.zeros_like(traj_obs["point_nav_reward_to_go"])
                         del traj_obs[distance_left_uuid]
-                        self._calculate_return_to_go(traj_obs, "point_goal_nav_reward", "point_nav_reward_to_go")
-                        self._calculate_return_to_go(traj_obs, "sparse_reward", "sparse_reward_to_go")
+                        scaling_factor = self.config.IL.DECISION_TRANSFORMER.episode_horizon# you tried with 160 before...
+                        self._calculate_return_to_go(traj_obs, "point_goal_nav_reward", "point_nav_reward_to_go", scaling_factor)
+                        self._calculate_return_to_go(traj_obs, "sparse_reward", "sparse_reward_to_go", scaling_factor)
                         transposed_ep = [
                             traj_obs,
                             np.array([step[1] for step in ep], dtype=np.int64),
@@ -577,7 +582,14 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         self.depth_features,
                     )
                     if envs.num_envs == 0:
-                        break
+                        envs.resume_all()
+                        observations = envs.reset()
+                        self._release_hook()
+                        self._create_feature_hooks()
+                        episodes = [[] for _ in range(envs.num_envs)]
+                        episode_features = [[] for _ in range(envs.num_envs)]
+                        # Populate dones with False initially
+                        observations, batch = self._prepare_observation(observations)
 
                 # caching the outputs of the cnn on one image only
                 rgb_encoder(batch)
@@ -741,7 +753,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             " [Time elapsed (s): {time}]"
         )
         start_time = time.time()
-        count = 1
+
 
         # if all envs finishes at the same time, the operation is equal to 1.
         # if all env are still processing, the operation is simply zero...
@@ -749,8 +761,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
 
         while envs.num_envs > 0 and len(stats_episodes) < num_eps:
             current_episodes = envs.current_episodes()
-            print("count", count)
-            count += 1
+
 
             # caching the outputs of the cnn on one image only
             rgb_encoder(batch)
@@ -765,7 +776,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             with torch.no_grad():
                 actions, hidden_states = self.policy.act(
                     batch,
-                    hidden_states,
+                    None,
                     prev_actions,
                     not_done_masks,
                     deterministic=not config.EVAL.SAMPLE,
@@ -775,7 +786,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
 
             horizon = prev_actions.shape[1]
             # if the max steps of the transform model is reached, force to end the game
-            if horizon == 183:
+            if horizon == self.config.IL.DECISION_TRANSFORMER.episode_horizon:
                 actions[:, -1] = 0
 
             outputs = envs.step([a[0].item() for a in actions])
@@ -807,6 +818,10 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 ep_id = current_episodes[i].episode_id
                 stats_episodes[ep_id] = infos[i]
                 observations[i] = envs.reset_at(i)[0]
+                prev_actions = None
+                self.rgb_features = self.rgb_features.set_(torch.zeros((1,), device="cpu"))
+                self.depth_features = self.depth_features.set_(torch.zeros((1,), device="cpu"))
+                observations, batch = self._prepare_observation(observations)
 
 
                 if config.use_pbar:
@@ -839,9 +854,9 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             for i in range(envs.num_envs):
                 if next_episodes[i].episode_id in stats_episodes:
                     envs_to_pause.append(i)
-                if has_env_finished_early(envs_that_needs_to_wait):
-                    if envs_that_needs_to_wait[i] and i not in envs_to_pause:
-                        envs_to_pause.append(i)
+                # if has_env_finished_early(envs_that_needs_to_wait):
+                #     if envs_that_needs_to_wait[i] and i not in envs_to_pause:
+                #         envs_to_pause.append(i)
             (
                 envs,
                 hidden_states,
@@ -1000,7 +1015,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                             ),
                             weights_batch.to(
                                 device=self.device, non_blocking=True
-                            ),
+                            ),300
                         )
 
                         logger.info(f"train_loss: {loss}")
@@ -1024,10 +1039,11 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                             step_id,
                         )
                         step_id += 1  # noqa: SIM113
-
-                    self.save_checkpoint(
-                        f"ckpt.{dagger_it * self.config.IL.epochs + epoch}.pth"
-                    )
+                    if (epoch + 1) % 50 == 0:
+                        print("Save", f"ckpt.{dagger_it * self.config.IL.epochs + epoch}.pth")
+                        self.save_checkpoint(
+                            f"ckpt.{dagger_it * self.config.IL.epochs + epoch}.pth"
+                        )
                 AuxLosses.deactivate()
 
 
