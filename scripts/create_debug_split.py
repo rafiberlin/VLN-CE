@@ -5,6 +5,7 @@ import os
 import shutil
 import argparse
 from string import Template
+from pathlib import Path
 
 """
 Script can be used to create smaller split files for debugging purpose.
@@ -25,7 +26,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--episodes",
-        default="4991",
+        default="773,1818,261",
         metavar="",
         help="Comma separated episode ids",
         type=str,
@@ -47,13 +48,18 @@ if __name__ == "__main__":
     outpath = Template(directory).substitute(split=debug_split)
 
     if not os.path.exists(outpath):
+        print("create", outpath)
         os.makedirs(outpath)
     train_file = read_compressed_json_file(split_template.substitute(split=split))
     # That was a problematic episode when creating a video for the gold path
 
     print("Filtering:", episode_filter)
     filter_preprocessed_data(train_file, episode_filter)
-    save_compressed_json_file(train_file, split_template.substitute(split=debug_split))
+    debug_outfile = split_template.substitute(split=debug_split)
+    # if not os.path.exists(debug_outfile):
+    #     print("Create:", debug_outfile)
+    #     Path(debug_outfile).touch()
+    save_compressed_json_file(train_file, debug_outfile)
     outfile_gt = split_template_gt.substitute(split=debug_split) + suffix
     source_gt = split_template_gt.substitute(split=split) + suffix
 
