@@ -119,7 +119,8 @@ class GPT(nn.Module):
         assert config.vocab_size is not None
         assert config.block_size is not None
         self.block_size = config.block_size
-
+        config.defrost()
+        config.n_embd = config.hidden_dim
         type_given = config.model_type is not None and len(config.model_type) > 0
         params_given = all([config.n_layer is not None, config.n_head is not None, config.n_embd is not None])
         assert type_given ^ params_given # exactly one of these (XOR)
@@ -161,6 +162,8 @@ class GPT(nn.Module):
         # report number of parameters (note we don't count the decoder parameters in lm_head)
         n_params = sum(p.numel() for p in self.transformer.parameters())
         print("number of parameters for GPT: %.2fM" % (n_params/1e6,))
+        del config["n_embd"]
+        config.freeze()
 
     def _init_weights(self, module):
         if isinstance(module, nn.Linear):
@@ -228,7 +231,7 @@ class GPT(nn.Module):
         # # forward the GPT model itself
         # tok_emb = self.transformer.wte(idx) # token embeddings of shape (b, t, n_embd)
         # pos_emb = self.transformer.wpe(pos) # position embeddings of shape (1, t, n_embd)
-        # x = self.transformer.drop(tok_emb + pos_emb)
+        x = self.transformer.drop(x)
         for block in self.transformer.h:
             x = block(x)
         x = self.transformer.ln_f(x)

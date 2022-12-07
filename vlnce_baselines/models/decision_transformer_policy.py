@@ -147,7 +147,6 @@ class DecisionTransformerNet(Net):
         self.embed_action = nn.Embedding(num_actions+1, model_config.DECISION_TRANSFORMER.hidden_dim)
 
         self.embed_ln = nn.LayerNorm(model_config.DECISION_TRANSFORMER.hidden_dim)
-
         self.progress_monitor = nn.Linear(
             self.model_config.STATE_ENCODER.hidden_size, 1
         )

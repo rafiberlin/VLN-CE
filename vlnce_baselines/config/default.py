@@ -74,7 +74,7 @@ _C.IL.load_from_ckpt = False
 _C.IL.ckpt_to_load = "data/checkpoints/ckpt.0.pth"
 # if True, loads the optimizer state, epoch, and step_id from the ckpt dict.
 _C.IL.is_requeue = False
-
+_C.IL.checkpoint_frequency = 1 # regulates the frequency (epochs % checkpoint_frequency == 0) to save the model.
 # ----------------------------------------------------------------------------
 # IL: RECOLLECT TRAINER CONFIG
 # ----------------------------------------------------------------------------
@@ -119,6 +119,22 @@ _C.IL.DAGGER.lmdb_features_dir = (
     "data/trajectories_dirs/debug/trajectories.lmdb"
 )
 _C.IL.DAGGER.drop_existing_lmdb_features = True
+
+# ----------------------------------------------------------------------------
+# IL: DAGGER / DECISION TRANSFORMER CONFIG
+# ----------------------------------------------------------------------------
+
+_C.IL.DECISION_TRANSFORMER = CN()
+_C.IL.DECISION_TRANSFORMER.episode_horizon = 183
+_C.IL.DECISION_TRANSFORMER.reward_type = "POINT_GOAL_NAV_REWARD"  # POINT_GOAL_NAV_REWARD or SPARSE_REWARD
+_C.IL.DECISION_TRANSFORMER.sensor_uuid = "distance_left" # USed to calculate the Return To Go
+_C.IL.DECISION_TRANSFORMER.POINT_GOAL_NAV_REWARD = CN()
+_C.IL.DECISION_TRANSFORMER.POINT_GOAL_NAV_REWARD.step_penalty = -0.01
+_C.IL.DECISION_TRANSFORMER.POINT_GOAL_NAV_REWARD.success = 10.0
+_C.IL.DECISION_TRANSFORMER.SPARSE_REWARD = CN()
+_C.IL.DECISION_TRANSFORMER.POINT_GOAL_NAV_REWARD.step_penalty = 0.0
+_C.IL.DECISION_TRANSFORMER.POINT_GOAL_NAV_REWARD.success = 1.0
+
 # ----------------------------------------------------------------------------
 # RL CONFIG
 # ----------------------------------------------------------------------------
@@ -293,12 +309,12 @@ _C.MODEL.WAYPOINT.offset_temperature = 1.0
 _C.MODEL.DECISION_TRANSFORMER = CN()
 _C.MODEL.DECISION_TRANSFORMER.hidden_dim = 128
 # the max in the training split.
-_C.MODEL.DECISION_TRANSFORMER.episode_horizon = 183
+_C.MODEL.DECISION_TRANSFORMER.episode_horizon = _C.IL.DECISION_TRANSFORMER.episode_horizon
 _C.MODEL.DECISION_TRANSFORMER.reward_type = "POINT_GOAL_NAV_REWARD"  # POINT_GOAL_NAV_REWARD or SPARSE_REWARD
 _C.MODEL.DECISION_TRANSFORMER.model_type = None
 _C.MODEL.DECISION_TRANSFORMER.n_layer = 2
 _C.MODEL.DECISION_TRANSFORMER.n_head = 1
-_C.MODEL.DECISION_TRANSFORMER.n_embd = 128
+_C.MODEL.DECISION_TRANSFORMER.n_embd = _C.MODEL.DECISION_TRANSFORMER.hidden_dim
 # these options must be filled in externally
 _C.MODEL.DECISION_TRANSFORMER.vocab_size = 4
 _C.MODEL.DECISION_TRANSFORMER.block_size = _C.MODEL.DECISION_TRANSFORMER.episode_horizon *3 #We multiply by three because at each time step, we use [reward, action, state]

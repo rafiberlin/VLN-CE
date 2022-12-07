@@ -514,8 +514,8 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                             axis=0) * -1.0
                         # PReparing entries for sparse rewards
                         traj_obs["sparse_reward_to_go"] = np.zeros_like(traj_obs["point_nav_reward_to_go"])
+                        scaling_factor = traj_obs[distance_left_uuid].size # Scaling by the episode length
                         del traj_obs[distance_left_uuid]
-                        scaling_factor = self.config.IL.DECISION_TRANSFORMER.episode_horizon# you tried with 160 before...
                         self._calculate_return_to_go(traj_obs, "point_goal_nav_reward", "point_nav_reward_to_go", scaling_factor)
                         self._calculate_return_to_go(traj_obs, "sparse_reward", "sparse_reward_to_go", scaling_factor)
                         transposed_ep = [
@@ -941,6 +941,11 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             action_space=action_space,
         )
 
+        workers = 3
+        # If set to spawn, that is made to be able to debug in Pytorch in Ubuntu > 18
+        #  So you want to only set 1 worker to be able to set a break point in the next loop...
+        if self.config.MULTIPROCESSING == "spawn":
+            workers = 1
         with TensorboardWriter(
             self.config.TENSORBOARD_DIR,
             flush_secs=self.flush_secs,
@@ -972,7 +977,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                     collate_fn=collate_fn,
                     pin_memory=False,
                     drop_last=True,  # drop last batch if smaller
-                    num_workers=1,
+                    num_workers=workers,
                 )
 
                 AuxLosses.activate()
@@ -1039,7 +1044,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                             step_id,
                         )
                         step_id += 1  # noqa: SIM113
-                    if (epoch + 1) % 50 == 0:
+                    if (epoch + 1) % self.config.IL.checkpoint_frequency == 0:
                         print("Save", f"ckpt.{dagger_it * self.config.IL.epochs + epoch}.pth")
                         self.save_checkpoint(
                             f"ckpt.{dagger_it * self.config.IL.epochs + epoch}.pth"
