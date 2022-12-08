@@ -478,7 +478,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             total=collect_size, dynamic_ncols=True
         ) as pbar, lmdb.open(
             self.lmdb_features_dir,
-            map_size=int(collect_size),
+            map_size=int(self.config.IL.DAGGER.lmdb_map_size),
         ) as lmdb_env, torch.no_grad():
             start_id = lmdb_env.stat()["entries"]
             txn = lmdb_env.begin(write=True)
