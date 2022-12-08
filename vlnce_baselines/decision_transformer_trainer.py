@@ -567,8 +567,6 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         batch,
                         _,
                         episode_features,
-                        self.rgb_features,
-                        self.depth_features
                     ) = self._pause_envs(
                         envs_to_pause,
                         envs,
@@ -578,8 +576,6 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         batch,
                         None,
                         episode_features,
-                        self.rgb_features,
-                        self.depth_features,
                     )
                     if envs.num_envs == 0:
                         envs.resume_all()
@@ -588,8 +584,10 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         self._create_feature_hooks()
                         episodes = [[] for _ in range(envs.num_envs)]
                         episode_features = [[] for _ in range(envs.num_envs)]
-                        # Populate dones with False initially
+                        prev_actions = None
                         observations, batch = self._prepare_observation(observations)
+                        self.rgb_features = self.rgb_features.set_(torch.zeros((1,), device="cpu"))
+                        self.depth_features = self.depth_features.set_(torch.zeros((1,), device="cpu"))
 
                 # caching the outputs of the cnn on one image only
                 rgb_encoder(batch)
@@ -818,7 +816,9 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 ep_id = current_episodes[i].episode_id
                 stats_episodes[ep_id] = infos[i]
                 observations[i] = envs.reset_at(i)[0]
-                prev_actions = None
+                # This step is usually done in self._prepare_observation(observations)
+                # but now, because we amenbd only one observation, we need to take care of this step manually...
+                observations[i][self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID] = observations[i][self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID]["tokens"]
                 self.rgb_features = self.rgb_features.set_(torch.zeros((1,), device="cpu"))
                 self.depth_features = self.depth_features.set_(torch.zeros((1,), device="cpu"))
                 observations, batch = self._prepare_observation(observations)
@@ -854,9 +854,9 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             for i in range(envs.num_envs):
                 if next_episodes[i].episode_id in stats_episodes:
                     envs_to_pause.append(i)
-                # if has_env_finished_early(envs_that_needs_to_wait):
-                #     if envs_that_needs_to_wait[i] and i not in envs_to_pause:
-                #         envs_to_pause.append(i)
+                if has_env_finished_early(envs_that_needs_to_wait):
+                    if envs_that_needs_to_wait[i] and i not in envs_to_pause:
+                        envs_to_pause.append(i)
             (
                 envs,
                 hidden_states,
@@ -865,8 +865,6 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 batch,
                 rgb_frames,
                 episodes,
-                self.rgb_features,
-                self.depth_features
             ) = self._pause_envs(
                 envs_to_pause,
                 envs,
@@ -876,9 +874,20 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 batch,
                 rgb_frames,
                 episodes,
-                self.rgb_features,
-                self.depth_features
             )
+
+            # at this stage, if we dont have any env left,
+            # that means that all prediction within the same "batch"
+            # are finished, we can wake all envs now.
+            if envs.num_envs < 1:
+                envs.resume_all()
+                episodes = [[] for _ in range(envs.num_envs)]
+                rgb_frames = [[] for _ in range(envs.num_envs)]
+                observations = envs.reset()
+                prev_actions = None
+                observations, batch = self._prepare_observation(observations)
+
+
 
         envs.close()
         self._release_hook()
@@ -1020,7 +1029,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                             ),
                             weights_batch.to(
                                 device=self.device, non_blocking=True
-                            ),300
+                            ),
                         )
 
                         logger.info(f"train_loss: {loss}")
