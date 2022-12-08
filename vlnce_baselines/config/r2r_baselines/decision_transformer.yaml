@@ -17,9 +17,9 @@ EVAL:
   EPISODE_COUNT: -1
 
 IL:
-  epochs: 200
-  batch_size: 3
-  checkpoint_frequency: 20
+  epochs: 110
+  batch_size: 16
+  checkpoint_frequency: 10
 
   RECOLLECT_TRAINER:
     gt_file:
@@ -35,15 +35,16 @@ IL:
       success: 1.0
   DAGGER:
     iterations: 1
-    update_size: 20
+    update_size: 10819
     p: 1.0
-    preload_lmdb_features: False
+    preload_lmdb_features: True
+    lmdb_commit_frequency: 500
     lmdb_features_dir: data/trajectories_dirs/decision_transformer/trajectories.lmdb
 
 MODEL:
   DECISION_TRANSFORMER:
-    n_layer: 2
-    n_head: 1
+    n_layer: 3
+    n_head: 8
     hidden_dim: 128 # The dimensions for the State, Reward and actions embeddings and in the GPT Backbne
   policy_name: DecisionTransformerPolicy
   PROGRESS_MONITOR:
