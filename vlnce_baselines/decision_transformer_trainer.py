@@ -604,19 +604,25 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 prev_actions = self._modify_batch_for_transformer(episode_features, batch, self.rgb_features, self.depth_features, envs,
                                                                   prev_actions,
                                                                   "rgb_features", "depth_features")
-
-                actions, _ = self.policy.act(
-                    batch,
-                    hidden_states,
-                    prev_actions,
-                    not_done_masks,
-                    deterministic=False,
-                )
+                batch_size = prev_actions.shape[0]
+                perform_dagger = (torch.rand((batch_size, 1), dtype=torch.float) < beta).to(self.device)
+                # only perform dagger when the random process allows it (should lower the
+                # processing time...)
+                if perform_dagger.sum() < batch_size:
+                    actions, _ = self.policy.act(
+                        batch,
+                        hidden_states,
+                        prev_actions,
+                        not_done_masks,
+                        deterministic=False,
+                    )
+                else:
+                    actions = torch.ones_like(batch[expert_uuid].long())
                 # actions.shape[0] == number of active enviroments
                 hidden_states = torch.zeros(actions.shape[0], 1, dtype=torch.float)
 
                 actions = torch.where(
-                    torch.rand_like(actions, dtype=torch.float) < beta,
+                    perform_dagger,
                     batch[expert_uuid].long(),
                     actions,
                 )
