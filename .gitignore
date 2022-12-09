@@ -141,7 +141,7 @@ data
 .log
 
 # evaluation results
-stats_*.json
+# stats_*.json
 
 # custom slurm utils
 sbatch_scripts
