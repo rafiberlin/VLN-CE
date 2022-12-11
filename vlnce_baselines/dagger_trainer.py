@@ -19,7 +19,8 @@ from habitat_baselines.common.tensorboard_utils import TensorboardWriter
 from habitat_baselines.utils.common import batch_obs
 
 from vlnce_baselines.common.aux_losses import AuxLosses
-from vlnce_baselines.common.base_il_trainer import BaseVLNCETrainer
+#from vlnce_baselines.common.base_il_trainer import BaseVLNCETrainer
+from vlnce_baselines.common.dagger_il_trainer import DaggerILTrainer
 from vlnce_baselines.common.env_utils import construct_envs
 from vlnce_baselines.common.utils import extract_instruction_tokens
 
@@ -232,7 +233,7 @@ class IWTrajectoryDataset(torch.utils.data.IterableDataset):
 
 
 @baseline_registry.register_trainer(name="dagger")
-class DaggerTrainer(BaseVLNCETrainer):
+class DaggerTrainer(DaggerILTrainer):
     def __init__(self, config=None):
         self.lmdb_features_dir = config.IL.DAGGER.lmdb_features_dir.format(
             split=config.TASK_CONFIG.DATASET.SPLIT
@@ -393,6 +394,9 @@ class DaggerTrainer(BaseVLNCETrainer):
                         prev_actions,
                         batch,
                         _,
+                        _,
+                        _,
+                        _
                     ) = self._pause_envs(
                         envs_to_pause,
                         envs,
@@ -437,7 +441,7 @@ class DaggerTrainer(BaseVLNCETrainer):
                 skips = batch[expert_uuid].long() == -1
                 actions = torch.where(
                     skips, torch.zeros_like(actions), actions
-                )
+                )# when you have to skip an environment, (no new episode loaded, fill the actions with zero, otherwise, take the value from the actions)
                 skips = skips.squeeze(-1).to(device="cpu", non_blocking=True)
                 prev_actions.copy_(actions)
 

@@ -1,6 +1,9 @@
 import json
 import gzip
 import statistics
+import argparse
+from string import Template
+import os
 
 
 def read_compressed_json_file(path):
@@ -36,9 +39,13 @@ def output_vlnce_r2r_statistics():
         print(str(len(trajectories)) + " trajectories.")  # Each trajectory has 3 different navigation instructions
         print(str(len(scenes)) + " scenes.")
         print(str(vocab["num_vocab"]) + " words.")
+
         # 0 is use for padding, we count the number of tokens that are not 0
-        print("Average instruction length: " + str(statistics.mean(
-            [len(list(filter(lambda x: x != 0, e["instruction"]["instruction_tokens"]))) for e in episodes])))
+        instruction_lengths = [len(list(filter(lambda x: x != 0, e["instruction"]["instruction_tokens"]))) for e in
+                               episodes]
+        print("Average instruction length: " + str(statistics.mean(instruction_lengths)))
+        print("Max instruction length:", max(instruction_lengths))
+        print("Min instruction length:", min(instruction_lengths))
 
 
 def save_compressed_json_file(data, path):
@@ -70,9 +77,37 @@ def filter_preprocessed_data(data, filter: list):
 
 if __name__ == "__main__":
     print("Reading...")
-    file1 = "../data/datasets/R2R_VLNCE_v1-3_preprocessed/train/train.json.gz"
-    file2 = "../data/datasets/R2R_VLNCE_v1-3_preprocessed/train/train_gt.json.gz"
-    train_file = read_compressed_json_file(file1)
-    train_file_gt = read_compressed_json_file(file2)
+
+    parser = argparse.ArgumentParser(
+        description="Reduce the train file annotation with a list of episodes.")
+    parser.add_argument(
+        "--split",
+        default="train",
+        metavar="",
+        help="Name of the splits: train, val_seen, val_unseen",
+        type=str,
+    )
+
+    args = parser.parse_args()
+    split = args.split
+
+    directory = '../data/datasets/R2R_VLNCE_v1-3_preprocessed/$split/'
+    split_template = Template(directory + "$split.json.gz")
+    split_template_gt = Template(directory + '$split')
+    # work around, as the template sees the underscore as Regex character
+    suffix = "_gt.json.gz"
+
+    file1 = split_template.substitute(split=split)
+    file2 = split_template_gt.substitute(split=split) + suffix
+    if os.path.exists(file1):
+        print("Reading:", file1)
+        train_file = read_compressed_json_file(file1)
+    if os.path.exists(file2):
+        print("Reading:", file2)
+        train_file_gt = read_compressed_json_file(file2)
+        list_episode_lengths = {k: len(train_file_gt[k]["actions"]) for k in train_file_gt.keys()}
+        sorted_list_episode_lengths = sorted(list_episode_lengths.items(), key=lambda kv: kv[1])
+        print("Longest episode:", sorted_list_episode_lengths[-1])
+        print("Shortest episode:", sorted_list_episode_lengths[0])
     output_vlnce_r2r_statistics()
     print("Done!")

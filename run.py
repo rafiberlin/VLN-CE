@@ -22,7 +22,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--run-type",
-        choices=["train", "eval", "inference"],
+        choices=["train", "eval", "inference", "create_dataset"],
         required=True,
         help="run type of the experiment (train, eval, inference)",
     )
@@ -86,6 +86,8 @@ def run_exp(exp_config: str, run_type: str, opts=None) -> None:
         trainer.eval()
     elif run_type == "inference":
         trainer.inference()
+    elif run_type == "create_dataset":
+        trainer.create_dataset()
 
 
 if __name__ == "__main__":

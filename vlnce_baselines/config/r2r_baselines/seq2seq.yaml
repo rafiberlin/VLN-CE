@@ -2,11 +2,13 @@ BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task.yaml
 TRAINER_NAME: dagger # recollect_trainer
 SIMULATOR_GPU_IDS: [0]
 TORCH_GPU_ID: 0
-NUM_ENVIRONMENTS: 1
+NUM_ENVIRONMENTS: 2
 TENSORBOARD_DIR: data/tensorboard_dirs/seq2seq
 CHECKPOINT_FOLDER: data/checkpoints/seq2seq
 EVAL_CKPT_PATH_DIR: data/checkpoints/seq2seq
 RESULTS_DIR: data/checkpoints/seq2seq/evals
+MULTIPROCESSING: forkserver # default is forkserver, Set to 'spawn' when debugging with Pycharm,
+
 
 EVAL:
   USE_CKPT_CONFIG: False
