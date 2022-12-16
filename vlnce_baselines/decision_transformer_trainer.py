@@ -704,12 +704,16 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         config.freeze()
 
         if config.EVAL.SAVE_RESULTS:
+            model_file = checkpoint_path.split("/")[-1]
+            base_name = f"ckpt_{checkpoint_index}"
+            if model_file != base_name:
+                base_name = model_file
             fname = os.path.join(
                 config.RESULTS_DIR,
-                f"stats_ckpt_{checkpoint_index}_{split}.json",
+                f"stats_{base_name}_{split}.json",
             )
             if os.path.exists(fname):
-                logger.info("skipping -- evaluation exists.")
+                logger.info(f"skipping {base_name} -- evaluation exists.")
                 return
 
         envs = construct_envs_auto_reset_false(
