@@ -109,32 +109,14 @@ class DecisionTransformerNet(Net):
             spatial_output=False,
         )
 
-        if model_config.SEQ2SEQ.use_prev_action:
-            self.prev_action_embedding = nn.Embedding(num_actions + 1, 32)
 
-        # Init the RNN state decoder
-        rnn_input_size = (
-            self.instruction_encoder.output_size
-            + model_config.DEPTH_ENCODER.output_size
-            + model_config.RGB_ENCODER.output_size
-        )
-
-        if model_config.SEQ2SEQ.use_prev_action:
-            rnn_input_size += self.prev_action_embedding.embedding_dim
-
-        self.state_encoder = build_rnn_state_encoder(
-            input_size=rnn_input_size,
-            hidden_size=model_config.STATE_ENCODER.hidden_size,
-            rnn_type=model_config.STATE_ENCODER.rnn_type,
-            num_layers=1,
-        )
 
         # size due to concatenation of instruction, depth, and rgb features
         input_state_size = self.instruction_encoder.output_size \
                            + model_config.DEPTH_ENCODER.output_size\
                             + model_config.RGB_ENCODER.output_size
 
-        assert model_config.DECISION_TRANSFORMER.reward_type in ["POINT_GOAL_NAV_REWARD", "SPARSE_REWARD"]
+        assert model_config.DECISION_TRANSFORMER.reward_type in ["point_nav_reward_to_go", "sparse_reward_to_go", "point_nav_reward", "sparse_reward"]
         self.reward_type = model_config.DECISION_TRANSFORMER.reward_type
 
         self.embed_timestep = nn.Embedding(model_config.DECISION_TRANSFORMER.episode_horizon, model_config.DECISION_TRANSFORMER.hidden_dim)
@@ -142,20 +124,15 @@ class DecisionTransformerNet(Net):
         self.embed_state = nn.Linear(input_state_size, model_config.DECISION_TRANSFORMER.hidden_dim)
         #TODO: What do you want to use, linear or embedding? I guess it should be embedding...
         # But if you want linear you will have to modify your input entry.
-        # instaed of having action 0, 1, 2 or 3 (5 if you try to add a start token), you will have a tensor of size (4,1) filled with 0 or 1.
+        # instaed of having action 0, 1, 2 or 3 (4 if you try to add a start token), you will have a tensor of size (4,1) filled with 0 or 1.
         #  and for action 3, you will have a 1 in the 4th row and zero otherwise.
         self.embed_action = nn.Embedding(num_actions+1, model_config.DECISION_TRANSFORMER.hidden_dim)
 
         self.embed_ln = nn.LayerNorm(model_config.DECISION_TRANSFORMER.hidden_dim)
-        self.progress_monitor = nn.Linear(
-            self.model_config.STATE_ENCODER.hidden_size, 1
-        )
-
-        self.predict_action = nn.Sequential(
-            *([nn.Linear(model_config.DECISION_TRANSFORMER.hidden_dim, num_actions+1)] + ([nn.Tanh()]))
-        )
-
-        self._init_layers()
+        # self._init_weights(self.embed_return)
+        # self._init_weights(self.embed_state)
+        # self._init_weights(self.embed_timestep)
+        # self._init_weights(self.embed_action)
 
         self.train()
 
@@ -191,11 +168,16 @@ class DecisionTransformerNet(Net):
     def num_recurrent_layers(self):
         return self.state_encoder.num_recurrent_layers
 
-    def _init_layers(self):
-        nn.init.kaiming_normal_(
-            self.progress_monitor.weight, nonlinearity="tanh"
-        )
-        nn.init.constant_(self.progress_monitor.bias, 0)
+    def _init_weights(self, module):
+        if isinstance(module, nn.Linear):
+            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
+            if module.bias is not None:
+                torch.nn.init.zeros_(module.bias)
+        elif isinstance(module, nn.Embedding):
+            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
+        elif isinstance(module, nn.LayerNorm):
+            torch.nn.init.zeros_(module.bias)
+            torch.nn.init.ones_(module.weight)
 
     def forward(self, observations, rnn_states, prev_actions, masks):
 
@@ -240,10 +222,8 @@ class DecisionTransformerNet(Net):
         actions = prev_actions
 
 
-        if "point_nav_reward_to_go" in observations.keys():
-            returns_to_go = observations["point_nav_reward_to_go"]\
-                if self.reward_type == "POINT_GOAL_NAV_REWARD" else \
-                            observations["sparse_reward_to_go"]
+        if self.reward_type in observations.keys():
+            returns_to_go = observations[self.reward_type]
         else:
             # If we don t have any rewards from the environment, just take one
             # as mentioned in the paper during evaluation.
@@ -305,30 +285,5 @@ class DecisionTransformerNet(Net):
         #action_preds = self.predict_action(output[:, 1])  # predict next action given state
         action_preds = output[:, 1]
         #return action_preds.view(seq_length*batch_size, -1), state_embeddings
-
-        # id = 0
-        # if "id" in observations.keys():
-        #     id = observations["id"]
-
-        # if id == "773" and seq_length == -1:
-        #     print("stacked_input")
-        #     print("0,0", stacked_inputs[0, 0])
-        #     print("0,1", stacked_inputs[0, 1])
-        #     print("0,2", stacked_inputs[0, 2])
-        #     print("state_embeddings")
-        #     print(state_embeddings[0,0])
-        #     print("action_embeddings")
-        #     print(action_embeddings[0, 0])
-        #     print("return_embeddings")
-        #     print(returns_embeddings[0, 0])
-        #     print("depth")
-        #     print(depth_embedding[0])
-        #     print("rgb")
-        #     print(rgb_embedding[0])
-        #     print("instruction")
-        #     print(instruction_embedding[0])
-        #
-        #     raise Exception("stop")
-
 
         return action_preds, state_embeddings

@@ -47,6 +47,12 @@ class ObservationsDict(dict):
 
         return self
 
+# Trick to create extra start token directly in the collate_fn
+# we don t need to recreate the whole dataset...
+global USE_EXTRA_START_TOKEN
+global EXTRA_START_TOKEN_ID
+EXTRA_START_TOKEN_ID = 4
+USE_EXTRA_START_TOKEN = False
 
 def collate_fn(batch):
     """Each sample in batch: (
@@ -87,7 +93,7 @@ def collate_fn(batch):
     max_traj_len = max(ele.size(0) for ele in prev_actions_batch)
     for bid in range(batch_size):
         for sensor in observations_batch:
-            fill = 0.0 if "_reward_to_go" in sensor else 1.0
+            fill = 0.0 if "_reward" in sensor else 1.0
             observations_batch[sensor][bid] = _pad_helper(
                 observations_batch[sensor][bid], max_traj_len, fill_val=fill
             )
@@ -107,7 +113,7 @@ def collate_fn(batch):
         # observations_batch[sensor] = observations_batch[sensor].view(
         #     -1, *observations_batch[sensor].size()[2:]
         # )
-        if "_reward_to_go" in sensor:
+        if "_reward" in sensor:
             observations_batch[sensor] = observations_batch[sensor].unsqueeze(-1)
     # observations_batch["instruction"] = observations_batch["instruction"].view(
     #     -1, *observations_batch["instruction"].size()[2:]
@@ -121,6 +127,12 @@ def collate_fn(batch):
         corrected_actions_batch, dtype=torch.uint8
     )
     not_done_masks[0] = 0
+
+    if USE_EXTRA_START_TOKEN:
+        # The environment only use actions from 0 to 3, the 4 is just a
+        # a dummy token to indicate the beginning of a sequence.
+        prev_actions_batch[:, 0] = EXTRA_START_TOKEN_ID
+
     # shape batch size time max episode length
     timesteps = torch.arange(0, max_traj_len).repeat(batch_size, 1)
     observations_batch["timesteps"] = timesteps
@@ -266,7 +278,9 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 "step_penalty": config.IL.DECISION_TRANSFORMER.SPARSE_REWARD.step_penalty,
                 "success": config.IL.DECISION_TRANSFORMER.SPARSE_REWARD.success},
         }
-
+        # Dirty trick to use a dedicated start token in the collate_fn
+        global USE_EXTRA_START_TOKEN
+        USE_EXTRA_START_TOKEN = config.MODEL.DECISION_TRANSFORMER.use_extra_start_token
         super().__init__(config)
 
     def _create_feature_hooks(self):
@@ -317,6 +331,8 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         rewards = traj_obs[observation_type]
         rewards = rewards + self.rewards[reward_type]["step_penalty"]
         rewards[-1] = rewards[-1] + self.rewards[reward_type]["success"]
+        # Just save the simple rewards for each time steps, not accumulated if needed
+        traj_obs[reward_type] = np.float32(rewards.squeeze())
         rewards = np.flip(np.flip(rewards).cumsum())
         traj_obs[observation_type] = np.float32(rewards/scaling_factor)
 
@@ -378,6 +394,8 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 device=self.device,
                 dtype=torch.long,
             )
+            if self.config.MODEL.DECISION_TRANSFORMER.use_extra_start_token:
+                prev_actions = prev_actions + EXTRA_START_TOKEN_ID
         #store the last images
         for i in range(envs.num_envs):
             episodes[i].append({rgb_key: rgb_seq[i][-1], depth_key: depth_seq[i][-1]})
@@ -900,6 +918,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
 
 
         envs.close()
+        gc.collect()
         self._release_hook()
         if config.use_pbar:
             pbar.close()
@@ -1003,6 +1022,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 for epoch in tqdm.trange(
                     self.config.IL.epochs, dynamic_ncols=True
                 ):
+                    total_loss = 0.0
                     for batch in tqdm.tqdm(
                         diter,
                         total=dataset.length // dataset.batch_size,
@@ -1042,13 +1062,13 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                             ),
                         )
 
-                        logger.info(f"train_loss: {loss}")
-                        logger.info(f"train_action_loss: {action_loss}")
-                        logger.info(f"train_aux_loss: {aux_loss}")
-                        logger.info(f"Batches processed: {step_id}.")
-                        logger.info(
-                            f"On DAgger iter {dagger_it}, Epoch {epoch}."
-                        )
+                        #logger.info(f"train_loss: {loss}")
+                        #logger.info(f"train_action_loss: {action_loss}")
+                        #logger.info(f"train_aux_loss: {aux_loss}")
+                        #logger.info(f"Batches processed: {step_id}.")
+                        #logger.info(
+                        #    f"On DAgger iter {dagger_it}, Epoch {epoch}."
+                        #)
                         writer.add_scalar(
                             f"train_loss_iter_{dagger_it}", loss, step_id
                         )
@@ -1062,7 +1082,9 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                             aux_loss,
                             step_id,
                         )
+                        total_loss += loss
                         step_id += 1  # noqa: SIM113
+                    logger.info(f"Mean Loss for DAgger iter {dagger_it}, Epoch {epoch}: {total_loss/(dataset.length // dataset.batch_size)}")
                     if (epoch + 1) % self.config.IL.checkpoint_frequency == 0:
                         print("Save", f"ckpt.{dagger_it * self.config.IL.epochs + epoch}.pth")
                         self.save_checkpoint(
@@ -1138,17 +1160,12 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         """
         T, N = corrected_actions.size()
 
-        recurrent_hidden_states = torch.zeros(
-            N,
-            self.policy.net.num_recurrent_layers,
-            self.config.MODEL.STATE_ENCODER.hidden_size,
-            device=self.device,
-        )
+        hidden_states = None
 
         AuxLosses.clear()
 
         distribution = self.policy.build_distribution(
-            observations, recurrent_hidden_states, prev_actions, not_done_masks
+            observations, hidden_states, prev_actions, not_done_masks
         )
 
         logits = distribution.logits
