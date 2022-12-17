@@ -45,7 +45,7 @@ IL:
     p: 1.0
     preload_lmdb_features: True
     lmdb_commit_frequency: 500
-    lmdb_features_dir: data/trajectories_dirs/decision_transformer_v2/trajectories.lmdb
+    lmdb_features_dir: data/trajectories_dirs/decision_transformer_v2_PGR_1_-0.01_SR_1_-0.01/trajectories.lmdb
     #lmdb_features_dir: data/trajectories_dirs/decision_transformer_PGR_1_-0.01_SR_1_-0.01/trajectories.lmdb
     #lmdb_features_dir: data/trajectories_dirs/decision_transformer_v2_debug/trajectories.lmdb
 
