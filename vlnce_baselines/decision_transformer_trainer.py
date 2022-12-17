@@ -1084,7 +1084,13 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         )
                         total_loss += loss
                         step_id += 1  # noqa: SIM113
-                    logger.info(f"Mean Loss for DAgger iter {dagger_it}, Epoch {epoch}: {total_loss/(dataset.length // dataset.batch_size)}")
+                    total_loss = total_loss / (dataset.length // dataset.batch_size)
+                    writer.add_scalar(
+                        f"train_total_loss{dagger_it}",
+                        total_loss,
+                        epoch,
+                    )
+                    logger.info(f"Mean Loss for DAgger iter {dagger_it}, Epoch {epoch}: {total_loss}")
                     if (epoch + 1) % self.config.IL.checkpoint_frequency == 0:
                         print("Save", f"ckpt.{dagger_it * self.config.IL.epochs + epoch}.pth")
                         self.save_checkpoint(
