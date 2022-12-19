@@ -598,8 +598,6 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                     if envs.num_envs == 0:
                         envs.resume_all()
                         observations = envs.reset()
-                        self._release_hook()
-                        self._create_feature_hooks()
                         episodes = [[] for _ in range(envs.num_envs)]
                         episode_features = [[] for _ in range(envs.num_envs)]
                         prev_actions = None
