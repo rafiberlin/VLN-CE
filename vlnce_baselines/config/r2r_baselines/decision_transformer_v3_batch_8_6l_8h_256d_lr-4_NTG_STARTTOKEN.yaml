@@ -54,7 +54,7 @@ MODEL:
   DECISION_TRANSFORMER:
     use_extra_start_token: True
     reward_type: point_nav_reward_to_go # point_nav_reward_to_go, sparse_reward_to_go, point_nav_reward, sparse_reward
-    n_layer: 8
+    n_layer: 6
     n_head: 8
     hidden_dim: 256 # The dimensions for the State, Reward and actions embeddings and in the GPT Backbne
   policy_name: DecisionTransformerPolicy
