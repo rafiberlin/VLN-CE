@@ -954,12 +954,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                     "Cannot open database for teacher forcing preload."
                 )
                 raise err
-        else:
-            with lmdb.open(
-                self.lmdb_features_dir,
-                map_size=int(self.config.IL.DAGGER.lmdb_map_size),
-            ) as lmdb_env, lmdb_env.begin(write=True) as txn:
-                txn.drop(lmdb_env.open_db())
+
 
         EPS = self.config.IL.DAGGER.expert_policy_sensor
         if EPS not in self.config.TASK_CONFIG.TASK.SENSORS:
@@ -996,6 +991,12 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             for dagger_it in range(self.config.IL.DAGGER.iterations):
                 step_id = 0
                 if not self.config.IL.DAGGER.preload_lmdb_features:
+                    with lmdb.open(
+                        self.lmdb_features_dir,
+                        map_size=int(self.config.IL.DAGGER.lmdb_map_size),
+                    ) as lmdb_env, lmdb_env.begin(write=True) as txn:
+                        txn.drop(lmdb_env.open_db())
+
                     self._update_dataset(
                         dagger_it + (1 if self.config.IL.load_from_ckpt else 0)
                     )
@@ -1022,8 +1023,10 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                     num_workers=workers,
                 )
                 num_batch = dataset.length // dataset.batch_size
+
                 if num_batch == 0:
                     num_batch = 1
+                logger.info(f"Number opf batches to process:{num_batch}")
                 AuxLosses.activate()
                 for epoch in tqdm.trange(
                     self.config.IL.epochs, dynamic_ncols=True
