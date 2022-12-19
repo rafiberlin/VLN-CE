@@ -496,6 +496,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             collect_size = self.config.IL.DAGGER.update_size
 
         print(f"To be collected: {collect_size} ")
+        raise Exception("quit")
         with tqdm.tqdm(
             total=collect_size, dynamic_ncols=True
         ) as pbar, lmdb.open(
