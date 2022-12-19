@@ -485,12 +485,12 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         collected_eps = 0
         ep_ids_collected = None
         if ensure_unique_episodes:
-            ep_ids_collected = {
-                ep.episode_id for ep in envs.current_episodes()
-            }
+            ep_ids_collected = set()
 
         dataset_episodes = sum(envs.number_of_episodes)
-        collect_size =  dataset_episodes if self.config.IL.DAGGER.update_size > dataset_episodes else self.config.IL.DAGGER.update_size
+        collect_size = dataset_episodes \
+            if (self.config.IL.DAGGER.update_size > dataset_episodes and ensure_unique_episodes) \
+            else self.config.IL.DAGGER.update_size
 
         with tqdm.tqdm(
             total=collect_size, dynamic_ncols=True
@@ -502,14 +502,20 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             txn = lmdb_env.begin(write=True)
 
             while collected_eps < collect_size:
-                current_episodes = None
-                envs_to_pause = None
-                # reset envs and observations if necessary
-                if ensure_unique_episodes:
-                    envs_to_pause = []
-                    current_episodes = envs.current_episodes()
+                envs_to_pause = []
+                current_episodes = envs.current_episodes()
 
                 for i in range(envs.num_envs):
+
+
+                    if ensure_unique_episodes:
+                        if (
+                            current_episodes[i].episode_id
+                            in ep_ids_collected
+                        ):
+                            skips[i] = True
+                            envs_to_pause.append(i)
+
                     if dones[i] and not skips[i]:
                         ep = episodes[i]
                         traj_obs = batch_obs(
@@ -559,15 +565,8 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                             txn = lmdb_env.begin(write=True)
 
                         if ensure_unique_episodes:
-                            if (
-                                current_episodes[i].episode_id
-                                in ep_ids_collected
-                            ):
-                                envs_to_pause.append(i)
-                            else:
-                                ep_ids_collected.add(
-                                    current_episodes[i].episode_id
-                                )
+                            if (not current_episodes[i].episode_id in ep_ids_collected):
+                                ep_ids_collected.add(current_episodes[i].episode_id)
 
 
                     # In opposition to the RNN logic, where only one state per time step is handled,
@@ -576,34 +575,36 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         if i not in envs_to_pause:
                             envs_to_pause.append(i)
 
-                if ensure_unique_episodes:
-                    (
-                        envs,
-                        hidden_states,
-                        not_done_masks,
-                        prev_actions,
-                        batch,
-                        _,
-                        episode_features,
-                    ) = self._pause_envs(
-                        envs_to_pause,
-                        envs,
-                        hidden_states,
-                        not_done_masks,
-                        prev_actions,
-                        batch,
-                        None,
-                        episode_features,
-                    )
-                    if envs.num_envs == 0:
-                        envs.resume_all()
-                        observations = envs.reset()
-                        episodes = [[] for _ in range(envs.num_envs)]
-                        episode_features = [[] for _ in range(envs.num_envs)]
-                        prev_actions = None
-                        observations, batch = self._prepare_observation(observations)
-                        self.rgb_features = self.rgb_features.set_(torch.zeros((1,), device="cpu"))
-                        self.depth_features = self.depth_features.set_(torch.zeros((1,), device="cpu"))
+
+
+                (
+                    envs,
+                    hidden_states,
+                    not_done_masks,
+                    prev_actions,
+                    batch,
+                    _,
+                    episode_features,
+                ) = self._pause_envs(
+                    envs_to_pause,
+                    envs,
+                    hidden_states,
+                    not_done_masks,
+                    prev_actions,
+                    batch,
+                    None,
+                    episode_features,
+                )
+
+                if envs.num_envs == 0:
+                    envs.resume_all()
+                    observations = envs.reset()
+                    episodes = [[] for _ in range(envs.num_envs)]
+                    episode_features = [[] for _ in range(envs.num_envs)]
+                    prev_actions = None
+                    observations, batch = self._prepare_observation(observations)
+                    self.rgb_features = self.rgb_features.set_(torch.zeros((1,), device="cpu"))
+                    self.depth_features = self.depth_features.set_(torch.zeros((1,), device="cpu"))
 
                 # caching the outputs of the cnn on one image only
                 rgb_encoder(batch)
@@ -1015,7 +1016,9 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                     drop_last=True,  # drop last batch if smaller
                     num_workers=workers,
                 )
-
+                num_batch = dataset.length // dataset.batch_size
+                if num_batch == 0:
+                    num_batch = 1
                 AuxLosses.activate()
                 for epoch in tqdm.trange(
                     self.config.IL.epochs, dynamic_ncols=True
@@ -1023,7 +1026,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                     total_loss = 0.0
                     for batch in tqdm.tqdm(
                         diter,
-                        total=dataset.length // dataset.batch_size,
+                        total=num_batch,
                         leave=False,
                         dynamic_ncols=True,
                     ):
@@ -1082,7 +1085,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         )
                         total_loss += loss
                         step_id += 1  # noqa: SIM113
-                    total_loss = total_loss / (dataset.length // dataset.batch_size)
+                    total_loss = total_loss / (num_batch)
                     writer.add_scalar(
                         f"train_total_loss{dagger_it}",
                         total_loss,
