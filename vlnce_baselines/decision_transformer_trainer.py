@@ -488,10 +488,14 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             ep_ids_collected = set()
 
         dataset_episodes = sum(envs.number_of_episodes)
-        collect_size = dataset_episodes \
-            if (self.config.IL.DAGGER.update_size > dataset_episodes and ensure_unique_episodes) \
-            else self.config.IL.DAGGER.update_size
+        if (self.config.IL.DAGGER.update_size > dataset_episodes and ensure_unique_episodes):
+            collect_size = dataset_episodes
+            print("Ensure unique episodes")
+        else:
+            print("Unique episodes not enforced")
+            collect_size = self.config.IL.DAGGER.update_size
 
+        print(f"To be collected: {collect_size} ")
         with tqdm.tqdm(
             total=collect_size, dynamic_ncols=True
         ) as pbar, lmdb.open(
