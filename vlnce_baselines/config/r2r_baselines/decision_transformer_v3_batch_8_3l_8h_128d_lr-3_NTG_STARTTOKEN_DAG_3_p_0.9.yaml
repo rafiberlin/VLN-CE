@@ -27,7 +27,7 @@ IL:
   batch_size: 8
   checkpoint_frequency: 3
   lr: 2.5e-3
-  load_from_ckpt: False # To train from a previous checkpoint
+  load_from_ckpt: True # To train from a previous checkpoint
   ckpt_to_load: /data/VLNCE/data/checkpoint/decision_transformer_v3_batch_8_3l_8h_128d_lr-3_NTG_STARTTOKEN_DAG_3_p_0.9/pretrained/ckpt.32.pth # REPLACE
   RECOLLECT_TRAINER:
     gt_file:
