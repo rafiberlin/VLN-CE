@@ -3,11 +3,11 @@ TRAINER_NAME: decision_transformer # recollect_trainer, dagger
 SIMULATOR_GPU_IDS: [1]
 TORCH_GPU_ID: 1
 NUM_ENVIRONMENTS: 15 #Only use one environment for Decision Transformer! An this is probably not working with MUlti Sim GPU
-#TENSORBOARD_DIR: data/tensorboard_dirs/decision_transformer_v3_batch_8_3l_8h_128d_lr-3_NTG_STARTTOKEN
-TENSORBOARD_DIR: /cache/tensorboard-logdir/decision_transformer_v3_batch_8_3l_8h_128d_lr-3_NTG_STARTTOKEN
-CHECKPOINT_FOLDER: data/checkpoints/decision_transformer_v3_batch_8_3l_8h_128d_lr-3_NTG_STARTTOKEN
-EVAL_CKPT_PATH_DIR: data/checkpoints/decision_transformer_v3_batch_8_3l_8h_128d_lr-3_NTG_STARTTOKEN
-RESULTS_DIR: data/checkpoints/decision_transformer_v3_batch_8_3l_8h_128d_lr-3_NTG_STARTTOKEN/evals/val_seen
+#TENSORBOARD_DIR: data/tensorboard_dirs/decision_transformer_v3_batch_8_3l_8h_128d_lr-3_NTG_STARTTOKEN_DAG_3_p_0.9
+TENSORBOARD_DIR: /cache/tensorboard-logdir/decision_transformer_v3_batch_8_3l_8h_128d_lr-3_NTG_STARTTOKEN_DAG_3_p_0.9
+CHECKPOINT_FOLDER: data/checkpoints/decision_transformer_v3_batch_8_3l_8h_128d_lr-3_NTG_STARTTOKEN_DAG_3_p_0.9
+EVAL_CKPT_PATH_DIR: data/checkpoints/decision_transformer_v3_batch_8_3l_8h_128d_lr-3_NTG_STARTTOKEN_DAG_3_p_0.9
+RESULTS_DIR: data/checkpoints/decision_transformer_v3_batch_8_3l_8h_128d_lr-3_NTG_STARTTOKEN_DAG_3_p_0.9/evals/val_seen
 MULTIPROCESSING: forkserver  # default is forkserver, Set to 'spawn' when debugging with Pycharm,
 ENV_NAME: VLNCEDecisionTransformerEnv
 
@@ -28,7 +28,7 @@ IL:
   checkpoint_frequency: 3
   lr: 2.5e-3
   load_from_ckpt: True # To train from a previous checkpoint
-  ckpt_to_load: /data/VLNCE/data/checkpoint/decision_transformer_v3_batch_8_3l_8h_128d_lr-3_NTG_STARTTOKEN_DAG_3_p_0.9/pretrained/ckpt.32.pth # REPLACE
+  ckpt_to_load: /data/VLNCE/data/checkpoint/decision_transformer_v3_batch_8_3l_8h_128d_lr-3_NTG_STARTTOKEN_DAG_3_p_0.9_DAG_3_p_0.9/pretrained/ckpt.32.pth # REPLACE
   RECOLLECT_TRAINER:
     gt_file:
       data/datasets/R2R_VLNCE_v1-3_preprocessed/{split}/{split}_gt.json.gz
@@ -46,7 +46,7 @@ IL:
     p: 0.90
     preload_lmdb_features: False
     lmdb_commit_frequency: 500
-    lmdb_features_dir: data/trajectories_dirs/decision_transformer_v3_batch_8_3l_8h_128d_lr-3_NTG_STARTTOKEN_DAG_3_p_0.9/trajectories.lmdb
+    lmdb_features_dir: data/trajectories_dirs/decision_transformer_v3_batch_8_3l_8h_128d_lr-3_NTG_STARTTOKEN_DAG_3_p_0.9_DAG_3_p_0.9/trajectories.lmdb
     #lmdb_features_dir: data/trajectories_dirs/decision_transformer_PGR_1_-0.01_SR_1_-0.01/trajectories.lmdb
     #lmdb_features_dir: data/trajectories_dirs/decision_transformer_v2_debug/trajectories.lmdb
 
