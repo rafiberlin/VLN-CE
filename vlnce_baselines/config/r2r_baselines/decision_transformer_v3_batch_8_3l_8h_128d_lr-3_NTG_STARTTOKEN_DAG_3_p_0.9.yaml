@@ -43,7 +43,7 @@ IL:
   DAGGER:
     iterations: 5
     update_size: 6000
-    p: 0.75
+    p: 0.9
     preload_lmdb_features: False
     lmdb_commit_frequency: 500
     lmdb_features_dir: data/trajectories_dirs/decision_transformer_v3_batch_8_3l_8h_128d_lr-3_NTG_STARTTOKEN_DAG_3_p_0.9_DAG_3_p_0.9/trajectories.lmdb
