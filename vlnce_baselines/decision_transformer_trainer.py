@@ -51,7 +51,9 @@ class ObservationsDict(dict):
 # we don t need to recreate the whole dataset...
 global USE_EXTRA_START_TOKEN
 global EXTRA_START_TOKEN_ID
+global STOP_ACTION_TOKEN_ID
 EXTRA_START_TOKEN_ID = 4
+STOP_ACTION_TOKEN_ID = 0
 USE_EXTRA_START_TOKEN = False
 
 def collate_fn(batch):
@@ -496,7 +498,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             collect_size = self.config.IL.DAGGER.update_size
 
         print(f"To be collected: {collect_size} ")
-
+        horizon = 1
         with tqdm.tqdm(
             total=collect_size, dynamic_ncols=True
         ) as pbar, lmdb.open(
@@ -509,6 +511,14 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             while collected_eps < collect_size:
                 envs_to_pause = []
                 current_episodes = envs.current_episodes()
+                # if the max steps of the transform model is reached,
+                # and the agent does not call the stop action, force the agent to ignore the episode
+                if horizon == self.config.IL.DECISION_TRANSFORMER.episode_horizon:
+                    episode_end = torch.where(actions == STOP_ACTION_TOKEN_ID, True, False)
+                    for i in range(envs.num_envs):
+                        if not episode_end[i] and i not in envs_to_pause:
+                            skips[i] = True
+                            envs_to_pause.append(i)
 
                 for i in range(envs.num_envs):
 
@@ -639,16 +649,6 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         not_done_masks,
                         deterministic=False,
                     )
-
-                    # if the max steps of the transform model is reached,
-                    # and the agent does not call the stop action, force the agent to ignore the episode
-                    if horizon == self.config.IL.DECISION_TRANSFORMER.episode_horizon:
-                        episode_end = torch.where(actions == 0, True, False)
-                        for i in range(envs.num_envs):
-                            if not episode_end[i] and i not in envs_to_pause:
-                                skips[i] = True
-                                envs_to_pause.append(i)
-
                 else:
                     actions = torch.ones_like(batch[expert_uuid].long())
                 # actions.shape[0] == number of active enviroments
