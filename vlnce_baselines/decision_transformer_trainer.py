@@ -627,6 +627,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                                                                   prev_actions,
                                                                   "rgb_features", "depth_features")
                 batch_size = prev_actions.shape[0]
+                horizon = prev_actions.shape[1]
                 perform_dagger = (torch.rand((batch_size, 1), dtype=torch.float) < beta).to(self.device)
                 # only perform dagger when the random process allows it (should lower the
                 # processing time...)
@@ -638,6 +639,16 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         not_done_masks,
                         deterministic=False,
                     )
+
+                    # if the max steps of the transform model is reached,
+                    # and the agent does not call the stop action, force the agent to ignore the episode
+                    if horizon == self.config.IL.DECISION_TRANSFORMER.episode_horizon:
+                        episode_end = torch.where(actions == 0, True, False)
+                        for i in range(envs.num_envs):
+                            if not episode_end[i] and i not in envs_to_pause:
+                                skips[i] = True
+                                envs_to_pause.append(i)
+
                 else:
                     actions = torch.ones_like(batch[expert_uuid].long())
                 # actions.shape[0] == number of active enviroments
