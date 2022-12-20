@@ -26,7 +26,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--episodes",
-        default="773,1818,261",
+        default="773,1818,261,7645,90,91",
         metavar="",
         help="Comma separated episode ids",
         type=str,
