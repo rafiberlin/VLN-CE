@@ -1288,7 +1288,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
 
                 if num_batch == 0:
                     num_batch = 1
-                logger.info(f"Number opf batches to process:{num_batch}")
+                logger.info(f"Number of batches to process:{num_batch}")
                 AuxLosses.activate()
                 for epoch in tqdm.trange(
                     self.config.IL.epochs, dynamic_ncols=True
