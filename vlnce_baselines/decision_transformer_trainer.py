@@ -134,7 +134,8 @@ def collate_fn(batch):
         # The environment only use actions from 0 to 3, the 4 is just a
         # a dummy token to indicate the beginning of a sequence.
         prev_actions_batch[:, 0] = EXTRA_START_TOKEN_ID
-
+    else:
+        prev_actions_batch[:, 0] = STOP_ACTION_TOKEN_ID # this is zero.
     # shape batch size time max episode length
     timesteps = torch.arange(0, max_traj_len).repeat(batch_size, 1)
     observations_batch["timesteps"] = timesteps
