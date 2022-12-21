@@ -99,7 +99,7 @@ def collate_fn(batch):
             fill = 0.0 if "_reward" in sensor else 1.0
             # Workaround when the reward is only a single scalar...
             if len(observations_batch[sensor][bid].shape) == 0:
-                observations_batch[sensor][bid] = observations_batch[sensor][bid].unsqueeze(-1).unsqueeze(-1)
+                observations_batch[sensor][bid] = observations_batch[sensor][bid].unsqueeze(-1)
             observations_batch[sensor][bid] = _pad_helper(
                 observations_batch[sensor][bid], max_traj_len, fill_val=fill
             )
