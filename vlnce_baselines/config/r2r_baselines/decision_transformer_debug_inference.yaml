@@ -9,6 +9,7 @@ EVAL_CKPT_PATH_DIR: data/checkpoints/decision_transformer_debug
 RESULTS_DIR: data/checkpoints/decision_transformer_debug/evals
 MULTIPROCESSING: spawn  # default is forkserver, Set to 'spawn' when debugging with Pycharm,
 ENV_NAME: VLNCEDecisionTransformerEnv
+use_pbar: True
 
 INFERENCE:
   SPLIT: test
@@ -17,7 +18,6 @@ INFERENCE:
   CKPT_PATH: data/checkpoints/decision_transformer_debug/ckpt.269.pth
   PREDICTIONS_FILE: predictions.json
   FORMAT: r2r
-
 
 EVAL:
   USE_CKPT_CONFIG: False

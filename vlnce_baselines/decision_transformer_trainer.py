@@ -38,7 +38,8 @@ from vlnce_baselines.common.utils import extract_instruction_tokens
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=FutureWarning)
     import tensorflow as tf  # noqa: F401
-import copy
+import jsonlines
+from typing import Any, Dict, List, Optional, Tuple
 
 class ObservationsDict(dict):
     def pin_memory(self):
@@ -697,6 +698,256 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         envs = None
 
         self._release_hook()
+
+
+    def inference(
+        self,
+    ):
+        """Evaluates a single checkpoint.
+
+        Args:
+            checkpoint_path: path of checkpoint
+            writer: tensorboard writer object
+            checkpoint_index: index of the current checkpoint
+        """
+        checkpoint_path = self.config.INFERENCE.CKPT_PATH
+        logger.info(f"checkpoint_path: {checkpoint_path}")
+
+        if self.config.INFERENCE.USE_CKPT_CONFIG:
+            config = self._setup_eval_config(
+                self.load_checkpoint(checkpoint_path, map_location="cpu")[
+                    "config"
+                ]
+            )
+        else:
+            config = self.config.clone()
+
+        config.defrost()
+        config.TASK_CONFIG.DATASET.SPLIT = self.config.INFERENCE.SPLIT
+        config.TASK_CONFIG.DATASET.ROLES = ["guide"]
+        config.TASK_CONFIG.DATASET.LANGUAGES = config.INFERENCE.LANGUAGES
+        config.TASK_CONFIG.ENVIRONMENT.ITERATOR_OPTIONS.SHUFFLE = False
+        config.TASK_CONFIG.ENVIRONMENT.ITERATOR_OPTIONS.MAX_SCENE_REPEAT_STEPS = (
+            -1
+        )
+        config.IL.ckpt_to_load = config.INFERENCE.CKPT_PATH
+        config.TASK_CONFIG.TASK.MEASUREMENTS = []
+        config.TASK_CONFIG.TASK.SENSORS = [
+            s for s in config.TASK_CONFIG.TASK.SENSORS if "INSTRUCTION" in s
+        ]
+        config.ENV_NAME = "VLNCEInferenceEnv"
+        config.freeze()
+
+        envs = construct_envs_auto_reset_false(
+            config, get_env_class(config.ENV_NAME)
+        )
+
+        observation_space, action_space = self._get_spaces(config, envs=envs)
+
+        self._initialize_policy(
+            config,
+            load_from_ckpt=True,
+            observation_space=observation_space,
+            action_space=action_space,
+        )
+        self.policy.eval()
+
+        self._create_feature_hooks()
+        rgb_encoder = self.policy.net.rgb_encoder
+        depth_encoder = self.policy.net.depth_encoder
+
+        observations = envs.reset()
+        observations, batch = self._prepare_observation(observations)
+
+        prev_actions = None
+        not_done_masks = torch.zeros(
+            envs.num_envs, 1, dtype=torch.uint8, device=self.device
+        )
+
+        episode_predictions = defaultdict(list)
+
+        episodes = [[] for _ in range(envs.num_envs)]
+
+        # episode ID --> instruction ID for rxr predictions format
+        instruction_ids: Dict[str, int] = {}
+
+        episode_already_predicted = []
+
+
+        def _populate_episode_with_starting_states():
+            # populate episode_predictions with the starting state
+            current_episodes = envs.current_episodes()
+            for i in range(envs.num_envs):
+                ep_id = current_episodes[i].episode_id
+                if ep_id not in episode_already_predicted:
+                    episode_predictions[current_episodes[i].episode_id].append(
+                        envs.call_at(i, "get_info", {"observations": {}})
+                    )
+                if config.INFERENCE.FORMAT == "rxr":
+                    ep_id = current_episodes[i].episode_id
+                    k = current_episodes[i].instruction.instruction_id
+                    instruction_ids[ep_id] = int(k)
+
+        _populate_episode_with_starting_states()
+
+        num_eps = sum(envs.count_episodes())
+        pbar = tqdm.tqdm(total=num_eps) if config.use_pbar else None
+
+
+        # if all envs finishes at the same time, the operation is equal to 1.
+        # if all env are still processing, the operation is simply zero...
+        has_env_finished_early = lambda envs_that_needs_to_wait : sum(envs_that_needs_to_wait.values()) / len(envs_that_needs_to_wait) > 0
+
+
+        while envs.num_envs > 0 and len(episode_already_predicted) < num_eps:
+
+            current_episodes = envs.current_episodes()
+            # caching the outputs of the cnn on one image only
+            rgb_encoder(batch)
+            depth_encoder(batch)
+            del batch["rgb"]
+            del batch["depth"]
+            rgb_key = "rgb_features"
+            depth_key = "depth_features"
+            prev_actions = self._modify_batch_for_transformer(episodes, batch, self.rgb_features, self.depth_features, envs,
+                                                              prev_actions, rgb_key, depth_key)
+
+            with torch.no_grad():
+                actions, hidden_states = self.policy.act(
+                    batch,
+                    None,
+                    prev_actions,
+                    not_done_masks,
+                    deterministic=not config.EVAL.SAMPLE,
+                )
+                prev_actions = torch.cat([prev_actions, actions], dim=1).to(self.device)
+                # prev_actions.copy_(actions)
+
+            horizon = prev_actions.shape[1]
+            # if the max steps of the transform model is reached, force to end the game
+            if horizon == self.config.IL.DECISION_TRANSFORMER.episode_horizon:
+                actions[:, -1] = 0
+
+            outputs = envs.step([a[0].item() for a in actions])
+            observations, _, dones, infos = [list(x) for x in zip(*outputs)]
+            # need to use a deep copy, otherwise, observations would be the same as cleaned_observations
+            observations, batch = self._prepare_observation(observations)
+            not_done_masks = torch.tensor(
+                [[0] if done else [1] for done in dones],
+                dtype=torch.uint8,
+                device=self.device,
+            )
+
+            # reset envs and observations if necessary
+            envs_that_needs_to_wait = {}
+            for i in range(envs.num_envs):
+                ep_id = current_episodes[i].episode_id
+                if ep_id not in episode_already_predicted:
+                    episode_predictions[ep_id].append(infos[i])
+                # This helps us to generate the transformer sequence
+                #episodes[i].append((cleaned_observations[i], prev_actions[i, -1].item()))
+                if not dones[i]:
+                    envs_that_needs_to_wait[i] = False
+                    continue
+                envs_that_needs_to_wait[i] = True
+                episodes[i] = []
+                episode_already_predicted.append(ep_id)
+                observations[i] = envs.reset_at(i)[0]
+                # This step is usually done in self._prepare_observation(observations)
+                # but now, because we amenbd only one observation, we need to take care of this step manually...
+                observations[i][self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID] = observations[i][self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID]["tokens"]
+                self.rgb_features = self.rgb_features.set_(torch.zeros((1,), device="cpu"))
+                self.depth_features = self.depth_features.set_(torch.zeros((1,), device="cpu"))
+                observations, batch = self._prepare_observation(observations)
+
+
+                if config.use_pbar:
+                    pbar.update()
+
+
+
+            envs_to_pause = []
+            next_episodes = envs.current_episodes()
+
+            for i in range(envs.num_envs):
+                if next_episodes[i].episode_id in episode_already_predicted:
+                    envs_to_pause.append(i)
+                elif has_env_finished_early(envs_that_needs_to_wait):
+                    if envs_that_needs_to_wait[i] and i not in envs_to_pause:
+                        envs_to_pause.append(i)
+            (
+                envs,
+                hidden_states,
+                not_done_masks,
+                prev_actions,
+                batch,
+                _,
+                episodes,
+            ) = self._pause_envs(
+                envs_to_pause,
+                envs,
+                hidden_states,
+                not_done_masks,
+                prev_actions,
+                batch,
+                None,
+                episodes,
+            )
+
+            # at this stage, if we dont have any env left,
+            # that means that all prediction within the same "batch"
+            # are finished, we can wake all envs now.
+            if envs.num_envs < 1:
+                envs.resume_all()
+                episodes = [[] for _ in range(envs.num_envs)]
+                observations = envs.reset()
+                prev_actions = None
+                observations, batch = self._prepare_observation(observations)
+                _populate_episode_with_starting_states()
+
+
+        envs.close()
+        gc.collect()
+        self._release_hook()
+        if config.use_pbar:
+            pbar.close()
+
+        if config.INFERENCE.FORMAT == "r2r":
+            with open(config.INFERENCE.PREDICTIONS_FILE, "w") as f:
+                json.dump(episode_predictions, f, indent=2)
+
+            logger.info(
+                f"Predictions saved to: {config.INFERENCE.PREDICTIONS_FILE}"
+            )
+        else:  # use 'rxr' format for rxr-habitat leaderboard
+            predictions_out = []
+
+            for k, v in episode_predictions.items():
+
+                # save only positions that changed
+                path = [v[0]["position"]]
+                for p in v[1:]:
+                    if path[-1] != p["position"]:
+                        path.append(p["position"])
+
+                predictions_out.append(
+                    {
+                        "instruction_id": instruction_ids[k],
+                        "path": path,
+                    }
+                )
+
+            predictions_out.sort(key=lambda x: x["instruction_id"])
+            with jsonlines.open(
+                config.INFERENCE.PREDICTIONS_FILE, mode="w"
+            ) as writer:
+                writer.write_all(predictions_out)
+
+            logger.info(
+                f"Predictions saved to: {config.INFERENCE.PREDICTIONS_FILE}"
+            )
+
+
 
     def _eval_checkpoint(
         self,
