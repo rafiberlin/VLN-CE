@@ -11,7 +11,7 @@ MULTIPROCESSING: spawn  # default is forkserver, Set to 'spawn' when debugging w
 ENV_NAME: VLNCEDecisionTransformerEnv
 
 INFERENCE:
-  SPLIT: test
+  SPLIT: debug
   USE_CKPT_CONFIG: False
   SAMPLE: False
   CKPT_PATH: data/checkpoints/decision_transformer_debug/ckpt.269.pth
@@ -29,7 +29,7 @@ IL:
   batch_size: 5
   checkpoint_frequency: 30
   lr: 2.5e-3
-  load_from_ckpt: True # To train from a previous checkpoint
+  load_from_ckpt: False # To train from a previous checkpoint
   ckpt_to_load: data/checkpoints/decision_transformer_debug/ckpt.269.pth # REPLACE
 
   RECOLLECT_TRAINER:
@@ -43,10 +43,13 @@ IL:
     SPARSE_REWARD:
       step_penalty: -0.01
       success: 1.0
+    NDTW_REWARD:
+      step_penalty: -0.01
+      success: 1.0
   DAGGER:
     iterations: 3
     update_size: 8
-    p: 0.999
+    p: 1.0
     preload_lmdb_features: False
     lmdb_commit_frequency: 500
     lmdb_features_dir: data/trajectories_dirs/decision_transformer_debug/trajectories.lmdb
@@ -55,7 +58,7 @@ IL:
 MODEL:
   DECISION_TRANSFORMER:
     use_extra_start_token: True
-    reward_type: point_nav_reward_to_go # point_nav_reward_to_go, sparse_reward_to_go, point_nav_reward, sparse_reward
+    reward_type: ndtw_reward_to_go # point_nav_reward_to_go, sparse_reward_to_go, point_nav_reward, sparse_reward, ndtw_reward, ndtw_reward_to_go
     n_layer: 3
     n_head: 8
     hidden_dim: 128 # The dimensions for the State, Reward and actions embeddings and in the GPT Backbne

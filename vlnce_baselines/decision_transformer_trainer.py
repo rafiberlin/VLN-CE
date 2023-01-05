@@ -284,6 +284,9 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             "sparse_reward": {
                 "step_penalty": config.IL.DECISION_TRANSFORMER.SPARSE_REWARD.step_penalty,
                 "success": config.IL.DECISION_TRANSFORMER.SPARSE_REWARD.success},
+            "ndtw_reward": {
+                "step_penalty": config.IL.DECISION_TRANSFORMER.NDTW_REWARD.step_penalty,
+                "success": config.IL.DECISION_TRANSFORMER.NDTW_REWARD.success},
         }
         # Dirty trick to use a dedicated start token in the collate_fn
         global USE_EXTRA_START_TOKEN
@@ -470,6 +473,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
 
         episodes = [[] for _ in range(envs.num_envs)]
         episode_features = [[] for _ in range(envs.num_envs)]
+        ndtw_lists = [[] for _ in range(envs.num_envs)]
         skips = [False for _ in range(envs.num_envs)]
         # Populate dones with False initially
         dones = [False for _ in range(envs.num_envs)]
@@ -560,8 +564,10 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         traj_obs["sparse_reward_to_go"] = np.zeros_like(traj_obs["point_nav_reward_to_go"])
                         scaling_factor = traj_obs[distance_left_uuid].size # Scaling by the episode length
                         del traj_obs[distance_left_uuid]
+                        traj_obs["ndtw_reward_to_go"] = np.array([step[3] for step in ep], dtype=np.float16)
                         self._calculate_return_to_go(traj_obs, "point_goal_nav_reward", "point_nav_reward_to_go", scaling_factor)
                         self._calculate_return_to_go(traj_obs, "sparse_reward", "sparse_reward_to_go", scaling_factor)
+                        self._calculate_return_to_go(traj_obs, "ndtw_reward", "ndtw_reward_to_go", scaling_factor)
                         transposed_ep = [
                             traj_obs,
                             np.array([step[1] for step in ep], dtype=np.int64),
@@ -687,6 +693,13 @@ class DecisionTransformerTrainer(DaggerILTrainer):
 
                 outputs = envs.step([a[0].item() for a in actions])
                 observations, _, dones, infos = [list(x) for x in zip(*outputs)]
+
+                # Just add ndtw, if you need it as Reward
+                for i in range(envs.num_envs):
+                    obs, prev_act, next_act = episodes[i][-1]
+                    episodes[i][-1] = (obs, prev_act, next_act , infos[i]["ndtw"])
+
+
                 observations, batch = self._prepare_observation(observations)
 
                 not_done_masks = torch.tensor(

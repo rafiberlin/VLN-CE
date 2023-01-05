@@ -1,15 +1,10 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from gym import Space
 from habitat import Config
 from habitat_baselines.common.baseline_registry import BaselineRegistry
-from habitat_baselines.rl.models.rnn_state_encoder import (
-    build_rnn_state_encoder,
-)
 from habitat_baselines.rl.ppo.policy import Net
 from vlnce_baselines.models.encoders.min_gpt import GPT
-from vlnce_baselines.common.aux_losses import AuxLosses
 from vlnce_baselines.models.encoders import resnet_encoders
 from vlnce_baselines.models.encoders.instruction_encoder import (
     InstructionEncoder,
@@ -116,7 +111,7 @@ class DecisionTransformerNet(Net):
                            + model_config.DEPTH_ENCODER.output_size\
                             + model_config.RGB_ENCODER.output_size
 
-        assert model_config.DECISION_TRANSFORMER.reward_type in ["point_nav_reward_to_go", "sparse_reward_to_go", "point_nav_reward", "sparse_reward"]
+        assert model_config.DECISION_TRANSFORMER.reward_type in ["point_nav_reward_to_go", "sparse_reward_to_go", "point_nav_reward", "sparse_reward", "ndtw_reward", "ndtw_reward_to_go"]
         self.reward_type = model_config.DECISION_TRANSFORMER.reward_type
 
         self.embed_timestep = nn.Embedding(model_config.DECISION_TRANSFORMER.episode_horizon, model_config.DECISION_TRANSFORMER.hidden_dim)
