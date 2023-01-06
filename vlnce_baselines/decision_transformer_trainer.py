@@ -516,7 +516,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         ) as lmdb_env, torch.no_grad():
             start_id = lmdb_env.stat()["entries"]
             txn = lmdb_env.begin(write=True)
-
+            last_episodes = envs.current_episodes()
             while collected_eps < collect_size:
                 envs_to_pause = []
                 current_episodes = envs.current_episodes()
@@ -530,15 +530,6 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                             envs_to_pause.append(i)
 
                 for i in range(envs.num_envs):
-
-
-                    if ensure_unique_episodes:
-                        if (
-                            current_episodes[i].episode_id
-                            in ep_ids_collected
-                        ):
-                            skips[i] = True
-                            envs_to_pause.append(i)
 
                     if dones[i] and not skips[i]:
                         ep = episodes[i]
@@ -591,7 +582,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                             txn = lmdb_env.begin(write=True)
 
                         if ensure_unique_episodes:
-                            if (not current_episodes[i].episode_id in ep_ids_collected):
+                            if (not last_episodes[i].episode_id in ep_ids_collected):
                                 ep_ids_collected.add(current_episodes[i].episode_id)
 
 
@@ -625,6 +616,20 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 if envs.num_envs == 0:
                     envs.resume_all()
                     observations = envs.reset()
+                    # This piece of code enforce to load only episode
+                    # not previously collected.
+                    to_init = min((collect_size - len(ep_ids_collected)), envs.num_envs)
+                    if ensure_unique_episodes and to_init > 0:
+                        initialized = 0
+                        while initialized != to_init:
+                            if initialized > 0:
+                                initialized = 0
+                            for env, e in enumerate(envs.current_episodes()):
+                                if e.episode_id in ep_ids_collected:
+                                    observations[env] = envs.reset_at(env)[0]
+                                else:
+                                    initialized += 1
+                    current_episodes = envs.current_episodes()
                     episodes = [[] for _ in range(envs.num_envs)]
                     episode_features = [[] for _ in range(envs.num_envs)]
                     prev_actions = None
@@ -691,7 +696,12 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 prev_actions = torch.cat([prev_actions, actions], dim=1).to(self.device)
                 # prev_actions.copy_(actions)
 
+                # When we step, environments can be reloaded automatically.
+                # we need to cache the previous list of episodes to be able to add them correctly in the part
+                # where done and not skip is applied.
+                last_episodes = current_episodes
                 outputs = envs.step([a[0].item() for a in actions])
+
                 observations, _, dones, infos = [list(x) for x in zip(*outputs)]
 
                 # Just add ndtw, if you need it as Reward
