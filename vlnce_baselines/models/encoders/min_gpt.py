@@ -117,9 +117,11 @@ class GPT(nn.Module):
     def __init__(self, config):
         super().__init__()
         assert config.vocab_size is not None
-        assert config.block_size is not None
-        self.block_size = config.block_size
+        assert config.episode_horizon is not None
+        assert config.step_size is not None
+        self.block_size = config.episode_horizon * config.step_size
         config.defrost()
+        config.block_size = self.block_size
         config.n_embd = config.hidden_dim
         type_given = config.model_type is not None and len(config.model_type) > 0
         params_given = all([config.n_layer is not None, config.n_head is not None, config.n_embd is not None])

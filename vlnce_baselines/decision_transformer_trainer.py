@@ -1272,7 +1272,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             action_space=action_space,
         )
 
-        workers = 3
+        workers = 6
         # If set to spawn, that is made to be able to debug in Pytorch in Ubuntu > 18
         #  So you want to only set 1 worker to be able to set a break point in the next loop...
         if self.config.MULTIPROCESSING == "spawn":
