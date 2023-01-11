@@ -385,7 +385,7 @@ class DecisionTransformerEnhancedNet(Net):
     def output_size(self):
         # *3 because rgb, depth and instructions have their own reoresentation
         # in the GPT backbone
-        return self.model_config.DECISION_TRANSFORMER.hidden_dim*2
+        return self.model_config.DECISION_TRANSFORMER.hidden_dim*3
 
 
     @property
