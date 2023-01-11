@@ -1488,10 +1488,11 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         )
         action_loss = ((weights * action_loss).sum(0) / weights.sum(0)).mean()
 
-        aux_mask = (weights > 0).view(-1)
-        aux_loss = AuxLosses.reduce(aux_mask)
-
-        loss = action_loss + aux_loss
+        #aux_mask = (weights > 0).view(-1)
+        #aux_loss = AuxLosses.reduce(aux_mask)
+        # We don't use it here
+        aux_loss = 0.0
+        loss = action_loss
         loss = loss / loss_accumulation_scalar
         loss.backward()
 
