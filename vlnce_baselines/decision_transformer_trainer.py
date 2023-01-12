@@ -1290,8 +1290,9 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             for dagger_it in range(self.config.IL.DAGGER.iterations):
                 step_id = 0
                 if not self.config.IL.DAGGER.preload_lmdb_features:
+                    update_id = dagger_it + (1 if self.config.IL.load_from_ckpt else 0)
                     self._update_dataset(
-                        dagger_it + (1 if self.config.IL.load_from_ckpt else 0)
+                        update_id
                     )
 
                 if torch.cuda.is_available():
@@ -1316,11 +1317,11 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                     num_workers=workers,
                 )
                 num_batch = dataset.length // dataset.batch_size
-
+                print("DAGGER Iteration", dagger_it, "dataset length: ", dataset.length)
                 if num_batch == 0:
                     num_batch = 1
                 logger.info(f"Number of batches to process:{num_batch}")
-                AuxLosses.activate()
+                #AuxLosses.activate()
                 for epoch in tqdm.trange(
                     self.config.IL.epochs, dynamic_ncols=True
                 ):
@@ -1398,7 +1399,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         self.save_checkpoint(
                             f"ckpt.{dagger_it * self.config.IL.epochs + epoch}.pth"
                         )
-                AuxLosses.deactivate()
+                #AuxLosses.deactivate()
 
 
 
@@ -1440,8 +1441,13 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             observation_space=observation_space,
             action_space=action_space,
         )
+        iteration = 1
         print("Starting Dataset...")
-        self._update_dataset(0 + (1 if self.config.IL.load_from_ckpt else 0))
+        if hasattr(self.config.IL.DAGGER, "repeat_dataset"):
+            iteration = max(1, self.config.IL.DAGGER.repeat_dataset)
+            print("Dataset will be repeated:", iteration)
+        for i in range(iteration):
+            self._update_dataset(0)
         print("Dataset creation completed!")
 
 
@@ -1470,7 +1476,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
 
         hidden_states = None
 
-        AuxLosses.clear()
+        #AuxLosses.clear()
 
         distribution = self.policy.build_distribution(
             observations, hidden_states, prev_actions, not_done_masks
