@@ -2,7 +2,7 @@ BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task.yaml
 TRAINER_NAME: decision_transformer # recollect_trainer, dagger
 SIMULATOR_GPU_IDS: [0]
 TORCH_GPU_ID: 0
-NUM_ENVIRONMENTS: 8 #Only use one environment for Decision Transformer! An this is probably not working with MUlti Sim GPU
+NUM_ENVIRONMENTS: 6 #Looks like the sweet spot for dataset creation is 6 envs. If you use more, we might wait too long to reload the next batch....
 TENSORBOARD_DIR: data/tensorboard_dirs/decision_transformer_debug
 CHECKPOINT_FOLDER: data/checkpoints/decision_transformer_debug
 EVAL_CKPT_PATH_DIR: data/checkpoints/decision_transformer_debug
