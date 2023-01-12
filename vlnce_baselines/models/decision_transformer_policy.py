@@ -24,7 +24,7 @@ class DecisionTransformerPolicy(ILPolicy):
         if hasattr(model_config.DECISION_TRANSFORMER, "net"):
             net = model_config.DECISION_TRANSFORMER.net
         assert net in ["DecisionTransformerNet", "DecisionTransformerEnhancedNet"]
-
+        print("Training with:", net)
         super().__init__(
             eval(net)(
                 observation_space=observation_space,

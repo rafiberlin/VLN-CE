@@ -473,7 +473,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
 
         episodes = [[] for _ in range(envs.num_envs)]
         episode_features = [[] for _ in range(envs.num_envs)]
-        ndtw_lists = [[] for _ in range(envs.num_envs)]
+
         skips = [False for _ in range(envs.num_envs)]
         # Populate dones with False initially
         dones = [False for _ in range(envs.num_envs)]
@@ -499,6 +499,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             ep_ids_collected = set()
 
         dataset_episodes = sum(envs.number_of_episodes)
+        print("Numbers of episodes in the split:", dataset_episodes)
         if (self.config.IL.DAGGER.update_size > dataset_episodes and ensure_unique_episodes):
             collect_size = dataset_episodes
             print("Ensure unique episodes")
@@ -508,6 +509,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
 
         print(f"To be collected: {collect_size} ")
         horizon = 1
+        agent_action = False
         with tqdm.tqdm(
             total=collect_size, dynamic_ncols=True
         ) as pbar, lmdb.open(
@@ -621,7 +623,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                     to_init = min((collect_size - len(ep_ids_collected)), envs.num_envs)
                     if ensure_unique_episodes and to_init > 0:
                         initialized = 0
-                        while initialized != to_init:
+                        while initialized < to_init:
                             if initialized > 0:
                                 initialized = 0
                             for env, e in enumerate(envs.current_episodes()):
@@ -658,6 +660,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 # only perform dagger when the random process allows it (should lower the
                 # processing time...)
                 if perform_dagger.sum() < batch_size:
+                    agent_action = True
                     actions, _ = self.policy.act(
                         batch,
                         hidden_states,
@@ -724,6 +727,8 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         envs = None
 
         self._release_hook()
+        if agent_action:
+            print("Dataset Creation with some agent actions.")
 
 
     def inference(
