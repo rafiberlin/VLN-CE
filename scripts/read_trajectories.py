@@ -24,7 +24,7 @@ def output_vlnce_r2r_statistics():
     :return:
     """
 
-    splits = ["train", "val_seen", "val_unseen", "test"]
+    splits = ["train", "val_seen", "val_unseen", "test", "envdrop"]
 
     for split in splits:
         print("#####################################################\n")

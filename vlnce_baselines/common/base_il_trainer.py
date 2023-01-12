@@ -591,6 +591,8 @@ class BaseVLNCETrainer(BaseILTrainer):
                     prev_actions,
                     batch,
                     _,
+                    _,
+
                 ) = self._pause_envs(
                     envs_to_pause,
                     envs,

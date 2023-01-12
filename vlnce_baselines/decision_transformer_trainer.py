@@ -38,7 +38,8 @@ from vlnce_baselines.common.utils import extract_instruction_tokens
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=FutureWarning)
     import tensorflow as tf  # noqa: F401
-import copy
+import jsonlines
+from typing import Any, Dict, List, Optional, Tuple
 
 class ObservationsDict(dict):
     def pin_memory(self):
@@ -47,6 +48,14 @@ class ObservationsDict(dict):
 
         return self
 
+# Trick to create extra start token directly in the collate_fn
+# we don t need to recreate the whole dataset...
+global USE_EXTRA_START_TOKEN
+global EXTRA_START_TOKEN_ID
+global STOP_ACTION_TOKEN_ID
+EXTRA_START_TOKEN_ID = 4
+STOP_ACTION_TOKEN_ID = 0
+USE_EXTRA_START_TOKEN = False
 
 def collate_fn(batch):
     """Each sample in batch: (
@@ -87,7 +96,10 @@ def collate_fn(batch):
     max_traj_len = max(ele.size(0) for ele in prev_actions_batch)
     for bid in range(batch_size):
         for sensor in observations_batch:
-            fill = 0.0 if "_reward_to_go" in sensor else 1.0
+            fill = 0.0 if "_reward" in sensor else 1.0
+            # Workaround when the reward is only a single scalar...
+            if len(observations_batch[sensor][bid].shape) == 0:
+                observations_batch[sensor][bid] = observations_batch[sensor][bid].unsqueeze(-1)
             observations_batch[sensor][bid] = _pad_helper(
                 observations_batch[sensor][bid], max_traj_len, fill_val=fill
             )
@@ -107,7 +119,7 @@ def collate_fn(batch):
         # observations_batch[sensor] = observations_batch[sensor].view(
         #     -1, *observations_batch[sensor].size()[2:]
         # )
-        if "_reward_to_go" in sensor:
+        if "_reward" in sensor:
             observations_batch[sensor] = observations_batch[sensor].unsqueeze(-1)
     # observations_batch["instruction"] = observations_batch["instruction"].view(
     #     -1, *observations_batch["instruction"].size()[2:]
@@ -121,6 +133,13 @@ def collate_fn(batch):
         corrected_actions_batch, dtype=torch.uint8
     )
     not_done_masks[0] = 0
+
+    if USE_EXTRA_START_TOKEN:
+        # The environment only use actions from 0 to 3, the 4 is just a
+        # a dummy token to indicate the beginning of a sequence.
+        prev_actions_batch[:, 0] = EXTRA_START_TOKEN_ID
+    else:
+        prev_actions_batch[:, 0] = STOP_ACTION_TOKEN_ID # this is zero.
     # shape batch size time max episode length
     timesteps = torch.arange(0, max_traj_len).repeat(batch_size, 1)
     observations_batch["timesteps"] = timesteps
@@ -265,8 +284,13 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             "sparse_reward": {
                 "step_penalty": config.IL.DECISION_TRANSFORMER.SPARSE_REWARD.step_penalty,
                 "success": config.IL.DECISION_TRANSFORMER.SPARSE_REWARD.success},
+            "ndtw_reward": {
+                "step_penalty": config.IL.DECISION_TRANSFORMER.NDTW_REWARD.step_penalty,
+                "success": config.IL.DECISION_TRANSFORMER.NDTW_REWARD.success},
         }
-
+        # Dirty trick to use a dedicated start token in the collate_fn
+        global USE_EXTRA_START_TOKEN
+        USE_EXTRA_START_TOKEN = config.MODEL.DECISION_TRANSFORMER.use_extra_start_token
         super().__init__(config)
 
     def _create_feature_hooks(self):
@@ -317,6 +341,8 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         rewards = traj_obs[observation_type]
         rewards = rewards + self.rewards[reward_type]["step_penalty"]
         rewards[-1] = rewards[-1] + self.rewards[reward_type]["success"]
+        # Just save the simple rewards for each time steps, not accumulated if needed
+        traj_obs[reward_type] = np.float32(rewards.squeeze())
         rewards = np.flip(np.flip(rewards).cumsum())
         traj_obs[observation_type] = np.float32(rewards/scaling_factor)
 
@@ -378,6 +404,8 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 device=self.device,
                 dtype=torch.long,
             )
+            if self.config.MODEL.DECISION_TRANSFORMER.use_extra_start_token:
+                prev_actions = prev_actions + EXTRA_START_TOKEN_ID
         #store the last images
         for i in range(envs.num_envs):
             episodes[i].append({rgb_key: rgb_seq[i][-1], depth_key: depth_seq[i][-1]})
@@ -445,6 +473,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
 
         episodes = [[] for _ in range(envs.num_envs)]
         episode_features = [[] for _ in range(envs.num_envs)]
+        ndtw_lists = [[] for _ in range(envs.num_envs)]
         skips = [False for _ in range(envs.num_envs)]
         # Populate dones with False initially
         dones = [False for _ in range(envs.num_envs)]
@@ -467,13 +496,18 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         collected_eps = 0
         ep_ids_collected = None
         if ensure_unique_episodes:
-            ep_ids_collected = {
-                ep.episode_id for ep in envs.current_episodes()
-            }
+            ep_ids_collected = set()
 
         dataset_episodes = sum(envs.number_of_episodes)
-        collect_size =  dataset_episodes if self.config.IL.DAGGER.update_size > dataset_episodes else self.config.IL.DAGGER.update_size
+        if (self.config.IL.DAGGER.update_size > dataset_episodes and ensure_unique_episodes):
+            collect_size = dataset_episodes
+            print("Ensure unique episodes")
+        else:
+            print("Unique episodes not enforced")
+            collect_size = self.config.IL.DAGGER.update_size
 
+        print(f"To be collected: {collect_size} ")
+        horizon = 1
         with tqdm.tqdm(
             total=collect_size, dynamic_ncols=True
         ) as pbar, lmdb.open(
@@ -482,16 +516,21 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         ) as lmdb_env, torch.no_grad():
             start_id = lmdb_env.stat()["entries"]
             txn = lmdb_env.begin(write=True)
-
+            last_episodes = envs.current_episodes()
             while collected_eps < collect_size:
-                current_episodes = None
-                envs_to_pause = None
-                # reset envs and observations if necessary
-                if ensure_unique_episodes:
-                    envs_to_pause = []
-                    current_episodes = envs.current_episodes()
+                envs_to_pause = []
+                current_episodes = envs.current_episodes()
+                # if the max steps of the transform model is reached,
+                # and the agent does not call the stop action, force the agent to ignore the episode
+                if horizon == self.config.IL.DECISION_TRANSFORMER.episode_horizon:
+                    episode_end = torch.where(actions == STOP_ACTION_TOKEN_ID, True, False)
+                    for i in range(envs.num_envs):
+                        if not episode_end[i] and i not in envs_to_pause:
+                            skips[i] = True
+                            envs_to_pause.append(i)
 
                 for i in range(envs.num_envs):
+
                     if dones[i] and not skips[i]:
                         ep = episodes[i]
                         traj_obs = batch_obs(
@@ -516,8 +555,10 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         traj_obs["sparse_reward_to_go"] = np.zeros_like(traj_obs["point_nav_reward_to_go"])
                         scaling_factor = traj_obs[distance_left_uuid].size # Scaling by the episode length
                         del traj_obs[distance_left_uuid]
+                        traj_obs["ndtw_reward_to_go"] = np.array([step[3] for step in ep], dtype=np.float16)
                         self._calculate_return_to_go(traj_obs, "point_goal_nav_reward", "point_nav_reward_to_go", scaling_factor)
                         self._calculate_return_to_go(traj_obs, "sparse_reward", "sparse_reward_to_go", scaling_factor)
+                        self._calculate_return_to_go(traj_obs, "ndtw_reward", "ndtw_reward_to_go", scaling_factor)
                         transposed_ep = [
                             traj_obs,
                             np.array([step[1] for step in ep], dtype=np.int64),
@@ -541,15 +582,8 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                             txn = lmdb_env.begin(write=True)
 
                         if ensure_unique_episodes:
-                            if (
-                                current_episodes[i].episode_id
-                                in ep_ids_collected
-                            ):
-                                envs_to_pause.append(i)
-                            else:
-                                ep_ids_collected.add(
-                                    current_episodes[i].episode_id
-                                )
+                            if (not last_episodes[i].episode_id in ep_ids_collected):
+                                ep_ids_collected.add(current_episodes[i].episode_id)
 
 
                     # In opposition to the RNN logic, where only one state per time step is handled,
@@ -558,36 +592,50 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         if i not in envs_to_pause:
                             envs_to_pause.append(i)
 
-                if ensure_unique_episodes:
-                    (
-                        envs,
-                        hidden_states,
-                        not_done_masks,
-                        prev_actions,
-                        batch,
-                        _,
-                        episode_features,
-                    ) = self._pause_envs(
-                        envs_to_pause,
-                        envs,
-                        hidden_states,
-                        not_done_masks,
-                        prev_actions,
-                        batch,
-                        None,
-                        episode_features,
-                    )
-                    if envs.num_envs == 0:
-                        envs.resume_all()
-                        observations = envs.reset()
-                        self._release_hook()
-                        self._create_feature_hooks()
-                        episodes = [[] for _ in range(envs.num_envs)]
-                        episode_features = [[] for _ in range(envs.num_envs)]
-                        prev_actions = None
-                        observations, batch = self._prepare_observation(observations)
-                        self.rgb_features = self.rgb_features.set_(torch.zeros((1,), device="cpu"))
-                        self.depth_features = self.depth_features.set_(torch.zeros((1,), device="cpu"))
+
+
+                (
+                    envs,
+                    hidden_states,
+                    not_done_masks,
+                    prev_actions,
+                    batch,
+                    _,
+                    episode_features,
+                ) = self._pause_envs(
+                    envs_to_pause,
+                    envs,
+                    hidden_states,
+                    not_done_masks,
+                    prev_actions,
+                    batch,
+                    None,
+                    episode_features,
+                )
+
+                if envs.num_envs == 0:
+                    envs.resume_all()
+                    observations = envs.reset()
+                    # This piece of code enforce to load only episode
+                    # not previously collected.
+                    to_init = min((collect_size - len(ep_ids_collected)), envs.num_envs)
+                    if ensure_unique_episodes and to_init > 0:
+                        initialized = 0
+                        while initialized != to_init:
+                            if initialized > 0:
+                                initialized = 0
+                            for env, e in enumerate(envs.current_episodes()):
+                                if e.episode_id in ep_ids_collected:
+                                    observations[env] = envs.reset_at(env)[0]
+                                else:
+                                    initialized += 1
+                    current_episodes = envs.current_episodes()
+                    episodes = [[] for _ in range(envs.num_envs)]
+                    episode_features = [[] for _ in range(envs.num_envs)]
+                    prev_actions = None
+                    observations, batch = self._prepare_observation(observations)
+                    self.rgb_features = self.rgb_features.set_(torch.zeros((1,), device="cpu"))
+                    self.depth_features = self.depth_features.set_(torch.zeros((1,), device="cpu"))
 
                 # caching the outputs of the cnn on one image only
                 rgb_encoder(batch)
@@ -605,6 +653,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                                                                   prev_actions,
                                                                   "rgb_features", "depth_features")
                 batch_size = prev_actions.shape[0]
+                horizon = prev_actions.shape[1]
                 perform_dagger = (torch.rand((batch_size, 1), dtype=torch.float) < beta).to(self.device)
                 # only perform dagger when the random process allows it (should lower the
                 # processing time...)
@@ -647,8 +696,20 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 prev_actions = torch.cat([prev_actions, actions], dim=1).to(self.device)
                 # prev_actions.copy_(actions)
 
+                # When we step, environments can be reloaded automatically.
+                # we need to cache the previous list of episodes to be able to add them correctly in the part
+                # where done and not skip is applied.
+                last_episodes = current_episodes
                 outputs = envs.step([a[0].item() for a in actions])
+
                 observations, _, dones, infos = [list(x) for x in zip(*outputs)]
+
+                # Just add ndtw, if you need it as Reward
+                for i in range(envs.num_envs):
+                    obs, prev_act, next_act = episodes[i][-1]
+                    episodes[i][-1] = (obs, prev_act, next_act , infos[i]["ndtw"])
+
+
                 observations, batch = self._prepare_observation(observations)
 
                 not_done_masks = torch.tensor(
@@ -663,6 +724,256 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         envs = None
 
         self._release_hook()
+
+
+    def inference(
+        self,
+    ):
+        """Evaluates a single checkpoint.
+
+        Args:
+            checkpoint_path: path of checkpoint
+            writer: tensorboard writer object
+            checkpoint_index: index of the current checkpoint
+        """
+        checkpoint_path = self.config.INFERENCE.CKPT_PATH
+        logger.info(f"checkpoint_path: {checkpoint_path}")
+
+        if self.config.INFERENCE.USE_CKPT_CONFIG:
+            config = self._setup_eval_config(
+                self.load_checkpoint(checkpoint_path, map_location="cpu")[
+                    "config"
+                ]
+            )
+        else:
+            config = self.config.clone()
+
+        config.defrost()
+        config.TASK_CONFIG.DATASET.SPLIT = self.config.INFERENCE.SPLIT
+        config.TASK_CONFIG.DATASET.ROLES = ["guide"]
+        config.TASK_CONFIG.DATASET.LANGUAGES = config.INFERENCE.LANGUAGES
+        config.TASK_CONFIG.ENVIRONMENT.ITERATOR_OPTIONS.SHUFFLE = False
+        config.TASK_CONFIG.ENVIRONMENT.ITERATOR_OPTIONS.MAX_SCENE_REPEAT_STEPS = (
+            -1
+        )
+        config.IL.ckpt_to_load = config.INFERENCE.CKPT_PATH
+        config.TASK_CONFIG.TASK.MEASUREMENTS = []
+        config.TASK_CONFIG.TASK.SENSORS = [
+            s for s in config.TASK_CONFIG.TASK.SENSORS if "INSTRUCTION" in s
+        ]
+        config.ENV_NAME = "VLNCEInferenceEnv"
+        config.freeze()
+
+        envs = construct_envs_auto_reset_false(
+            config, get_env_class(config.ENV_NAME)
+        )
+
+        observation_space, action_space = self._get_spaces(config, envs=envs)
+
+        self._initialize_policy(
+            config,
+            load_from_ckpt=True,
+            observation_space=observation_space,
+            action_space=action_space,
+        )
+        self.policy.eval()
+
+        self._create_feature_hooks()
+        rgb_encoder = self.policy.net.rgb_encoder
+        depth_encoder = self.policy.net.depth_encoder
+
+        observations = envs.reset()
+        observations, batch = self._prepare_observation(observations)
+
+        prev_actions = None
+        not_done_masks = torch.zeros(
+            envs.num_envs, 1, dtype=torch.uint8, device=self.device
+        )
+
+        episode_predictions = defaultdict(list)
+
+        episodes = [[] for _ in range(envs.num_envs)]
+
+        # episode ID --> instruction ID for rxr predictions format
+        instruction_ids: Dict[str, int] = {}
+
+        episode_already_predicted = []
+
+
+        def _populate_episode_with_starting_states():
+            # populate episode_predictions with the starting state
+            current_episodes = envs.current_episodes()
+            for i in range(envs.num_envs):
+                ep_id = current_episodes[i].episode_id
+                if ep_id not in episode_already_predicted:
+                    episode_predictions[current_episodes[i].episode_id].append(
+                        envs.call_at(i, "get_info", {"observations": {}})
+                    )
+                if config.INFERENCE.FORMAT == "rxr":
+                    ep_id = current_episodes[i].episode_id
+                    k = current_episodes[i].instruction.instruction_id
+                    instruction_ids[ep_id] = int(k)
+
+        _populate_episode_with_starting_states()
+
+        num_eps = sum(envs.count_episodes())
+        pbar = tqdm.tqdm(total=num_eps) if config.use_pbar else None
+
+
+        # if all envs finishes at the same time, the operation is equal to 1.
+        # if all env are still processing, the operation is simply zero...
+        has_env_finished_early = lambda envs_that_needs_to_wait : sum(envs_that_needs_to_wait.values()) / len(envs_that_needs_to_wait) > 0
+
+
+        while envs.num_envs > 0 and len(episode_already_predicted) < num_eps:
+
+            current_episodes = envs.current_episodes()
+            # caching the outputs of the cnn on one image only
+            rgb_encoder(batch)
+            depth_encoder(batch)
+            del batch["rgb"]
+            del batch["depth"]
+            rgb_key = "rgb_features"
+            depth_key = "depth_features"
+            prev_actions = self._modify_batch_for_transformer(episodes, batch, self.rgb_features, self.depth_features, envs,
+                                                              prev_actions, rgb_key, depth_key)
+
+            with torch.no_grad():
+                actions, hidden_states = self.policy.act(
+                    batch,
+                    None,
+                    prev_actions,
+                    not_done_masks,
+                    deterministic=not config.EVAL.SAMPLE,
+                )
+                prev_actions = torch.cat([prev_actions, actions], dim=1).to(self.device)
+                # prev_actions.copy_(actions)
+
+            horizon = prev_actions.shape[1]
+            # if the max steps of the transform model is reached, force to end the game
+            if horizon == self.config.IL.DECISION_TRANSFORMER.episode_horizon:
+                actions[:, -1] = 0
+
+            outputs = envs.step([a[0].item() for a in actions])
+            observations, _, dones, infos = [list(x) for x in zip(*outputs)]
+            # need to use a deep copy, otherwise, observations would be the same as cleaned_observations
+            observations, batch = self._prepare_observation(observations)
+            not_done_masks = torch.tensor(
+                [[0] if done else [1] for done in dones],
+                dtype=torch.uint8,
+                device=self.device,
+            )
+
+            # reset envs and observations if necessary
+            envs_that_needs_to_wait = {}
+            for i in range(envs.num_envs):
+                ep_id = current_episodes[i].episode_id
+                if ep_id not in episode_already_predicted:
+                    episode_predictions[ep_id].append(infos[i])
+                # This helps us to generate the transformer sequence
+                #episodes[i].append((cleaned_observations[i], prev_actions[i, -1].item()))
+                if not dones[i]:
+                    envs_that_needs_to_wait[i] = False
+                    continue
+                envs_that_needs_to_wait[i] = True
+                episodes[i] = []
+                episode_already_predicted.append(ep_id)
+                observations[i] = envs.reset_at(i)[0]
+                # This step is usually done in self._prepare_observation(observations)
+                # but now, because we amenbd only one observation, we need to take care of this step manually...
+                observations[i][self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID] = observations[i][self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID]["tokens"]
+                self.rgb_features = self.rgb_features.set_(torch.zeros((1,), device="cpu"))
+                self.depth_features = self.depth_features.set_(torch.zeros((1,), device="cpu"))
+                observations, batch = self._prepare_observation(observations)
+
+
+                if config.use_pbar:
+                    pbar.update()
+
+
+
+            envs_to_pause = []
+            next_episodes = envs.current_episodes()
+
+            for i in range(envs.num_envs):
+                if next_episodes[i].episode_id in episode_already_predicted:
+                    envs_to_pause.append(i)
+                elif has_env_finished_early(envs_that_needs_to_wait):
+                    if envs_that_needs_to_wait[i] and i not in envs_to_pause:
+                        envs_to_pause.append(i)
+            (
+                envs,
+                hidden_states,
+                not_done_masks,
+                prev_actions,
+                batch,
+                _,
+                episodes,
+            ) = self._pause_envs(
+                envs_to_pause,
+                envs,
+                hidden_states,
+                not_done_masks,
+                prev_actions,
+                batch,
+                None,
+                episodes,
+            )
+
+            # at this stage, if we dont have any env left,
+            # that means that all prediction within the same "batch"
+            # are finished, we can wake all envs now.
+            if envs.num_envs < 1:
+                envs.resume_all()
+                episodes = [[] for _ in range(envs.num_envs)]
+                observations = envs.reset()
+                prev_actions = None
+                observations, batch = self._prepare_observation(observations)
+                _populate_episode_with_starting_states()
+
+
+        envs.close()
+        gc.collect()
+        self._release_hook()
+        if config.use_pbar:
+            pbar.close()
+
+        if config.INFERENCE.FORMAT == "r2r":
+            with open(config.INFERENCE.PREDICTIONS_FILE, "w") as f:
+                json.dump(episode_predictions, f, indent=2)
+
+            logger.info(
+                f"Predictions saved to: {config.INFERENCE.PREDICTIONS_FILE}"
+            )
+        else:  # use 'rxr' format for rxr-habitat leaderboard
+            predictions_out = []
+
+            for k, v in episode_predictions.items():
+
+                # save only positions that changed
+                path = [v[0]["position"]]
+                for p in v[1:]:
+                    if path[-1] != p["position"]:
+                        path.append(p["position"])
+
+                predictions_out.append(
+                    {
+                        "instruction_id": instruction_ids[k],
+                        "path": path,
+                    }
+                )
+
+            predictions_out.sort(key=lambda x: x["instruction_id"])
+            with jsonlines.open(
+                config.INFERENCE.PREDICTIONS_FILE, mode="w"
+            ) as writer:
+                writer.write_all(predictions_out)
+
+            logger.info(
+                f"Predictions saved to: {config.INFERENCE.PREDICTIONS_FILE}"
+            )
+
+
 
     def _eval_checkpoint(
         self,
@@ -900,6 +1211,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
 
 
         envs.close()
+        gc.collect()
         self._release_hook()
         if config.use_pbar:
             pbar.close()
@@ -960,7 +1272,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             action_space=action_space,
         )
 
-        workers = 3
+        workers = 6
         # If set to spawn, that is made to be able to debug in Pytorch in Ubuntu > 18
         #  So you want to only set 1 worker to be able to set a break point in the next loop...
         if self.config.MULTIPROCESSING == "spawn":
@@ -998,14 +1310,19 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                     drop_last=True,  # drop last batch if smaller
                     num_workers=workers,
                 )
+                num_batch = dataset.length // dataset.batch_size
 
+                if num_batch == 0:
+                    num_batch = 1
+                logger.info(f"Number of batches to process:{num_batch}")
                 AuxLosses.activate()
                 for epoch in tqdm.trange(
                     self.config.IL.epochs, dynamic_ncols=True
                 ):
+                    total_loss = 0.0
                     for batch in tqdm.tqdm(
                         diter,
-                        total=dataset.length // dataset.batch_size,
+                        total=num_batch,
                         leave=False,
                         dynamic_ncols=True,
                     ):
@@ -1042,13 +1359,13 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                             ),
                         )
 
-                        logger.info(f"train_loss: {loss}")
-                        logger.info(f"train_action_loss: {action_loss}")
-                        logger.info(f"train_aux_loss: {aux_loss}")
-                        logger.info(f"Batches processed: {step_id}.")
-                        logger.info(
-                            f"On DAgger iter {dagger_it}, Epoch {epoch}."
-                        )
+                        #logger.info(f"train_loss: {loss}")
+                        #logger.info(f"train_action_loss: {action_loss}")
+                        #logger.info(f"train_aux_loss: {aux_loss}")
+                        #logger.info(f"Batches processed: {step_id}.")
+                        #logger.info(
+                        #    f"On DAgger iter {dagger_it}, Epoch {epoch}."
+                        #)
                         writer.add_scalar(
                             f"train_loss_iter_{dagger_it}", loss, step_id
                         )
@@ -1062,7 +1379,15 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                             aux_loss,
                             step_id,
                         )
+                        total_loss += loss
                         step_id += 1  # noqa: SIM113
+                    total_loss = total_loss / (num_batch)
+                    writer.add_scalar(
+                        f"train_total_loss{dagger_it}",
+                        total_loss,
+                        epoch,
+                    )
+                    logger.info(f"Mean Loss for DAgger iter {dagger_it}, Epoch {epoch}: {total_loss}")
                     if (epoch + 1) % self.config.IL.checkpoint_frequency == 0:
                         print("Save", f"ckpt.{dagger_it * self.config.IL.epochs + epoch}.pth")
                         self.save_checkpoint(
@@ -1138,17 +1463,12 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         """
         T, N = corrected_actions.size()
 
-        recurrent_hidden_states = torch.zeros(
-            N,
-            self.policy.net.num_recurrent_layers,
-            self.config.MODEL.STATE_ENCODER.hidden_size,
-            device=self.device,
-        )
+        hidden_states = None
 
         AuxLosses.clear()
 
         distribution = self.policy.build_distribution(
-            observations, recurrent_hidden_states, prev_actions, not_done_masks
+            observations, hidden_states, prev_actions, not_done_masks
         )
 
         logits = distribution.logits
@@ -1168,10 +1488,11 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         )
         action_loss = ((weights * action_loss).sum(0) / weights.sum(0)).mean()
 
-        aux_mask = (weights > 0).view(-1)
-        aux_loss = AuxLosses.reduce(aux_mask)
-
-        loss = action_loss + aux_loss
+        #aux_mask = (weights > 0).view(-1)
+        #aux_loss = AuxLosses.reduce(aux_mask)
+        # We don't use it here
+        aux_loss = 0.0
+        loss = action_loss
         loss = loss / loss_accumulation_scalar
         loss.backward()
 

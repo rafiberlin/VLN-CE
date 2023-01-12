@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from habitat import logger
 from habitat_baselines.common.baseline_registry import baseline_registry
-
+import gc
 import habitat_extensions  # noqa: F401
 import vlnce_baselines  # noqa: F401
 from vlnce_baselines.config.default import get_config
@@ -22,9 +22,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--run-type",
-        choices=["train", "eval", "inference", "create_dataset"],
+        choices=["train", "eval", "inference", "create_dataset", "train_eval"],
         required=True,
-        help="run type of the experiment (train, eval, inference)",
+        help="run type of the experiment (train, eval, inference, dataset creation only, train + eval)",
     )
     parser.add_argument(
         "--exp-config",
@@ -88,6 +88,11 @@ def run_exp(exp_config: str, run_type: str, opts=None) -> None:
         trainer.inference()
     elif run_type == "create_dataset":
         trainer.create_dataset()
+    elif run_type == "train_eval":
+        trainer.train()
+        gc.collect()
+        trainer.eval()
+
 
 
 if __name__ == "__main__":

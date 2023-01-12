@@ -26,7 +26,8 @@ TASK:
   SENSORS: [
     INSTRUCTION_SENSOR,
     SHORTEST_PATH_SENSOR,
-    VLN_ORACLE_PROGRESS_SENSOR
+    VLN_ORACLE_PROGRESS_SENSOR,
+    VLN_ORACLE_DISTANCE_LEFT_SENSOR
   ]
   INSTRUCTION_SENSOR_UUID: instruction
   POSSIBLE_ACTIONS: [STOP, MOVE_FORWARD, TURN_LEFT, TURN_RIGHT]
@@ -48,5 +49,5 @@ TASK:
 DATASET:
   TYPE: VLN-CE-v1
   SPLIT: joint_train_envdrop
-  DATA_PATH: data/datasets/R2R_VLNCE_v1-3_preprocessed/{split}/{split}.json.gz
+  DATA_PATH: data/datasets/R2R_VLNCE_v1-3_preprocessed/{split}/{split}.gz
   SCENES_DIR: data/scene_datasets/
