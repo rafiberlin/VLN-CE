@@ -26,6 +26,7 @@ EVAL:
   EPISODE_COUNT: -1
 
 IL:
+  preload_dataloader_size: 128
   epochs: 60
   batch_size: 5
   checkpoint_frequency: 20
