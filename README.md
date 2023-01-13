@@ -124,6 +124,11 @@ gdown https://drive.google.com/uc?id=1qrdomxA5fuQ6n44NXzPAJe2dMdxatvma
 gdown https://drive.google.com/uc?id=1kQ_at68wiK2vAmlWbjJ4EDrLtaM0nfkR
 ```
 
+Remark: Under:
+data/datasets/R2R_VLNCE_v1-3_preprocessed/joint_train_envdrop/
+
+you will need to rename the file  joint_train_envdrop.gz to joint_train_envdrop.json.gz
+
 ##### Encoder Weights
 
 Baseline models encode depth observations using a ResNet pre-trained on PointGoal navigation. Those weights can be downloaded from [here](https://github.com/facebookresearch/habitat-lab/tree/master/habitat_baselines/rl/ddppo) (672M). Extract the contents to `data/ddppo-models/{model}.pth`.
