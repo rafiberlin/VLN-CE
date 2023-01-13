@@ -51,7 +51,7 @@ def main():
                 if file.endswith(".yaml"):
                     file_path = os.path.join(conf_parameter, file)
                     print("exp_config", file_path)
-                    #run_exp(exp_config=file_path, run_type=args.run_type, opts=args.opt)
+                    run_exp(exp_config=file_path, run_type=args.run_type, opts=args.opt)
                 else:
                     print("not a valid config file:", file)
     else:
