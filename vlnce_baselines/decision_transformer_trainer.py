@@ -169,7 +169,7 @@ class IWTrajectoryDataset(torch.utils.data.IterableDataset):
         inflection_weight_coef=1.0,
         lmdb_map_size=1e9,
         batch_size=1,
-        preload_size=512
+        preload_size=128
     ):
         super().__init__()
         assert preload_size > 0
@@ -1310,6 +1310,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                     inflection_weight_coef=self.config.IL.inflection_weight_coef,
                     lmdb_map_size=self.config.IL.DAGGER.lmdb_map_size,
                     batch_size=self.config.IL.batch_size,
+                    preload_size=self.config.IL.preload_dataloader_size,
                 )
                 diter = torch.utils.data.DataLoader(
                     dataset,
