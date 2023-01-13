@@ -99,16 +99,21 @@ def run_exp(exp_config: str, run_type: str, opts=None) -> None:
 
     if run_type == "train":
         trainer.train()
+        gc.collect()
     elif run_type == "eval":
         trainer.eval()
+        gc.collect()
     elif run_type == "inference":
         trainer.inference()
+        gc.collect()
     elif run_type == "create_dataset":
+        gc.collect()
         trainer.create_dataset()
     elif run_type == "train_eval":
         trainer.train()
         gc.collect()
         trainer.eval()
+        gc.collect()
 
 
 if __name__ == "__main__":
