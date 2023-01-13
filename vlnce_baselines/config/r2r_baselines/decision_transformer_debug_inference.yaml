@@ -12,10 +12,10 @@ ENV_NAME: VLNCEDecisionTransformerEnv
 use_pbar: True
 
 INFERENCE:
-  SPLIT: test
+  SPLIT: debug
   USE_CKPT_CONFIG: False
   SAMPLE: False
-  CKPT_PATH: data/checkpoints/decision_transformer_debug/ckpt.269.pth
+  CKPT_PATH: data/checkpoints/decision_transformer_debug/ckpt.32.pth
   PREDICTIONS_FILE: predictions.json
   FORMAT: r2r
 

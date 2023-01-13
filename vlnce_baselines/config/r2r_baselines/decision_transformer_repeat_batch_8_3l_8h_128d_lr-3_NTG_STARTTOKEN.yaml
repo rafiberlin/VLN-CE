@@ -22,16 +22,16 @@ INFERENCE:
 
 EVAL:
   USE_CKPT_CONFIG: False
-  SPLIT: val_seen # val_unseen
+  SPLIT: debug # val_unseen
   EPISODE_COUNT: -1
 
 IL:
-  epochs: 60
+  epochs: 10
   batch_size: 8
   checkpoint_frequency: 2
   lr: 2.5e-3
-  load_from_ckpt: False # To train from a previous checkpoint
-  ckpt_to_load: data/checkpoints/decision_transformer_repeat_batch_8_3l_8h_128d_lr-3_NTG_STARTTOKEN/ckpt.269.pth # REPLACE
+  load_from_ckpt: True # To train from a previous checkpoint
+  ckpt_to_load: data/checkpoints/decision_transformer_repeat_batch_8_3l_8h_128d_lr-3_NTG_STARTTOKEN/ckpt.7.pth # REPLACE
 
   RECOLLECT_TRAINER:
     gt_file:
