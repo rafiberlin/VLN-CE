@@ -169,11 +169,13 @@ class IWTrajectoryDataset(torch.utils.data.IterableDataset):
         inflection_weight_coef=1.0,
         lmdb_map_size=1e9,
         batch_size=1,
+        preload_size=512
     ):
         super().__init__()
+        assert preload_size > 0
         self.lmdb_features_dir = lmdb_features_dir
         self.lmdb_map_size = lmdb_map_size
-        self.preload_size = batch_size * 100
+        self.preload_size = batch_size * preload_size
         self._preload = []
         self.batch_size = batch_size
 
@@ -202,6 +204,8 @@ class IWTrajectoryDataset(torch.utils.data.IterableDataset):
                 map_size=int(self.lmdb_map_size),
                 readonly=True,
                 lock=False,
+                readahead=False,
+                meminit=True
             ) as lmdb_env, lmdb_env.begin(buffers=True) as txn:
                 for _ in range(self.preload_size):
                     if len(self.load_ordering) == 0:
@@ -1276,12 +1280,12 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             observation_space=observation_space,
             action_space=action_space,
         )
-
-        workers = 6
+        # Seems to bottleneck on Dataloader access if I have more than 1 worker
+        workers = 1
         # If set to spawn, that is made to be able to debug in Pytorch in Ubuntu > 18
         #  So you want to only set 1 worker to be able to set a break point in the next loop...
-        if self.config.MULTIPROCESSING == "spawn":
-            workers = 1
+        #if self.config.MULTIPROCESSING == "spawn":
+        #    workers = 1
         with TensorboardWriter(
             self.config.TENSORBOARD_DIR,
             flush_secs=self.flush_secs,
