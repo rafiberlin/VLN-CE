@@ -40,23 +40,20 @@ def main():
         help="Modify config options from command line",
     )
 
-
-
     args = parser.parse_args()
     if os.path.isdir(args.exp_config):
         conf_parameter = args.exp_config
         if os.path.isdir(conf_parameter):
             print("Running several config files from:", conf_parameter)
             for file in os.listdir(conf_parameter):
-                if file.endswith(".yaml"):
+                if file.endswith(".yaml") or file.endswith(".yml"):
                     file_path = os.path.join(conf_parameter, file)
                     print("exp_config", file_path)
                     run_exp(exp_config=file_path, run_type=args.run_type, opts=args.opts)
                 else:
-                    print("not a valid config file:", file)
+                    print("Not a valid config file:", file)
     else:
         run_exp(**vars(args))
-
 
 
 def run_exp(exp_config: str, run_type: str, opts=None) -> None:
@@ -115,7 +112,10 @@ def run_exp(exp_config: str, run_type: str, opts=None) -> None:
         gc.collect()
         trainer.eval()
         gc.collect()
-    logger.removeHandler(log_file)
+
+    # avoids to write to all previous files if running in a loop
+    logger.removeHandler(logger.handlers[-1])
+    gc.collect()
 
 
 if __name__ == "__main__":
