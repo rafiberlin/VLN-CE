@@ -73,7 +73,8 @@ def run_exp(exp_config: str, run_type: str, opts=None) -> None:
     config_file_root__name = exp_config.split("/")[-1].split(".")[0]
     if logdir:
         os.makedirs(logdir, exist_ok=True)
-    logger.add_filehandler(config_file_root__name + "_" + config.LOG_FILE)
+    log_file = config_file_root__name + "_" + config.LOG_FILE
+    logger.add_filehandler(log_file)
 
     random.seed(config.TASK_CONFIG.SEED)
     np.random.seed(config.TASK_CONFIG.SEED)
@@ -114,6 +115,7 @@ def run_exp(exp_config: str, run_type: str, opts=None) -> None:
         gc.collect()
         trainer.eval()
         gc.collect()
+    logger.removeHandler(log_file)
 
 
 if __name__ == "__main__":
