@@ -71,9 +71,23 @@ def filter_preprocessed_data(data, filter: list):
     :return:
     """
 
+    print("Filtering based on given IDs", filter)
     episodes = {data['episodes'][i]["episode_id"]: data["episodes"][i] for i in range(len(data["episodes"]))}
     data["episodes"] = [episodes[episode_id] for episode_id in filter]
 
+
+def get_episode_list(data, boundaries: tuple):
+    """
+    Get a list of episodes based on the criteria
+    :param data:
+    :param boundaries:
+    :return:
+    """
+
+    lower_bound, upper_bound = boundaries
+    assert 0 <= lower_bound <= upper_bound
+
+    return [int(id) for id in data if (lower_bound < len(data[id]["actions"]) <= upper_bound)]
 
 if __name__ == "__main__":
     print("Reading...")
