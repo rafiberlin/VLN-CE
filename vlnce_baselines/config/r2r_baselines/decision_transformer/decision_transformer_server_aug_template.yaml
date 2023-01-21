@@ -46,7 +46,7 @@ IL:
   DAGGER:
     repeat_dataset: 1
     iterations: 1
-    update_size: 10819
+    update_size: 157232
     p: 1.0
     preload_lmdb_features: True
     lmdb_commit_frequency: 500
