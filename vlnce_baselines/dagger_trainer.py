@@ -395,8 +395,6 @@ class DaggerTrainer(DaggerILTrainer):
                         batch,
                         _,
                         _,
-                        _,
-                        _
                     ) = self._pause_envs(
                         envs_to_pause,
                         envs,
@@ -540,7 +538,7 @@ class DaggerTrainer(DaggerILTrainer):
                     collate_fn=collate_fn,
                     pin_memory=False,
                     drop_last=True,  # drop last batch if smaller
-                    num_workers=3,
+                    num_workers=1,
                 )
 
                 AuxLosses.activate()
