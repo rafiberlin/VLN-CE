@@ -30,7 +30,8 @@ def main():
         "--exp-config",
         type=str,
         required=True,
-        help="path to config yaml containing info about experiment",
+        help="path to config yaml containing info about experiment. "
+             "If this is a directory, run all yaml file contained in the dir.",
     )
     parser.add_argument(
         "opts",
@@ -40,7 +41,19 @@ def main():
     )
 
     args = parser.parse_args()
-    run_exp(**vars(args))
+    if os.path.isdir(args.exp_config):
+        conf_parameter = args.exp_config
+        if os.path.isdir(conf_parameter):
+            print("Running several config files from:", conf_parameter)
+            for file in os.listdir(conf_parameter):
+                if file.endswith(".yaml") or file.endswith(".yml"):
+                    file_path = os.path.join(conf_parameter, file)
+                    print("exp_config", file_path)
+                    run_exp(exp_config=file_path, run_type=args.run_type, opts=args.opts)
+                else:
+                    print("Not a valid config file:", file)
+    else:
+        run_exp(**vars(args))
 
 
 def run_exp(exp_config: str, run_type: str, opts=None) -> None:
@@ -54,9 +67,11 @@ def run_exp(exp_config: str, run_type: str, opts=None) -> None:
     config = get_config(exp_config, opts)
     logger.info(f"config: {config}")
     logdir = "/".join(config.LOG_FILE.split("/")[:-1])
+    config_file_root__name = exp_config.split("/")[-1].split(".")[0]
     if logdir:
         os.makedirs(logdir, exist_ok=True)
-    logger.add_filehandler(config.LOG_FILE)
+    log_file = config_file_root__name + "_" + config.LOG_FILE
+    logger.add_filehandler(log_file)
 
     random.seed(config.TASK_CONFIG.SEED)
     np.random.seed(config.TASK_CONFIG.SEED)
@@ -82,17 +97,25 @@ def run_exp(exp_config: str, run_type: str, opts=None) -> None:
 
     if run_type == "train":
         trainer.train()
+        gc.collect()
     elif run_type == "eval":
         trainer.eval()
+        gc.collect()
     elif run_type == "inference":
         trainer.inference()
+        gc.collect()
     elif run_type == "create_dataset":
+        gc.collect()
         trainer.create_dataset()
     elif run_type == "train_eval":
         trainer.train()
         gc.collect()
         trainer.eval()
+        gc.collect()
 
+    # avoids to write to all previous files if running in a loop
+    logger.removeHandler(logger.handlers[-1])
+    gc.collect()
 
 
 if __name__ == "__main__":

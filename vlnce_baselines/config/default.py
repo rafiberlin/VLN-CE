@@ -64,6 +64,7 @@ _C.IL.lr = 2.5e-4
 _C.IL.batch_size = 5
 # number of network update rounds per iteration
 _C.IL.epochs = 4
+_C.IL.preload_dataloader_size = 100
 # if true, uses class-based inflection weighting
 _C.IL.use_iw = True
 # inflection coefficient for RxR training set GT trajectories (guide): 1.9

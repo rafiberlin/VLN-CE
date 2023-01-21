@@ -169,11 +169,13 @@ class IWTrajectoryDataset(torch.utils.data.IterableDataset):
         inflection_weight_coef=1.0,
         lmdb_map_size=1e9,
         batch_size=1,
+        preload_size=128
     ):
         super().__init__()
+        assert preload_size > 0
         self.lmdb_features_dir = lmdb_features_dir
         self.lmdb_map_size = lmdb_map_size
-        self.preload_size = batch_size * 100
+        self.preload_size = batch_size * preload_size
         self._preload = []
         self.batch_size = batch_size
 
@@ -202,6 +204,8 @@ class IWTrajectoryDataset(torch.utils.data.IterableDataset):
                 map_size=int(self.lmdb_map_size),
                 readonly=True,
                 lock=False,
+                readahead=False,
+                meminit=True
             ) as lmdb_env, lmdb_env.begin(buffers=True) as txn:
                 for _ in range(self.preload_size):
                     if len(self.load_ordering) == 0:
@@ -473,7 +477,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
 
         episodes = [[] for _ in range(envs.num_envs)]
         episode_features = [[] for _ in range(envs.num_envs)]
-        ndtw_lists = [[] for _ in range(envs.num_envs)]
+
         skips = [False for _ in range(envs.num_envs)]
         # Populate dones with False initially
         dones = [False for _ in range(envs.num_envs)]
@@ -499,6 +503,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             ep_ids_collected = set()
 
         dataset_episodes = sum(envs.number_of_episodes)
+        print("Numbers of episodes in the split:", dataset_episodes)
         if (self.config.IL.DAGGER.update_size > dataset_episodes and ensure_unique_episodes):
             collect_size = dataset_episodes
             print("Ensure unique episodes")
@@ -508,6 +513,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
 
         print(f"To be collected: {collect_size} ")
         horizon = 1
+        agent_action = False
         with tqdm.tqdm(
             total=collect_size, dynamic_ncols=True
         ) as pbar, lmdb.open(
@@ -621,7 +627,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                     to_init = min((collect_size - len(ep_ids_collected)), envs.num_envs)
                     if ensure_unique_episodes and to_init > 0:
                         initialized = 0
-                        while initialized != to_init:
+                        while initialized < to_init:
                             if initialized > 0:
                                 initialized = 0
                             for env, e in enumerate(envs.current_episodes()):
@@ -658,6 +664,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 # only perform dagger when the random process allows it (should lower the
                 # processing time...)
                 if perform_dagger.sum() < batch_size:
+                    agent_action = True
                     actions, _ = self.policy.act(
                         batch,
                         hidden_states,
@@ -724,6 +731,8 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         envs = None
 
         self._release_hook()
+        if agent_action:
+            print("Dataset Creation with some agent actions.")
 
 
     def inference(
@@ -1271,12 +1280,12 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             observation_space=observation_space,
             action_space=action_space,
         )
-
-        workers = 6
+        # Seems to bottleneck on Dataloader access if I have more than 1 worker
+        workers = 1
         # If set to spawn, that is made to be able to debug in Pytorch in Ubuntu > 18
         #  So you want to only set 1 worker to be able to set a break point in the next loop...
-        if self.config.MULTIPROCESSING == "spawn":
-            workers = 1
+        #if self.config.MULTIPROCESSING == "spawn":
+        #    workers = 1
         with TensorboardWriter(
             self.config.TENSORBOARD_DIR,
             flush_secs=self.flush_secs,
@@ -1285,8 +1294,9 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             for dagger_it in range(self.config.IL.DAGGER.iterations):
                 step_id = 0
                 if not self.config.IL.DAGGER.preload_lmdb_features:
+                    update_id = dagger_it + (1 if self.config.IL.load_from_ckpt else 0)
                     self._update_dataset(
-                        dagger_it + (1 if self.config.IL.load_from_ckpt else 0)
+                        update_id
                     )
 
                 if torch.cuda.is_available():
@@ -1300,6 +1310,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                     inflection_weight_coef=self.config.IL.inflection_weight_coef,
                     lmdb_map_size=self.config.IL.DAGGER.lmdb_map_size,
                     batch_size=self.config.IL.batch_size,
+                    preload_size=self.config.IL.preload_dataloader_size,
                 )
                 diter = torch.utils.data.DataLoader(
                     dataset,
@@ -1311,11 +1322,11 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                     num_workers=workers,
                 )
                 num_batch = dataset.length // dataset.batch_size
-
+                print("DAGGER Iteration", dagger_it, "dataset length: ", dataset.length)
                 if num_batch == 0:
                     num_batch = 1
                 logger.info(f"Number of batches to process:{num_batch}")
-                AuxLosses.activate()
+                #AuxLosses.activate()
                 for epoch in tqdm.trange(
                     self.config.IL.epochs, dynamic_ncols=True
                 ):
@@ -1393,7 +1404,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         self.save_checkpoint(
                             f"ckpt.{dagger_it * self.config.IL.epochs + epoch}.pth"
                         )
-                AuxLosses.deactivate()
+                #AuxLosses.deactivate()
 
 
 
@@ -1435,8 +1446,13 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             observation_space=observation_space,
             action_space=action_space,
         )
+        iteration = 1
         print("Starting Dataset...")
-        self._update_dataset(0 + (1 if self.config.IL.load_from_ckpt else 0))
+        if hasattr(self.config.IL.DAGGER, "repeat_dataset"):
+            iteration = max(1, self.config.IL.DAGGER.repeat_dataset)
+            print("Dataset will be repeated:", iteration)
+        for i in range(iteration):
+            self._update_dataset(0)
         print("Dataset creation completed!")
 
 
@@ -1465,7 +1481,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
 
         hidden_states = None
 
-        AuxLosses.clear()
+        #AuxLosses.clear()
 
         distribution = self.policy.build_distribution(
             observations, hidden_states, prev_actions, not_done_masks

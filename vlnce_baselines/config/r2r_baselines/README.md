@@ -4,18 +4,18 @@ Experiments in this paper used the R2R data. Each experiment can be recreated fo
 
 | Model             | val_seen SPL | val_unseen SPL | Config |
 |-------------------|--------------|----------------|--------|
-| Seq2Seq           | 0.24         | 0.18           | [seq2seq.yaml](seq2seq.yaml) |
-| Seq2Seq_PM        | 0.21         | 0.15           | [seq2seq_pm.yaml](seq2seq_pm.yaml) |
-| Seq2Seq_DA        | 0.32         | 0.23           | [seq2seq_da.yaml](seq2seq_da.yaml) |
-| Seq2Seq_Aug       | 0.25         | 0.17           | [seq2seq_aug.yaml](seq2seq_aug.yaml)  ⟶ [seq2seq_aug_tune.yaml](seq2seq_aug_tune.yaml) |
-| Seq2Seq_PM_DA_Aug | 0.31         | 0.22           | [seq2seq_pm_aug.yaml](seq2seq_pm_aug.yaml)  ⟶ [seq2seq_pm_da_aug_tune.yaml](seq2seq_pm_da_aug_tune.yaml) |
-| CMA               | 0.25         | 0.22           | [cma.yaml](cma.yaml) |
-| CMA_PM            | 0.26         | 0.19           | [cma_pm.yaml](cma_pm.yaml) |
-| CMA_DA            | 0.31         | 0.25           | [cma_da.yaml](cma_da.yaml) |
-| CMA_Aug           | 0.24         | 0.19           | [cma_aug.yaml](cma_aug.yaml)  ⟶ [cma_aug_tune.yaml](cma_aug_tune.yaml) |
-| **CMA_PM_DA_Aug** | **0.35**     | **0.30**       | [cma_pm_aug.yaml](cma_pm_aug.yaml)  ⟶ [cma_pm_da_aug_tune.yaml](cma_pm_da_aug_tune.yaml) |
-| CMA_PM_Aug        | 0.25         | 0.22           | [cma_pm_aug.yaml](cma_pm_aug.yaml)  ⟶ [cma_pm_aug_tune.yaml](cma_pm_aug_tune.yaml) |
-| CMA_DA_Aug        | 0.33         | 0.26           | [cma_aug.yaml](cma_aug.yaml)  ⟶ [cma_da_aug_tune.yaml](cma_da_aug_tune.yaml) |
+| Seq2Seq           | 0.24         | 0.18           | [seq2seq.yaml](original/seq2seq.yaml) |
+| Seq2Seq_PM        | 0.21         | 0.15           | [seq2seq_pm.yaml](original/seq2seq_pm.yaml) |
+| Seq2Seq_DA        | 0.32         | 0.23           | [seq2seq_da.yaml](original/seq2seq_da.yaml) |
+| Seq2Seq_Aug       | 0.25         | 0.17           | [seq2seq_aug.yaml](original/seq2seq_aug.yaml)  ⟶ [seq2seq_aug_tune.yaml](original/seq2seq_aug_tune.yaml) |
+| Seq2Seq_PM_DA_Aug | 0.31         | 0.22           | [seq2seq_pm_aug.yaml](original/seq2seq_pm_aug.yaml)  ⟶ [seq2seq_pm_da_aug_tune.yaml](original/seq2seq_pm_da_aug_tune.yaml) |
+| CMA               | 0.25         | 0.22           | [cma.yaml](original/cma.yaml) |
+| CMA_PM            | 0.26         | 0.19           | [cma_pm.yaml](original/cma_pm.yaml) |
+| CMA_DA            | 0.31         | 0.25           | [cma_da.yaml](original/cma_da.yaml) |
+| CMA_Aug           | 0.24         | 0.19           | [cma_aug.yaml](original/cma_aug.yaml)  ⟶ [cma_aug_tune.yaml](original/cma_aug_tune.yaml) |
+| **CMA_PM_DA_Aug** | **0.35**     | **0.30**       | [cma_pm_aug.yaml](original/cma_pm_aug.yaml)  ⟶ [cma_pm_da_aug_tune.yaml](original/cma_pm_da_aug_tune.yaml) |
+| CMA_PM_Aug        | 0.25         | 0.22           | [cma_pm_aug.yaml](original/cma_pm_aug.yaml)  ⟶ [cma_pm_aug_tune.yaml](original/cma_pm_aug_tune.yaml) |
+| CMA_DA_Aug        | 0.33         | 0.26           | [cma_aug.yaml](original/cma_aug.yaml)  ⟶ [cma_da_aug_tune.yaml](original/cma_da_aug_tune.yaml) |
 
 |         |  Legend                                                                                          |
 |---------|--------------------------------------------------------------------------------------------------|
