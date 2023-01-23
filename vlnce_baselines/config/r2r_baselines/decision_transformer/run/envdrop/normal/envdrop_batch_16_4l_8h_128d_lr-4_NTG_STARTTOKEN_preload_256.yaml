@@ -3,7 +3,7 @@ TRAINER_NAME: decision_transformer # recollect_trainer, dagger
 SIMULATOR_GPU_IDS: [0]
 TORCH_GPU_ID: 0
 NUM_ENVIRONMENTS: 2 #Looks like the sweet spot for dataset creation is 6 envs. If you use more, we might wait too long to reload the next batch....
-TENSORBOARD_DIR: /cache/tensorboard-logdir/envdrop_batch_16_4l_8h_128d_lr-4_NTG_STARTTOKEN_preload_256
+TENSORBOARD_DIR: /cache/tensorboard-logdir/normal/envdrop_batch_16_4l_8h_128d_lr-4_NTG_STARTTOKEN_preload_256
 CHECKPOINT_FOLDER: data/checkpoints/normal/envdrop_batch_16_4l_8h_128d_lr-4_NTG_STARTTOKEN_preload_256
 EVAL_CKPT_PATH_DIR: data/checkpoints/normal/envdrop_batch_16_4l_8h_128d_lr-4_NTG_STARTTOKEN_preload_256
 RESULTS_DIR: data/checkpoints/normal/envdrop_batch_16_4l_8h_128d_lr-4_NTG_STARTTOKEN_preload_256/evals/debug
