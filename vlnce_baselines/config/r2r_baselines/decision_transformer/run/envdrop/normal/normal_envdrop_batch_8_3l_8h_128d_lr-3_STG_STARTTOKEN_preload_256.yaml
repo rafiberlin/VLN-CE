@@ -30,8 +30,8 @@ IL:
   epochs: 15
   batch_size: 8
   checkpoint_frequency: 3
-  lr: 2.5e-2
-  load_from_ckpt: True # To train from a previous checkpoint
+  lr: 2.5e-3
+  load_from_ckpt: False # To train from a previous checkpoint
   ckpt_to_load: data/checkpoints/normal/_GOOD_MODELS_/repeat_batch_32_3l_8h_128d_lr-3_NTG_STARTTOKEN_preload_256.ckpt.8.pth # REPLACE
 
   RECOLLECT_TRAINER:
