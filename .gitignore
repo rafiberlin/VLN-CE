@@ -148,3 +148,4 @@ sbatch_scripts
 
 visualisation/ML/
 
+*.pth
