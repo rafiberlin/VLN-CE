@@ -1,3 +1,4 @@
+#FAILED TO FIT
 BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task_aug.yaml
 TRAINER_NAME: decision_transformer # recollect_trainer, dagger
 SIMULATOR_GPU_IDS: [0]
