@@ -61,6 +61,7 @@ _C.INFERENCE.FORMAT = "rxr"  # either 'rxr' or 'r2r'
 # ----------------------------------------------------------------------------
 _C.IL = CN()
 _C.IL.optimizer = "torch.optim.Adam"
+_C.IL.dataload_workers = 1
 _C.IL.lr = 2.5e-4
 _C.IL.batch_size = 5
 # number of network update rounds per iteration
