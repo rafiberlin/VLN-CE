@@ -65,7 +65,7 @@ class BaseVLNCETrainer(BaseILTrainer):
             action_space=action_space,
         )
         self.policy.to(self.device)
-
+        # torch.optim.RAdam or torch.optim.Adam for example
         self.optimizer = eval(config.IL.optimizer)(
             self.policy.parameters(), lr=self.config.IL.lr
         )
