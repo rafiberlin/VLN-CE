@@ -1,4 +1,4 @@
-#BEST Val Seen only 0.15 SPL, convergence is anything below 0.30 Mean Loss
+#BEST Val Seen only 0.15 SPL (51 epochs), convergence is anything below 0.30 Mean Loss
 BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task_aug.yaml
 TRAINER_NAME: decision_transformer # recollect_trainer, dagger
 SIMULATOR_GPU_IDS: [0]
