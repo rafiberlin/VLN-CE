@@ -66,7 +66,7 @@ class BaseVLNCETrainer(BaseILTrainer):
         )
         self.policy.to(self.device)
 
-        self.optimizer = torch.optim.Adam(
+        self.optimizer = eval(config.IL.optimizer)(
             self.policy.parameters(), lr=self.config.IL.lr
         )
         if load_from_ckpt:
