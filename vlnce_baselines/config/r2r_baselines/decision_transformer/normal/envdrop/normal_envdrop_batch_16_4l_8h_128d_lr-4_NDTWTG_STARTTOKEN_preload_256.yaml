@@ -1,13 +1,14 @@
+#BEST Val Seen only 0.15 SPL, convergence is anything below 0.30 Mean Loss
 BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task_aug.yaml
 TRAINER_NAME: decision_transformer # recollect_trainer, dagger
 SIMULATOR_GPU_IDS: [0]
 TORCH_GPU_ID: 0
-NUM_ENVIRONMENTS: 2 #Looks like the sweet spot for dataset creation is 6 envs. If you use more, we might wait too long to reload the next batch....
-TENSORBOARD_DIR: /cache/tensorboard-logdir/normal/envdrop_batch_16_4l_8h_128d_lr-4_NDTWTG_STARTTOKEN_preload_256
+NUM_ENVIRONMENTS: 6 #Looks like the sweet spot for dataset creation is 6 envs. If you use more, we might wait too long to reload the next batch....
+TENSORBOARD_DIR: data/tensorboard-logdir/normal/envdrop_batch_16_4l_8h_128d_lr-4_NDTWTG_STARTTOKEN_preload_256
 CHECKPOINT_FOLDER: data/checkpoints/normal/envdrop_batch_16_4l_8h_128d_lr-4_NDTWTG_STARTTOKEN_preload_256
 EVAL_CKPT_PATH_DIR: data/checkpoints/normal/envdrop_batch_16_4l_8h_128d_lr-4_NDTWTG_STARTTOKEN_preload_256
-RESULTS_DIR: data/checkpoints/normal/envdrop_batch_16_4l_8h_128d_lr-4_NDTWTG_STARTTOKEN_preload_256/evals/debug
-MULTIPROCESSING: forkserver  # default is forkserver, Set to 'spawn' when debugging with Pycharm,
+RESULTS_DIR: data/checkpoints/normal/envdrop_batch_16_4l_8h_128d_lr-4_NDTWTG_STARTTOKEN_preload_256/evals/val_seen
+MULTIPROCESSING: forkserver  # default is forkserver, Set to 'spawn' when val_seenging with Pycharm,
 ENV_NAME: VLNCEDecisionTransformerEnv
 
 
@@ -22,17 +23,18 @@ INFERENCE:
 
 EVAL:
   USE_CKPT_CONFIG: False
-  SPLIT: debug # val_unseen
+  SPLIT: val_seen # val_unseen
   EPISODE_COUNT: -1
 
 IL:
+  optimizer: torch.optim.RAdam # for example, "torch.optim.Adam" or torch.optim.Adam
   preload_dataloader_size: 256
   epochs: 51
   batch_size: 16
   checkpoint_frequency: 3
   lr: 2.5e-4
-  load_from_ckpt: False # To train from a previous checkpoint
-  ckpt_to_load: data/checkpoints/normal/envdrop_batch_16_4l_8h_128d_lr-4_NDTWTG_STARTTOKEN_preload_256/ckpt.7.pth # REPLACE
+  load_from_ckpt: True # To train from a previous checkpoint
+  ckpt_to_load: /media/rafi/Samsung_T5/_DATASETS/VLNCE/data/checkpoints/normal/envdrop_batch_16_4l_8h_128d_lr-4_NDTWTG_STARTTOKEN_preload_256/_pretrained/ckpt.50.pth # REPLACE
 
   RECOLLECT_TRAINER:
     gt_file:
@@ -55,7 +57,7 @@ IL:
     p: 1.0
     preload_lmdb_features: True
     lmdb_commit_frequency: 500
-    lmdb_features_dir: data/trajectories_dirs/_aug_gold_/trajectories.lmdb
+    lmdb_features_dir: data/trajectories_dirs/decision_transformer_aug_v3_PGR_1_-0.01_SR_1_-0.01_NDTWR_1_-0.01/trajectories.lmdb
 
 
 MODEL:
