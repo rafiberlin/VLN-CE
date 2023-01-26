@@ -28,10 +28,10 @@ EVAL:
 IL:
   dataload_workers: 5
   optimizer: torch.optim.RAdam
-  preload_dataloader_size: 256
-  epochs: 51
-  batch_size: 64
-  checkpoint_frequency: 3
+  preload_dataloader_size: 128
+  epochs: 30
+  batch_size: 32
+  checkpoint_frequency: 2
   lr: 2.5e-4
   load_from_ckpt: False # To train from a previous checkpoint
   ckpt_to_load: data/checkpoints/enhanced/enhanced_envdrop_batch_32_6l_8h_256d_lr-4_NTG_STARTTOKEN_preload_128_RAdam/ckpt.7.pth # REPLACE
