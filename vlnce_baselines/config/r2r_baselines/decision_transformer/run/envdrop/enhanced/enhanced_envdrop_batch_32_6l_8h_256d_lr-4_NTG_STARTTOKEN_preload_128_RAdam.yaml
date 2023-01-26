@@ -3,10 +3,10 @@ TRAINER_NAME: decision_transformer # recollect_trainer, dagger
 SIMULATOR_GPU_IDS: [1]
 TORCH_GPU_ID: 1
 NUM_ENVIRONMENTS: 2 #Looks like the sweet spot for dataset creation is 6 envs. If you use more, we might wait too long to reload the next batch....
-TENSORBOARD_DIR: /cache/tensorboard-logdir/enhanced/enhanced_envdrop_batch_32_6l_8h_256d_lr-4_NTG_STARTTOKEN_preload_128_RAdam
-CHECKPOINT_FOLDER: data/checkpoints/enhanced/enhanced_envdrop_batch_32_6l_8h_256d_lr-4_NTG_STARTTOKEN_preload_128_RAdam
-EVAL_CKPT_PATH_DIR: data/checkpoints/enhanced/enhanced_envdrop_batch_32_6l_8h_256d_lr-4_NTG_STARTTOKEN_preload_128_RAdam
-RESULTS_DIR: data/checkpoints/enhanced/enhanced_envdrop_batch_32_6l_8h_256d_lr-4_NTG_STARTTOKEN_preload_128_RAdam/evals/debug
+TENSORBOARD_DIR: /cache/tensorboard-logdir/enhanced/envdrop_batch_32_6l_8h_256d_lr-4_NTG_STARTTOKEN_preload_128_RAdam
+CHECKPOINT_FOLDER: data/checkpoints/enhanced/envdrop_batch_32_6l_8h_256d_lr-4_NTG_STARTTOKEN_preload_128_RAdam
+EVAL_CKPT_PATH_DIR: data/checkpoints/enhanced/envdrop_batch_32_6l_8h_256d_lr-4_NTG_STARTTOKEN_preload_128_RAdam
+RESULTS_DIR: data/checkpoints/enhanced/envdrop_batch_32_6l_8h_256d_lr-4_NTG_STARTTOKEN_preload_128_RAdam/evals/debug
 MULTIPROCESSING: forkserver  # default is forkserver, Set to 'spawn' when debugging with Pycharm,
 ENV_NAME: VLNCEDecisionTransformerEnv
 
@@ -15,7 +15,7 @@ INFERENCE:
   SPLIT: test
   USE_CKPT_CONFIG: False
   SAMPLE: False
-  CKPT_PATH: data/checkpoints/enhanced/enhanced_envdrop_batch_32_6l_8h_256d_lr-4_NTG_STARTTOKEN_preload_128_RAdam/ckpt.269.pth
+  CKPT_PATH: data/checkpoints/enhanced/envdrop_batch_32_6l_8h_256d_lr-4_NTG_STARTTOKEN_preload_128_RAdam/ckpt.269.pth
   PREDICTIONS_FILE: predictions.json
   FORMAT: r2r
 
@@ -34,7 +34,7 @@ IL:
   checkpoint_frequency: 2
   lr: 2.5e-4
   load_from_ckpt: False # To train from a previous checkpoint
-  ckpt_to_load: data/checkpoints/enhanced/enhanced_envdrop_batch_32_6l_8h_256d_lr-4_NTG_STARTTOKEN_preload_128_RAdam/ckpt.7.pth # REPLACE
+  ckpt_to_load: data/checkpoints/enhanced/envdrop_batch_32_6l_8h_256d_lr-4_NTG_STARTTOKEN_preload_128_RAdam/ckpt.7.pth # REPLACE
 
   RECOLLECT_TRAINER:
     gt_file:
