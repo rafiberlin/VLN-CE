@@ -26,6 +26,7 @@ EVAL:
   EPISODE_COUNT: -1
 
 IL:
+  dataload_workers: 10
   optimizer: torch.optim.RAdam
   preload_dataloader_size: 128
   epochs: 30
