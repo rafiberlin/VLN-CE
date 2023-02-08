@@ -104,10 +104,12 @@ class GPT(nn.Module):
         C.model_type = None
         C.n_layer = 2
         C.n_head = 1
-        C.n_embd =  128
+        C.n_embd = 128
         # these options must be filled in externally
         C.vocab_size = 4
         C.block_size = 156
+        C.episode_horizon = 128
+        C.step_size = 1
         # dropout hyperparameters
         C.embd_pdrop = 0.1
         C.resid_pdrop = 0.1
@@ -122,7 +124,8 @@ class GPT(nn.Module):
         self.block_size = config.episode_horizon * config.step_size
         config.defrost()
         config.block_size = self.block_size
-        config.n_embd = config.hidden_dim
+        if hasattr(config, "hidden_dim"):
+            config.n_embd = config.hidden_dim
         type_given = config.model_type is not None and len(config.model_type) > 0
         params_given = all([config.n_layer is not None, config.n_head is not None, config.n_embd is not None])
         assert type_given ^ params_given # exactly one of these (XOR)
