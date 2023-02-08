@@ -535,8 +535,12 @@ class VanillaMultiHeadAttention(nn.Module):
         self.n_embd = config.n_embd
 
     @staticmethod
-    def create_causal_mask(size):
-        return torch.tril(torch.ones(size, size)).view(1, 1, size, size) == 0
+    def create_causal_mask(size, device="cpu"):
+        return (torch.tril(torch.ones(size, size)).view(1, 1, size, size) == 0).to(device)
+
+    @staticmethod
+    def create_padded_mask(t, device="cpu"):
+        return (t == 0.0).all(dim=-1).to(device)
 
     def forward(self, q, k, v, mask=None):
         q_B, q_T, q_C = q.size() # batch size, sequence length, embedding dimensionality (n_embd)
@@ -722,18 +726,6 @@ class DecisionTransformerWithAttendedInstructionsNet(Net):
             rgb_embedding = rgb_embedding * 0
 
         return instruction_embedding, depth_embedding, rgb_embedding
-
-    def _attn(
-        self, q: Tensor, k: Tensor, v: Tensor, mask: Optional[Tensor] = None
-    ) -> Tensor:
-        logits = torch.einsum("nc, nci -> ni", q, k)
-
-        if mask is not None:
-            logits = logits - mask.float() * 1e8
-
-        attn = F.softmax(logits * self._scale, dim=1)
-
-        return torch.einsum("ni, nci -> nc", attn, v)
 
     def forward(self, observations, rnn_states, prev_actions, masks):
 

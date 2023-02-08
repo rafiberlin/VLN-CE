@@ -124,6 +124,10 @@ class GPT(nn.Module):
         self.block_size = config.episode_horizon * config.step_size
         config.defrost()
         config.block_size = self.block_size
+        delete_n_embd = False
+        if not hasattr(config, "n_embd"):
+            delete_n_embd = True
+
         if hasattr(config, "hidden_dim"):
             config.n_embd = config.hidden_dim
         type_given = config.model_type is not None and len(config.model_type) > 0
@@ -167,7 +171,8 @@ class GPT(nn.Module):
         # report number of parameters (note we don't count the decoder parameters in lm_head)
         n_params = sum(p.numel() for p in self.transformer.parameters())
         print("number of parameters for GPT: %.2fM" % (n_params/1e6,))
-        del config["n_embd"]
+        if delete_n_embd:
+            del config["n_embd"]
         config.freeze()
 
     def _init_weights(self, module):
