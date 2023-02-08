@@ -617,10 +617,18 @@ class DecisionTransformerWithAttendedInstructionsNet(Net):
 
         self.model_config.defrost()
         # a step has Reward, Action, Instruction, Depth, RGB
-        # the normal Decition Transformer has Instruction, Depth, RGB conctenated
+        # the normal Decision Transformer has Instruction, Depth, RGB conctenated
         # into only one state
         self.model_config.DECISION_TRANSFORMER.step_size = 5
         self.model_config.freeze()
+
+        self.state_to_text_causal_attention = VanillaMultiHeadAttention(self.model_config.DECISION_TRANSFORMER.ATTENTION_LAYER)
+        self.text_to_depth_attention = VanillaMultiHeadAttention(
+            self.model_config.DECISION_TRANSFORMER.ATTENTION_LAYER)
+        self.text_to_rgb_attention = VanillaMultiHeadAttention(
+            self.model_config.DECISION_TRANSFORMER.ATTENTION_LAYER)
+
+
 
         self.gpt_encoder = GPT(self.model_config.DECISION_TRANSFORMER)
 
@@ -652,6 +660,30 @@ class DecisionTransformerWithAttendedInstructionsNet(Net):
                                                  model_config.DECISION_TRANSFORMER.hidden_dim)
         self.depth_embed_state = nn.Linear(model_config.DEPTH_ENCODER.output_size,
                                                  model_config.DECISION_TRANSFORMER.hidden_dim)
+
+        self.state_q_to_text = nn.Sequential(
+            nn.Linear(
+                self.rgb_embed_state.out_features + self.depth_embed_state.out_features,
+                self.instruction_embed_state.out_features,
+            ),
+            nn.ReLU(True),
+        )
+
+        self.text_q_to_rgb = nn.Sequential(
+            nn.Linear(
+                self.instruction_embed_state.out_features,
+                self.rgb_embed_state.out_features
+            ),
+            nn.ReLU(True),
+        )
+
+        self.text_q_to_depth = nn.Sequential(
+            nn.Linear(
+                self.instruction_embed_state.out_features,
+                self.depth_embed_state.out_features
+            ),
+            nn.ReLU(True),
+        )
 
         # 5 because we have embedding for reward, one for past actions and 3 for states( instructions
         # rgb and depth). In the origininal transformer, there is only one state instead of 3.
@@ -731,7 +763,7 @@ class DecisionTransformerWithAttendedInstructionsNet(Net):
 
         # need to be checked now as the function _prepare_embeddings() modifies the
         # obsevations directly.
-        original_batch_shape = observations["instruction"].shape[0:2]  # excluding the embedding dimentions
+        original_batch_shape = observations["instruction"].shape[0:2]  # excluding the embedding dimensions
         batch_size, seq_length = original_batch_shape
 
         instruction_embedding, depth_embedding, rgb_embedding = self._prepare_embeddings(observations)
@@ -763,6 +795,9 @@ class DecisionTransformerWithAttendedInstructionsNet(Net):
             timesteps = self._create_timesteps(seq_length, batch_size)
 
         instruction_states = resize_tensor(instruction_embedding)
+        # The instructions are repeated for each time step.
+        # here we just want to one representation per batch
+        single_instruction_states = instruction_states[:, 0, :, :]
         depth_embedding = resize_tensor(depth_embedding)
         rgb_embedding = resize_tensor(rgb_embedding)
         if len(timesteps.shape) > 2:
@@ -772,13 +807,23 @@ class DecisionTransformerWithAttendedInstructionsNet(Net):
         # https://github.com/huggingface/transformers/commit/707b12a353b69feecf11557e13d3041982bf023f
 
         # embed each modality with a different head
-        instruction_state_embeddings = self.instruction_embed_state(instruction_states)
+        #WARNING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Will probably mess up with dimensonality with the timesteps
+        instruction_state_embeddings = self.instruction_embed_state(single_instruction_states)
         rgb_state_embeddings = self.rgb_embed_state(rgb_embedding)
         depth_state_embeddings = self.depth_embed_state(depth_embedding)
 
         action_embeddings = self.embed_action(actions)
         returns_embeddings = self.embed_return(returns_to_go)
         time_embeddings = self.embed_timestep(timesteps)
+
+        #
+        concat_state_inputs = torch.cat((rgb_state_embeddings, depth_state_embeddings), dim=-1)
+        state_q_to_text = self.state_q_to_text(concat_state_inputs)
+        causal_mask = VanillaMultiHeadAttention.create_causal_mask(seq_length, state_q_to_text.device)
+        state_q_to_text = self.state_to_text_causal_attention(state_q_to_text, state_q_to_text, state_q_to_text, causal_mask)
+
+        text_q_to_depth = self.text_q_to_depth(instruction_state_embeddings)
+        text_q_to_rgb = self.text_q_to_rgb(instruction_state_embeddings)
 
         # print(state_embeddings.shape, action_embeddings.shape, returns_embeddings.shape, time_embeddings.shape)
         # time embeddings are treated similar to positional embeddings
