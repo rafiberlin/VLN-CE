@@ -535,12 +535,12 @@ class VanillaMultiHeadAttention(nn.Module):
         self.n_embd = config.n_embd
 
     @staticmethod
-    def create_causal_mask(size, device="cpu"):
+    def create_causal_mask(size: int, device="cpu"):
         return (torch.tril(torch.ones(size, size)).view(1, 1, size, size) == 0).to(device)
 
     @staticmethod
-    def create_padded_mask(t, device="cpu"):
-        return (t == 0.0).all(dim=-1).to(device)
+    def create_padded_mask(t: Tensor):
+        return (t == 0.0).all(dim=-1).to(t.device)
 
     def forward(self, q, k, v, mask=None):
         q_B, q_T, q_C = q.size() # batch size, sequence length, embedding dimensionality (n_embd)
@@ -619,15 +619,8 @@ class DecisionTransformerWithAttendedInstructionsNet(Net):
         # a step has Reward, Action, Instruction, Depth, RGB
         # the normal Decision Transformer has Instruction, Depth, RGB conctenated
         # into only one state
-        self.model_config.DECISION_TRANSFORMER.step_size = 5
+        self.model_config.DECISION_TRANSFORMER.step_size = 8
         self.model_config.freeze()
-
-        self.state_to_text_causal_attention = VanillaMultiHeadAttention(self.model_config.DECISION_TRANSFORMER.ATTENTION_LAYER)
-        self.text_to_depth_attention = VanillaMultiHeadAttention(
-            self.model_config.DECISION_TRANSFORMER.ATTENTION_LAYER)
-        self.text_to_rgb_attention = VanillaMultiHeadAttention(
-            self.model_config.DECISION_TRANSFORMER.ATTENTION_LAYER)
-
 
 
         self.gpt_encoder = GPT(self.model_config.DECISION_TRANSFORMER)
@@ -685,6 +678,21 @@ class DecisionTransformerWithAttendedInstructionsNet(Net):
             nn.ReLU(True),
         )
 
+        self.state_to_text_causal_attention = VanillaMultiHeadAttention(
+            self.model_config.DECISION_TRANSFORMER.ATTENTION_LAYER)
+
+        self.text_to_depth_attention = VanillaMultiHeadAttention(
+            self.model_config.DECISION_TRANSFORMER.ATTENTION_LAYER)
+
+        self.text_to_rgb_attention = VanillaMultiHeadAttention(
+            self.model_config.DECISION_TRANSFORMER.ATTENTION_LAYER)
+
+        # these transform the instruction sequences (originated form all rnn hidden states)
+        # to a fix sentence embedding representation
+        self.to_sentence_embed = nn.AdaptiveAvgPool1d(1)
+        self.to_sentence_embed2 = nn.AdaptiveAvgPool1d(1)
+        self.to_sentence_embed3 = nn.AdaptiveAvgPool1d(1)
+
         # 5 because we have embedding for reward, one for past actions and 3 for states( instructions
         # rgb and depth). In the origininal transformer, there is only one state instead of 3.
         self.transformer_step_size = self.model_config.DECISION_TRANSFORMER.step_size
@@ -718,9 +726,9 @@ class DecisionTransformerWithAttendedInstructionsNet(Net):
 
     @property
     def output_size(self):
-        # *3 because rgb, depth and instructions have their own reoresentation
-        # in the GPT backbone
-        return self.model_config.DECISION_TRANSFORMER.hidden_dim*3
+        # we retrieve 2 , because it corresponds to the actions an reward dimension that are removed
+        # after GPT processing...
+        return self.model_config.DECISION_TRANSFORMER.hidden_dim*(self.model_config.DECISION_TRANSFORMER.step_size -2)
 
 
     @property
@@ -816,18 +824,35 @@ class DecisionTransformerWithAttendedInstructionsNet(Net):
         returns_embeddings = self.embed_return(returns_to_go)
         time_embeddings = self.embed_timestep(timesteps)
 
-        #
-        concat_state_inputs = torch.cat((rgb_state_embeddings, depth_state_embeddings), dim=-1)
+        # needs to add the time embeddings as the attention layer I use do not add it automaticallys
+        concat_state_inputs = torch.cat((rgb_state_embeddings + time_embeddings, depth_state_embeddings + time_embeddings), dim=-1)
         state_q_to_text = self.state_q_to_text(concat_state_inputs)
         causal_mask = VanillaMultiHeadAttention.create_causal_mask(seq_length, state_q_to_text.device)
+        text_mask = VanillaMultiHeadAttention.create_padded_mask(single_instruction_states)
         state_q_to_text = self.state_to_text_causal_attention(state_q_to_text, state_q_to_text, state_q_to_text, causal_mask)
 
+        state_attended_text = self.state_to_text_causal_attention(q=state_q_to_text, v=instruction_state_embeddings, k=instruction_state_embeddings, mask=text_mask)
+
+        # WARNING Maybe you don't need a key for RGB and one for DEPTH, it might get reused?
+        # Should we also use a padded mask as well?
         text_q_to_depth = self.text_q_to_depth(instruction_state_embeddings)
+        text_attended_depth = self.text_to_depth_attention(q=text_q_to_depth, k=depth_state_embeddings, v=depth_state_embeddings)
         text_q_to_rgb = self.text_q_to_rgb(instruction_state_embeddings)
+        text_attended_key = self.text_to_rgb_attention(q=text_q_to_rgb, k=rgb_state_embeddings, v=rgb_state_embeddings)
+
+        # text_attended_*** have a shape of Batch*Instruction Length* Dim => the permutation allows to get only one embedding for the whole instructions
+        # TODO ITHIN THE POOLING has no weight. Hence, instead of reducing it to one representation, you can create
+        # as many as time steps!!!
+        depth_influenced_text = self.to_sentence_embed(text_attended_depth.permute(0,2,1)).permute(0,2,1)
+        rgb_influenced_text = self.to_sentence_embed2(text_attended_key.permute(0,2,1)).permute(0,2,1)
+        instruction_sentence_embeddings = self.to_sentence_embed2(instruction_state_embeddings.permute(0, 2, 1)).permute(0, 2, 1)
 
         # print(state_embeddings.shape, action_embeddings.shape, returns_embeddings.shape, time_embeddings.shape)
         # time embeddings are treated similar to positional embeddings
-        instruction_state_embeddings2 = instruction_state_embeddings + time_embeddings
+        instruction_state_embeddings2 = instruction_sentence_embeddings + time_embeddings
+        depth_influenced_text2 = depth_influenced_text + time_embeddings
+        rgb_influenced_text2 = rgb_influenced_text + time_embeddings
+        state_attended_text2 = state_attended_text + time_embeddings # Here maybe you shouldn t add the time embeddings? As you already did it in the
         rgb_state_embeddings2 = rgb_state_embeddings + time_embeddings
         depth_state_embeddings2 = depth_state_embeddings + time_embeddings
         action_embeddings2 = action_embeddings + time_embeddings
@@ -837,7 +862,7 @@ class DecisionTransformerWithAttendedInstructionsNet(Net):
 
         # this makes the sequence look like (R_1, s_instr_1, s_depth_1, s_rgb_1, a_1, R_2, s_instr_2, s_depth_2, s_rgb_2, a_2, ...)
         stacked_inputs = (
-            torch.stack((returns_embeddings2, instruction_state_embeddings2, rgb_state_embeddings2, depth_state_embeddings2, action_embeddings2), dim=1)
+            torch.stack((returns_embeddings2, instruction_state_embeddings2, rgb_state_embeddings2, depth_state_embeddings2, depth_influenced_text2, rgb_influenced_text2, state_attended_text2, action_embeddings2), dim=1)
                 .permute(0, 2, 1, 3)
                 .reshape(batch_size, self.transformer_step_size * seq_length, -1)
         )
@@ -852,7 +877,8 @@ class DecisionTransformerWithAttendedInstructionsNet(Net):
 
         # get predictions
         # we are retrieveing rgb, depth and instruction steps...
-        action_preds = output[:,1:4].permute(0,2,1,3).reshape(batch_size, seq_length, -1)
+        # WARNING: Wrong SLICE?
+        action_preds = output[:,1:7].permute(0,2,1,3).reshape(batch_size, seq_length, -1)
         # return action_preds.view(seq_length*batch_size, -1), state_embeddings
 
         return action_preds, None
