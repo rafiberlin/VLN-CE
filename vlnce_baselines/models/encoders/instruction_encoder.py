@@ -6,7 +6,9 @@ import torch.nn as nn
 from habitat import Config
 from habitat.core.simulator import Observations
 from torch import Tensor
-from ..utils import VanillaMultiHeadAttention
+from vlnce_baselines.models.utils import VanillaMultiHeadAttention
+from vlnce_baselines.models.utils import PositionalEncoding
+
 
 class Word2VecEmbeddings(nn.Module):
     def __init__(self, config: Config) -> None:
@@ -82,6 +84,7 @@ class InstructionEncoderWithTransformer(nn.Module):
         self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=config.DECISION_TRANSFORMER.n_layer)
         self.instruction_embed_state = nn.Linear(self.word2vec.output_size,
                                                  config.DECISION_TRANSFORMER.hidden_dim)
+        self.positional_encoding = PositionalEncoding(config.DECISION_TRANSFORMER.hidden_dim)
 
     def forward(self, observations: Observations) -> Tensor:
         """
@@ -93,6 +96,7 @@ class InstructionEncoderWithTransformer(nn.Module):
         pretrained_embeddings = self.word2vec(observations)
         # Instructions are repeated at each time step, we want only one instructions
         embeddings = self.instruction_embed_state(pretrained_embeddings)[:,0,:,:]
+        embeddings = self.positional_encoding(embeddings)
         padded_mask = VanillaMultiHeadAttention.create_padded_mask(embeddings)
         encoded_instructions = self.transformer_encoder(embeddings, src_key_padding_mask=padded_mask)
         return encoded_instructions
