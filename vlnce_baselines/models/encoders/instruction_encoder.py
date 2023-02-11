@@ -7,6 +7,60 @@ from habitat import Config
 from habitat.core.simulator import Observations
 from torch import Tensor
 
+class Word2VecEmbeddings(nn.Module):
+    def __init__(self, config: Config) -> None:
+        """
+        A layer that allows to us the pretrained Word2Vec embeddings
+        without further handling.
+        :param config:
+        """
+        super().__init__()
+
+        self.config = config
+        self.padding_idx = 0
+
+        if config.sensor_uuid == "instruction":
+            if self.config.use_pretrained_embeddings:
+                self.embedding_layer = nn.Embedding.from_pretrained(
+                    embeddings=self._load_embeddings(),
+                    freeze=not self.config.fine_tune_embeddings,
+                )
+            else:  # each embedding initialized to sampled Gaussian
+                self.embedding_layer = nn.Embedding(
+                    num_embeddings=config.vocab_size,
+                    embedding_dim=config.embedding_size,
+                    padding_idx=self.padding_idx,
+                )
+
+    @property
+    def output_size(self):
+        return self.config.embedding_size
+
+    def _load_embeddings(self) -> Tensor:
+        """Loads word embeddings from a pretrained embeddings file.
+        PAD: index 0. [0.0, ... 0.0]
+        UNK: index 1. mean of all R2R word embeddings: [mean_0, ..., mean_n]
+        why UNK is averaged: https://bit.ly/3u3hkYg
+        Returns:
+            embeddings tensor of size [num_words x embedding_dim]
+        """
+        with gzip.open(self.config.embedding_file, "rt") as f:
+            embeddings = torch.tensor(json.load(f))
+        return embeddings
+
+    def forward(self, observations: Observations) -> Tensor:
+        """
+        Tensor sizes after computation:
+            instruction: [batch_size x seq_length]
+            lengths: [batch_size]
+            hidden_state: [batch_size x hidden_size]
+        """
+        assert self.config.sensor_uuid == "instruction"
+        instruction = observations["instruction"].long()
+        instruction = self.embedding_layer(instruction)
+
+        return instruction
+
 
 class InstructionEncoder(nn.Module):
     def __init__(self, config: Config) -> None:
@@ -69,7 +123,6 @@ class InstructionEncoder(nn.Module):
         """
         if self.config.sensor_uuid == "instruction":
             instruction = observations["instruction"].long()
-            lengths = (instruction != 0.0).long().sum(dim=1)
             instruction = self.embedding_layer(instruction)
         else:
             instruction = observations["rxr_instruction"]
