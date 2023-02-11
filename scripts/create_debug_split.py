@@ -19,7 +19,7 @@ if __name__ == "__main__":
         description="Reduce the train file annotation with a list of episodes.")
     parser.add_argument(
         "--split",
-        default="joint_train_envdrop",
+        default="val_seen",
         metavar="",
         help="Name of the splits: train, val_seen, val_unseen, joint_train_envdrop",
         type=str,
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--lower-length",
-        default=50,
+        default=1,
         metavar="",
         help="Episode Length min",
         type=int,
@@ -53,12 +53,14 @@ if __name__ == "__main__":
     boundaries = (args.lower_length, args.upper_length)
     split = args.split
 
+    ep_limit = 50
+
     directory = '../data/datasets/R2R_VLNCE_v1-3_preprocessed/$split/'
     split_template = Template(directory + "$split.json.gz")
     split_template_gt = Template(directory + '$split')
     # work around, as the template sees the underscore as Regex character
     suffix = "_gt.json.gz"
-    debug_split = "joint_train_envdrop_50_plus"
+    debug_split = "val_seen_50_ep"
 
     outfile_gt = split_template_gt.substitute(split=debug_split) + suffix
     source_gt = split_template_gt.substitute(split=split) + suffix
@@ -66,7 +68,7 @@ if __name__ == "__main__":
 
     outpath = Template(directory).substitute(split=debug_split)
 
-    length_list = get_episode_list(train_file_gt, boundaries)
+    length_list = get_episode_list(train_file_gt, boundaries, ep_limit)
     if len(length_list) > 0:
         print("Using filter based on episode length")
         episode_filter = length_list
