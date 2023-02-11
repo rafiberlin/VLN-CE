@@ -318,6 +318,7 @@ _C.MODEL.DECISION_TRANSFORMER.model_type = None
 _C.MODEL.DECISION_TRANSFORMER.n_layer = 2
 _C.MODEL.DECISION_TRANSFORMER.n_head = 1
 _C.MODEL.DECISION_TRANSFORMER.n_embd = _C.MODEL.DECISION_TRANSFORMER.hidden_dim
+_C.MODEL.DECISION_TRANSFORMER.use_transformer_encoded_instruction = False
 # these options must be filled in externally
 _C.MODEL.DECISION_TRANSFORMER.vocab_size = 4
 _C.MODEL.DECISION_TRANSFORMER.step_size = 3 #We multiply by three because at each time step, we use [reward, action, state].

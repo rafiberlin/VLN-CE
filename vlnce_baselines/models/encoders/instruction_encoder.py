@@ -6,6 +6,7 @@ import torch.nn as nn
 from habitat import Config
 from habitat.core.simulator import Observations
 from torch import Tensor
+from ..utils import VanillaMultiHeadAttention
 
 class Word2VecEmbeddings(nn.Module):
     def __init__(self, config: Config) -> None:
@@ -61,6 +62,44 @@ class Word2VecEmbeddings(nn.Module):
 
         return instruction
 
+class InstructionEncoderWithTransformer(nn.Module):
+    def __init__(self, config: Config) -> None:
+        """An encoder that uses RNN to encode an instruction. Returns
+        the final hidden state after processing the instruction sequence.
+
+        Args:
+            config: must have
+                embedding_size: The dimension of each embedding vector
+                hidden_size: The hidden (output) size
+                rnn_type: The RNN cell type.  Must be GRU or LSTM
+                final_state_only: If True, return just the final state
+        """
+        super().__init__()
+
+        self.config = config
+        self.word2vec = Word2VecEmbeddings(config.INSTRUCTION_ENCODER)
+        encoder_layer = nn.TransformerEncoderLayer(d_model=config.DECISION_TRANSFORMER.hidden_dim, nhead=config.DECISION_TRANSFORMER.n_head, batch_first=True)
+        self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=config.DECISION_TRANSFORMER.n_layer)
+        self.instruction_embed_state = nn.Linear(self.word2vec.output_size,
+                                                 config.DECISION_TRANSFORMER.hidden_dim)
+
+    def forward(self, observations: Observations) -> Tensor:
+        """
+        Tensor sizes after computation:
+            instruction: [batch_size x seq_length]
+            lengths: [batch_size]
+            hidden_state: [batch_size x hidden_size]
+        """
+        pretrained_embeddings = self.word2vec(observations)
+        # Instructions are repeated at each time step, we want only one instructions
+        embeddings = self.instruction_embed_state(pretrained_embeddings)[:,0,:,:]
+        padded_mask = VanillaMultiHeadAttention.create_padded_mask(embeddings)
+        encoded_instructions = self.transformer_encoder(embeddings, src_key_padding_mask=padded_mask)
+        return encoded_instructions
+
+    @property
+    def output_size(self):
+        return self.config.DECISION_TRANSFORMER.hidden_dim
 
 class InstructionEncoder(nn.Module):
     def __init__(self, config: Config) -> None:
