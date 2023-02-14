@@ -22,15 +22,15 @@ INFERENCE:
 
 EVAL:
   USE_CKPT_CONFIG: False
-  SPLIT: val_seen #val_seen_50_ep
+  SPLIT: debug #val_seen_50_ep
   EPISODE_COUNT: -1
 
 IL:
   preload_dataloader_size: 100
   optimizer: torch.optim.Adam
-  epochs: 33
+  epochs: 150
   batch_size: 8
-  checkpoint_frequency: 1
+  checkpoint_frequency: 50
   lr: 2.5e-4
   load_from_ckpt: False # To train from a previous checkpoint
   ckpt_to_load: data/checkpoints/decision_transformer_debug/bugfree/ckpt.269.pth # REPLACE

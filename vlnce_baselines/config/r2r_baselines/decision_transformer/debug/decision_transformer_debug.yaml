@@ -2,7 +2,7 @@ BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task.yaml
 TRAINER_NAME: decision_transformer # recollect_trainer, dagger
 SIMULATOR_GPU_IDS: [0]
 TORCH_GPU_ID: 0
-NUM_ENVIRONMENTS: 3 #Only use one environment for Decision Transformer! An this is probably not working with MUlti Sim GPU
+NUM_ENVIRONMENTS: 6 #Only use one environment for Decision Transformer! An this is probably not working with MUlti Sim GPU
 TENSORBOARD_DIR: data/tensorboard_dirs/decision_transformer_debug
 CHECKPOINT_FOLDER: data/checkpoints/decision_transformer_debug
 EVAL_CKPT_PATH_DIR: data/checkpoints/decision_transformer_debug
@@ -28,8 +28,8 @@ EVAL:
 IL:
   epochs: 60
   batch_size: 5
-  checkpoint_frequency: 20
-  lr: 2.5e-3
+  checkpoint_frequency: 15
+  lr: 1.5e-3
   load_from_ckpt: False # To train from a previous checkpoint
   ckpt_to_load: data/checkpoints/decision_transformer_debug/ckpt.269.pth # REPLACE
 
@@ -37,9 +37,10 @@ IL:
     gt_file:
       data/datasets/R2R_VLNCE_v1-3_preprocessed/{split}/{split}_gt.json.gz
   DECISION_TRANSFORMER:
+    recompute_reward: True # allows to apply step penalty and end reward on the fly without recaching the whole dataset...
     sensor_uuid: distance_left
     POINT_GOAL_NAV_REWARD:
-      step_penalty: -0.01
+      step_penalty: -0.2
       success: 1.0
     SPARSE_REWARD:
       step_penalty: -0.01
@@ -59,12 +60,27 @@ IL:
 
 MODEL:
   DECISION_TRANSFORMER:
-    net: DecisionTransformerNet # DecisionTransformerNet or DecisionTransformerEnhancedNet
+    # Possible values: DecisionTransformerNet, DecisionTransformerEnhancedNet
+    # DecisionTransformerWithAttendedInstructionsNet or  FullDecisionTransformerNet
+    net: DecisionTransformerNet
     use_extra_start_token: True
     reward_type: point_nav_reward_to_go # point_nav_reward_to_go, sparse_reward_to_go, point_nav_reward, sparse_reward, ndtw_reward, ndtw_reward_to_go
     n_layer: 3
     n_head: 8
     hidden_dim: 128 # The dimensions for the State, Reward and actions embeddings and in the GPT Backbne
+    use_transformer_encoded_instruction: False
+    ATTENTION_LAYER: # only for DecisionTransformerWithAttendedInstructionsNet
+      n_head: 8
+      n_embd: 256
+      use_instruction_state_embeddings: True
+      use_depth_influenced_text: True
+      use_rgb_influenced_text: True
+      use_state_attended_text: True # Here maybe you shouldn t add the time embeddings? As you already did it in the
+      use_rgb_state_embeddings: True
+      use_depth_state_embeddings: True
+    ENCODER: # only for FullDecisionTransformerNet
+      n_layer: 3
+      n_head: 8
   policy_name: DecisionTransformerPolicy
-  PROGRESS_MONITOR:
+  PROGRESS_MONITOR: # This is only used to create the datasets and the reward signals
     use: True

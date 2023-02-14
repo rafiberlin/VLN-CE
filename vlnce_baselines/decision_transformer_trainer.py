@@ -50,12 +50,11 @@ class ObservationsDict(dict):
 
 # Trick to create extra start token directly in the collate_fn
 # we don t need to recreate the whole dataset...
-global USE_EXTRA_START_TOKEN
 global EXTRA_START_TOKEN_ID
 global STOP_ACTION_TOKEN_ID
 EXTRA_START_TOKEN_ID = 4
 STOP_ACTION_TOKEN_ID = 0
-USE_EXTRA_START_TOKEN = False
+
 
 
 def _is_correct_previous_actions(batch):
@@ -79,106 +78,6 @@ def collate_fn_check_batch(batch):
     if not _is_correct_previous_actions(batch):
         raise Exception("Dataset has not been created correctly! Prev actions and corrected actions not shifted accordingly!")
 
-
-def collate_fn(batch):
-    """Each sample in batch: (
-        obs,
-        prev_actions,
-        oracle_actions,
-        inflec_weight,
-    )
-    """
-
-    def _pad_helper(t, max_len, fill_val=0):
-        pad_amount = max_len - t.size(0)
-        if pad_amount == 0:
-            return t
-
-        pad = torch.full_like(t[0:1], fill_val).expand(
-            pad_amount, *t.size()[1:]
-        )
-        return torch.cat([t, pad], dim=0)
-
-
-    if not _is_correct_previous_actions(batch):
-        raise Exception("Dataset has not been created correctly! Prev actions and corrected actions not shifted accordingly!")
-
-    transposed = list(zip(*batch))
-
-    observations_batch = list(transposed[0])
-    prev_actions_batch = list(transposed[1])
-    corrected_actions_batch = list(transposed[2])
-    weights_batch = list(transposed[3])  # to make it batch * seq length
-    batch_size = len(prev_actions_batch)
-
-    new_observations_batch = defaultdict(list)
-    for sensor in observations_batch[0]:
-        for bid in range(batch_size):
-            new_observations_batch[sensor].append(
-                observations_batch[bid][sensor]
-            )
-
-    observations_batch = new_observations_batch
-
-    max_traj_len = max(ele.size(0) for ele in prev_actions_batch)
-    for bid in range(batch_size):
-        for sensor in observations_batch:
-            fill = 0.0 if "_reward" in sensor else 1.0
-            # Workaround when the reward is only a single scalar...
-            if len(observations_batch[sensor][bid].shape) == 0:
-                observations_batch[sensor][bid] = observations_batch[sensor][bid].unsqueeze(-1)
-            observations_batch[sensor][bid] = _pad_helper(
-                observations_batch[sensor][bid], max_traj_len, fill_val=fill
-            )
-
-        prev_actions_batch[bid] = _pad_helper(
-            prev_actions_batch[bid], max_traj_len
-        )
-        corrected_actions_batch[bid] = _pad_helper(
-            corrected_actions_batch[bid], max_traj_len
-        )
-        weights_batch[bid] = _pad_helper(weights_batch[bid], max_traj_len)
-
-    stack_dimension = 0
-
-    for sensor in observations_batch:
-        observations_batch[sensor] = torch.stack(observations_batch[sensor], dim=stack_dimension)
-        # observations_batch[sensor] = observations_batch[sensor].view(
-        #     -1, *observations_batch[sensor].size()[2:]
-        # )
-        if "_reward" in sensor:
-            observations_batch[sensor] = observations_batch[sensor].unsqueeze(-1)
-    # observations_batch["instruction"] = observations_batch["instruction"].view(
-    #     -1, *observations_batch["instruction"].size()[2:]
-    # )
-
-    prev_actions_batch = torch.stack(prev_actions_batch, dim=stack_dimension)
-    corrected_actions_batch = torch.stack(corrected_actions_batch, dim=stack_dimension)
-
-    weights_batch = torch.stack(weights_batch, dim=stack_dimension)
-    not_done_masks = torch.ones_like(
-        corrected_actions_batch, dtype=torch.uint8
-    )
-    not_done_masks[0] = 0
-
-    if USE_EXTRA_START_TOKEN:
-        # The environment only use actions from 0 to 3, the 4 is just a
-        # a dummy token to indicate the beginning of a sequence.
-        prev_actions_batch[:, 0] = EXTRA_START_TOKEN_ID
-    else:
-        prev_actions_batch[:, 0] = STOP_ACTION_TOKEN_ID # this is zero.
-    # shape batch size time max episode length
-    timesteps = torch.arange(0, max_traj_len).repeat(batch_size, 1)
-    observations_batch["timesteps"] = timesteps
-    observations_batch = ObservationsDict(observations_batch)
-
-    return (
-        observations_batch,
-        prev_actions_batch,
-        not_done_masks,
-        corrected_actions_batch,
-        weights_batch
-    )
 
 
 def _block_shuffle(lst, block_size):
@@ -309,7 +208,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             split=config.TASK_CONFIG.DATASET.SPLIT
         )
         #
-        self.rewards = {"point_goal_nav_reward": {
+        self.rewards = {"point_nav_reward": {
             "step_penalty": config.IL.DECISION_TRANSFORMER.POINT_GOAL_NAV_REWARD.step_penalty,
             "success": config.IL.DECISION_TRANSFORMER.POINT_GOAL_NAV_REWARD.success},
             "sparse_reward": {
@@ -319,9 +218,6 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 "step_penalty": config.IL.DECISION_TRANSFORMER.NDTW_REWARD.step_penalty,
                 "success": config.IL.DECISION_TRANSFORMER.NDTW_REWARD.success},
         }
-        # Dirty trick to use a dedicated start token in the collate_fn
-        global USE_EXTRA_START_TOKEN
-        USE_EXTRA_START_TOKEN = config.MODEL.DECISION_TRANSFORMER.use_extra_start_token
         super().__init__(config)
 
     def _create_feature_hooks(self):
@@ -358,24 +254,46 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         self.rgb_features = torch.zeros((1,), device="cpu")
         self.depth_features = torch.zeros((1,), device="cpu")
 
-    def _calculate_return_to_go(self, traj_obs: dict, reward_type: str, observation_type: str, scaling_factor=1.0):
+    def _calculate_return_to_go(self, traj_obs: dict, reward_type: str, observation_type: str, scaling_factor=1.0, destination_key= None):
         """
         Calculate the return to go. For a given step, sum of all rewards to come
         :param traj_obs:
         :param reward_type:
         :param observation_type:
+        :param destination_key: if not given, will try to derive a destination name from observation_type (should start with raw_)
         :param scaling_factor: scale the rewards down, proportinally to the sequence length
         :return:
         """
         assert (reward_type in self.rewards.keys())
         assert (observation_type in traj_obs.keys())
         rewards = traj_obs[observation_type]
+        # work around when transforming the values read in the database...
+        # that avoid to have a second fonction for the collate_fn when recalculating on the fly
+        isTensor = type(rewards) is torch.Tensor
+        if isTensor:
+            rewards = rewards.numpy()
         rewards = rewards + self.rewards[reward_type]["step_penalty"]
         rewards[-1] = rewards[-1] + self.rewards[reward_type]["success"]
         # Just save the simple rewards for each time steps, not accumulated if needed
-        traj_obs[reward_type] = np.float32(rewards.squeeze())
+        rewards = np.float32(rewards.squeeze())
+        if isTensor:
+            simple_reward = torch.from_numpy(rewards)
+        else:
+            simple_reward = rewards
+        traj_obs[reward_type] = simple_reward
         rewards = np.flip(np.flip(rewards).cumsum())
-        traj_obs[observation_type] = np.float32(rewards/scaling_factor)
+        if destination_key is None:
+            assert observation_type.startswith("raw_")
+            destination_key = observation_type.split("raw_")[1] + "_to_go"
+        reward_to_go = np.float32(rewards/scaling_factor)
+        if isTensor:
+            reward_to_go = torch.from_numpy(reward_to_go)
+        traj_obs[destination_key] = reward_to_go
+
+    def _calculate_rewards(self, traj_obs, scaling_factor):
+        self._calculate_return_to_go(traj_obs, "point_nav_reward", "raw_point_nav_reward", scaling_factor)
+        self._calculate_return_to_go(traj_obs, "sparse_reward", "raw_sparse_reward", scaling_factor)
+        self._calculate_return_to_go(traj_obs, "ndtw_reward", "raw_ndtw_reward", scaling_factor)
 
     def _make_dirs(self) -> None:
         self._make_ckpt_dir()
@@ -585,17 +503,16 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         #    np.concatenate(([current_episodes[i].info["geodesic_distance"]], traj_obs[distance_left_uuid])), axis=0)
                         # We add the final distance to the goal once again because on th elast step,
                         # the STOP action is called
-                        traj_obs["point_nav_reward_to_go"] = np.diff(
+
+                        traj_obs["raw_point_nav_reward"] = np.diff(
                             np.concatenate((traj_obs[distance_left_uuid], [traj_obs[distance_left_uuid][-1]])),
                             axis=0) * -1.0
                         # PReparing entries for sparse rewards
-                        traj_obs["sparse_reward_to_go"] = np.zeros_like(traj_obs["point_nav_reward_to_go"])
+                        traj_obs["raw_sparse_reward"] = np.zeros_like(traj_obs["raw_point_nav_reward"])
                         scaling_factor = traj_obs[distance_left_uuid].size # Scaling by the episode length
-                        del traj_obs[distance_left_uuid]
-                        traj_obs["ndtw_reward_to_go"] = np.array([step[3] for step in ep], dtype=np.float16)
-                        self._calculate_return_to_go(traj_obs, "point_goal_nav_reward", "point_nav_reward_to_go", scaling_factor)
-                        self._calculate_return_to_go(traj_obs, "sparse_reward", "sparse_reward_to_go", scaling_factor)
-                        self._calculate_return_to_go(traj_obs, "ndtw_reward", "ndtw_reward_to_go", scaling_factor)
+                        traj_obs[distance_left_uuid]
+                        traj_obs["raw_ndtw_reward"] = np.array([step[3] for step in ep], dtype=np.float16)
+                        self._calculate_rewards(traj_obs, scaling_factor)
                         transposed_ep = [
                             traj_obs,
                             np.array([step[1] for step in ep], dtype=np.int64),
@@ -1302,6 +1219,106 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 -1
             )
         self.config.freeze()
+
+        def collate_fn(batch):
+            """Each sample in batch: (
+                obs,
+                prev_actions,
+                oracle_actions,
+                inflec_weight,
+            )
+            """
+
+            def _pad_helper(t, max_len, fill_val=0):
+                pad_amount = max_len - t.size(0)
+                if pad_amount == 0:
+                    return t
+
+                pad = torch.full_like(t[0:1], fill_val).expand(
+                    pad_amount, *t.size()[1:]
+                )
+                return torch.cat([t, pad], dim=0)
+
+            if not _is_correct_previous_actions(batch):
+                raise Exception(
+                    "Dataset has not been created correctly! Prev actions and corrected actions not shifted accordingly!")
+            transposed = list(zip(*batch))
+            observations_batch = list(transposed[0])
+
+
+            if self.config.IL.DECISION_TRANSFORMER.recompute_reward:
+                for o in observations_batch:
+                    scaling_factor = len(o["raw_sparse_reward"])
+                    self._calculate_rewards(o, scaling_factor)
+
+            prev_actions_batch = list(transposed[1])
+            corrected_actions_batch = list(transposed[2])
+            weights_batch = list(transposed[3])  # to make it batch * seq length
+            batch_size = len(prev_actions_batch)
+
+            new_observations_batch = defaultdict(list)
+            for sensor in observations_batch[0]:
+                for bid in range(batch_size):
+                    new_observations_batch[sensor].append(
+                        observations_batch[bid][sensor]
+                    )
+
+            observations_batch = new_observations_batch
+
+            max_traj_len = max(ele.size(0) for ele in prev_actions_batch)
+            for bid in range(batch_size):
+                for sensor in observations_batch:
+                    fill = 0.0 if "_reward" in sensor else 1.0
+                    # Workaround when the reward is only a single scalar...
+                    if len(observations_batch[sensor][bid].shape) == 0:
+                        observations_batch[sensor][bid] = observations_batch[sensor][bid].unsqueeze(-1)
+                    observations_batch[sensor][bid] = _pad_helper(
+                        observations_batch[sensor][bid], max_traj_len, fill_val=fill
+                    )
+
+                prev_actions_batch[bid] = _pad_helper(
+                    prev_actions_batch[bid], max_traj_len
+                )
+                corrected_actions_batch[bid] = _pad_helper(
+                    corrected_actions_batch[bid], max_traj_len
+                )
+                weights_batch[bid] = _pad_helper(weights_batch[bid], max_traj_len)
+
+            stack_dimension = 0
+
+            for sensor in observations_batch:
+                observations_batch[sensor] = torch.stack(observations_batch[sensor], dim=stack_dimension)
+                if "_reward" in sensor:
+                    observations_batch[sensor] = observations_batch[sensor].unsqueeze(-1)
+
+
+            prev_actions_batch = torch.stack(prev_actions_batch, dim=stack_dimension)
+            corrected_actions_batch = torch.stack(corrected_actions_batch, dim=stack_dimension)
+
+            weights_batch = torch.stack(weights_batch, dim=stack_dimension)
+            not_done_masks = torch.ones_like(
+                corrected_actions_batch, dtype=torch.uint8
+            )
+            not_done_masks[0] = 0
+
+            if self.config.MODEL.DECISION_TRANSFORMER.use_extra_start_token:
+                # The environment only use actions from 0 to 3, the 4 is just a
+                # a dummy token to indicate the beginning of a sequence.
+                prev_actions_batch[:, 0] = EXTRA_START_TOKEN_ID
+            else:
+                prev_actions_batch[:, 0] = STOP_ACTION_TOKEN_ID  # this is zero.
+            # shape batch size time max episode length
+            timesteps = torch.arange(0, max_traj_len).repeat(batch_size, 1)
+            observations_batch["timesteps"] = timesteps
+            observations_batch = ObservationsDict(observations_batch)
+
+            return (
+                observations_batch,
+                prev_actions_batch,
+                not_done_masks,
+                corrected_actions_batch,
+                weights_batch
+            )
 
         observation_space, action_space = self._get_spaces(self.config)
 
