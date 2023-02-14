@@ -57,6 +57,29 @@ EXTRA_START_TOKEN_ID = 4
 STOP_ACTION_TOKEN_ID = 0
 USE_EXTRA_START_TOKEN = False
 
+
+def _is_correct_previous_actions(batch):
+    """
+    Somehow, I detected a bug. Some actions are not shifted correctly
+    prev_actions_batch[i+1] is not always equal to  corrected_actions_batch[i]
+    :param batch:
+    :return:
+    """
+    return sum([(batch[i][1][1:] == batch[i][2][:-1]).sum() == len(batch[i][1][1:]) for i in range(len(batch))]) == len(
+        batch)
+
+def collate_fn_check_batch(batch):
+    """Each sample in batch: (
+        obs,
+        prev_actions,
+        oracle_actions,
+        inflec_weight,
+    )
+    """
+    if not _is_correct_previous_actions(batch):
+        raise Exception("Dataset has not been created correctly! Prev actions and corrected actions not shifted accordingly!")
+
+
 def collate_fn(batch):
     """Each sample in batch: (
         obs,
@@ -75,6 +98,10 @@ def collate_fn(batch):
             pad_amount, *t.size()[1:]
         )
         return torch.cat([t, pad], dim=0)
+
+
+    if not _is_correct_previous_actions(batch):
+        raise Exception("Dataset has not been created correctly! Prev actions and corrected actions not shifted accordingly!")
 
     transposed = list(zip(*batch))
 
@@ -514,6 +541,10 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         print(f"To be collected: {collect_size} ")
         horizon = 1
         agent_action = False
+
+        def _detect_wrong_episode(transposed_ep):
+            return not (transposed_ep[1][1:] == transposed_ep[2][:-1]).sum() == len(transposed_ep[1][1:])
+
         with tqdm.tqdm(
             total=collect_size, dynamic_ncols=True
         ) as pbar, lmdb.open(
@@ -606,7 +637,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                     not_done_masks,
                     prev_actions,
                     batch,
-                    _,
+                    episodes,
                     episode_features,
                 ) = self._pause_envs(
                     envs_to_pause,
@@ -615,7 +646,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                     not_done_masks,
                     prev_actions,
                     batch,
-                    None,
+                    episodes, # A trick, I am using what is thought for the RGB features to reduce this list as well
                     episode_features,
                 )
 
@@ -1406,6 +1437,65 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         )
                 #AuxLosses.deactivate()
 
+    def check_dataset(self) -> None:
+        """
+        Throws an exception if the dataset is somehow not created correctly
+        :return:
+        """
+        print(f"Checking data under:{self.lmdb_features_dir}")
+        try:
+            lmdb.open(self.lmdb_features_dir, readonly=True)
+        except lmdb.Error as err:
+            logger.error(
+                "Cannot open database for teacher forcing preload."
+            )
+            raise err
+        # Seems to bottleneck on Dataloader access if I have more than 1 worker
+        workers = self.config.IL.dataload_workers
+        # If set to spawn, that is made to be able to debug in Pytorch in Ubuntu > 18
+        #  So you want to only set 1 worker to be able to set a break point in the next loop...
+        #if self.config.MULTIPROCESSING == "spawn":
+        #    workers = 1
+        with TensorboardWriter(
+            self.config.TENSORBOARD_DIR,
+            flush_secs=self.flush_secs,
+            purge_step=0,
+        ) as writer:
+            if torch.cuda.is_available():
+                with torch.cuda.device(self.device):
+                    torch.cuda.empty_cache()
+            gc.collect()
+
+            dataset = IWTrajectoryDataset(
+                self.lmdb_features_dir,
+                self.config.IL.use_iw,
+                inflection_weight_coef=self.config.IL.inflection_weight_coef,
+                lmdb_map_size=self.config.IL.DAGGER.lmdb_map_size,
+                batch_size=self.config.IL.batch_size,
+                preload_size=self.config.IL.preload_dataloader_size,
+            )
+            diter = torch.utils.data.DataLoader(
+                dataset,
+                batch_size=self.config.IL.batch_size,
+                shuffle=False,
+                collate_fn=collate_fn_check_batch,
+                pin_memory=False,
+                drop_last=True,  # drop last batch if smaller
+                num_workers=workers,
+            )
+            num_batch = dataset.length // dataset.batch_size
+            if num_batch == 0:
+                num_batch = 1
+            logger.info(f"Number of batches to process:{num_batch}")
+            # The check is done with the collate function, we just need to iterate to run the whole check...
+            for _ in tqdm.tqdm(
+                diter,
+                total=num_batch,
+                leave=False,
+                dynamic_ncols=True,
+            ):
+                pass
+        print("Dataset seems fine!")
 
 
     def create_dataset(self) -> None:

@@ -22,9 +22,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--run-type",
-        choices=["train", "eval", "inference", "create_dataset", "train_eval"],
+        choices=["train", "eval", "inference", "create_dataset", "train_eval", "check_dataset"],
         required=True,
-        help="run type of the experiment (train, eval, inference, dataset creation only, train + eval)",
+        help="run type of the experiment (train, eval, inference, dataset creation only, train + eval, check dataset consistency)",
     )
     parser.add_argument(
         "--exp-config",
@@ -112,6 +112,8 @@ def run_exp(exp_config: str, run_type: str, opts=None) -> None:
         gc.collect()
         trainer.eval()
         gc.collect()
+    elif run_type == "check_dataset":
+        trainer.check_dataset()
 
     # avoids to write to all previous files if running in a loop
     logger.removeHandler(logger.handlers[-1])
