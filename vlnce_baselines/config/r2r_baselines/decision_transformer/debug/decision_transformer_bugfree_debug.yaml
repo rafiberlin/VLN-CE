@@ -7,7 +7,7 @@ TENSORBOARD_DIR: data/tensorboard_dirs/decision_transformer_debug/bugfree
 CHECKPOINT_FOLDER: data/checkpoints/decision_transformer_debug/bugfree
 EVAL_CKPT_PATH_DIR: data/checkpoints/decision_transformer_debug/bugfree
 RESULTS_DIR: data/checkpoints/decision_transformer_debug/bugfree/evals
-MULTIPROCESSING: forkserver  # default is forkserver, Set to 'spawn' when debugging with Pycharm,
+MULTIPROCESSING: spawn  # default is forkserver, Set to 'spawn' when debugging with Pycharm,
 ENV_NAME: VLNCEDecisionTransformerEnv
 
 
