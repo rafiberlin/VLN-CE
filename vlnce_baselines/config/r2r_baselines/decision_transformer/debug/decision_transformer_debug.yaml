@@ -26,9 +26,9 @@ EVAL:
   EPISODE_COUNT: -1
 
 IL:
-  epochs: 60
+  epochs: 70
   batch_size: 5
-  checkpoint_frequency: 15
+  checkpoint_frequency: 10
   lr: 1.5e-3
   load_from_ckpt: False # To train from a previous checkpoint
   ckpt_to_load: data/checkpoints/decision_transformer_debug/ckpt.269.pth # REPLACE
