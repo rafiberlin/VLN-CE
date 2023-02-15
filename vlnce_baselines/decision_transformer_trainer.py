@@ -1447,7 +1447,8 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         epoch,
                     )
                     logger.info(f"Mean Loss for DAgger iter {dagger_it}, Epoch {epoch}: {total_loss}")
-                    if (epoch + 1) % self.config.IL.checkpoint_frequency == 0:
+                    if total_loss <= self.config.IL.mean_loss_to_save_checkpoint and (epoch + 1) % self.config.IL.checkpoint_frequency == 0:
+                    #if (epoch + 1) % self.config.IL.checkpoint_frequency == 0:
                         print("Save", f"ckpt.{dagger_it * self.config.IL.epochs + epoch}.pth")
                         self.save_checkpoint(
                             f"ckpt.{dagger_it * self.config.IL.epochs + epoch}.pth"
