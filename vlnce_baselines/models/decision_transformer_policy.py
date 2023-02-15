@@ -909,7 +909,7 @@ class FullDecisionTransformerNet(Net):
         # the normal Decision Transformer has Instruction, Depth, RGB conctenated
         # into only one state
         #self.model_config.DECISION_TRANSFORMER.step_size = 8
-        self.model_config.DECISION_TRANSFORMER.step_size = 4
+        self.model_config.DECISION_TRANSFORMER.step_size = 6
         self.model_config.freeze()
 
         self.full_transformer = nn.Transformer(d_model=model_config.DECISION_TRANSFORMER.hidden_dim
@@ -949,7 +949,7 @@ class FullDecisionTransformerNet(Net):
         self.depth_embed_state = nn.Linear(model_config.DEPTH_ENCODER.output_size,
                                                  model_config.DECISION_TRANSFORMER.hidden_dim)
 
-
+        self.gpt_encoder = GPT(self.model_config.DECISION_TRANSFORMER)
 
         # 5 because we have embedding for reward, one for past actions and 3 for states( instructions
         # rgb and depth). In the origininal transformer, there is only one state instead of 3.
@@ -1076,7 +1076,9 @@ class FullDecisionTransformerNet(Net):
         #WARNING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Will probably mess up with dimensonality with the timesteps
         instruction_state_embeddings = self.positional_encoding_for_instruction(self.instruction_embed_state(single_instruction_states.permute(0,2,1)))
 
-        causal_mask = VanillaMultiHeadAttention.create_causal_mask(seq_length * self.transformer_step_size, rgb_embedding.device)[0][0]# only 2D allowed in Pytorch Inmplementation
+        step_size = 2
+
+        causal_mask = VanillaMultiHeadAttention.create_causal_mask(seq_length * step_size, rgb_embedding.device)[0][0]# only 2D allowed in Pytorch Inmplementation
         text_mask = VanillaMultiHeadAttention.create_padded_mask(instruction_state_embeddings)
 
         rgb_state_embeddings = self.rgb_embed_state(rgb_embedding)
@@ -1097,10 +1099,16 @@ class FullDecisionTransformerNet(Net):
 
 
         # this makes the sequence look like (R_1, s_instr_1, s_depth_1, s_rgb_1, a_1, R_2, s_instr_2, s_depth_2, s_rgb_2, a_2, ...)
+        # stacked_inputs = (
+        #     torch.stack((returns_embeddings2, rgb_state_embeddings2, depth_state_embeddings2, action_embeddings2), dim=1)
+        #         .permute(0, 2, 1, 3)
+        #         .reshape(batch_size, self.transformer_step_size * seq_length, -1)
+        # )
+        #this makes the sequence look like (s_depth_1, s_rgb_1, s_depth_2, s_rgb_2 ...)
         stacked_inputs = (
-            torch.stack((returns_embeddings2, rgb_state_embeddings2, depth_state_embeddings2, action_embeddings2), dim=1)
+            torch.stack((rgb_state_embeddings2, depth_state_embeddings2), dim=1)
                 .permute(0, 2, 1, 3)
-                .reshape(batch_size, self.transformer_step_size * seq_length, -1)
+                .reshape(batch_size, step_size * seq_length, -1)
         )
         #torch.stack((returns_embeddings2, instruction_state_embeddings2, rgb_state_embeddings2, depth_state_embeddings2, depth_influenced_text2, rgb_influenced_text2, state_attended_text2, action_embeddings2), dim=1)
         stacked_inputs2 = self.embed_ln(stacked_inputs)
@@ -1112,6 +1120,16 @@ class FullDecisionTransformerNet(Net):
         # reshape back to original.
         # In the third dimension (dim=2), returns (0), states (1), or actions (2)
         # i.e. x[:,1,t] is the token for s_t
+        output = output.reshape(batch_size, seq_length, step_size, -1).permute(0, 2, 1, 3)
+
+        dim_for_concat = 1
+        stacked = returns_embeddings2.unsqueeze(dim_for_concat)
+        stacked = torch.cat((stacked, rgb_state_embeddings2.unsqueeze(dim_for_concat)), dim=dim_for_concat)
+        stacked = torch.cat((stacked, depth_state_embeddings2.unsqueeze(dim_for_concat)), dim=dim_for_concat)
+        stacked = torch.cat((stacked, output), dim=dim_for_concat)
+        stacked = torch.cat((stacked, action_embeddings2.unsqueeze(dim_for_concat)), dim=dim_for_concat).permute(0, 2, 1, 3).reshape(batch_size, self.transformer_step_size* seq_length, -1)
+
+        output = self.gpt_encoder(stacked)
         output = output.reshape(batch_size, seq_length, self.transformer_step_size, -1).permute(0, 2, 1, 3)
 
         # get predictions
