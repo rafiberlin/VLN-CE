@@ -1,4 +1,4 @@
-BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task.yaml
+BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task_debug.yaml
 TRAINER_NAME: decision_transformer # recollect_trainer, dagger
 SIMULATOR_GPU_IDS: [0]
 TORCH_GPU_ID: 0
@@ -24,11 +24,13 @@ EVAL:
   USE_CKPT_CONFIG: False
   SPLIT: debug
   EPISODE_COUNT: -1
+  VAL_SEEN: "val_seen"
+  VAL_UNSEEN: "val_unseen"
 
 IL:
-  epochs: 70
+  epochs: 5
   batch_size: 5
-  checkpoint_frequency: 10
+  checkpoint_frequency: 1
   lr: 1.5e-3
   load_from_ckpt: False # To train from a previous checkpoint
   ckpt_to_load: data/checkpoints/decision_transformer_debug/ckpt.269.pth # REPLACE

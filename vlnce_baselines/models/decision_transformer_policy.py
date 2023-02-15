@@ -4,7 +4,7 @@ from gym import Space
 from habitat import Config
 from habitat_baselines.common.baseline_registry import BaselineRegistry
 from habitat_baselines.rl.ppo.policy import Net
-from vlnce_baselines.models.encoders.min_gpt import GPT
+from vlnce_baselines.models.encoders.min_gpt import GPT, NewGELU
 from vlnce_baselines.models.encoders import resnet_encoders
 from vlnce_baselines.models.encoders.instruction_encoder import (
     InstructionEncoder, Word2VecEmbeddings, InstructionEncoderWithTransformer
@@ -121,6 +121,7 @@ class DecisionTransformerNet(Net):
 
         assert model_config.DECISION_TRANSFORMER.reward_type in ["point_nav_reward_to_go", "sparse_reward_to_go", "point_nav_reward", "sparse_reward", "ndtw_reward", "ndtw_reward_to_go"]
         self.reward_type = model_config.DECISION_TRANSFORMER.reward_type
+        self.activation = nn.Sequential(nn.Dropout(p=0.3), NewGELU())
 
 
         # size due to concatenation of instruction, depth, and rgb features
@@ -268,7 +269,7 @@ class DecisionTransformerNet(Net):
 
         # embed each modality with a different head
         state_embeddings = self.embed_state(states)
-        action_embeddings = self.embed_action(actions)
+        action_embeddings = self.activation(self.embed_action(actions))
         returns_embeddings = self.embed_return(returns_to_go)
         time_embeddings = self.embed_timestep(timesteps)
 
