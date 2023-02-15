@@ -3,10 +3,10 @@ TRAINER_NAME: decision_transformer # recollect_trainer, dagger
 SIMULATOR_GPU_IDS: [0]
 TORCH_GPU_ID: 0
 NUM_ENVIRONMENTS: 5 #Only use one environment for Decision Transformer! An this is probably not working with MUlti Sim GPU
-TENSORBOARD_DIR: data/tensorboard_dirs/decision_transformer_debug
-CHECKPOINT_FOLDER: data/checkpoints/decision_transformer_debug
-EVAL_CKPT_PATH_DIR: data/checkpoints/decision_transformer_debug
-RESULTS_DIR: data/checkpoints/decision_transformer_debug/evals
+TENSORBOARD_DIR: data/tensorboard_dirs/decision_transformer_debug/param_search
+CHECKPOINT_FOLDER: data/checkpoints/decision_transformer_debug/param_search
+EVAL_CKPT_PATH_DIR: data/checkpoints/decision_transformer_debug/param_search
+RESULTS_DIR: data/checkpoints/decision_transformer_debug/param_search/evals
 MULTIPROCESSING: forkserver  # default is forkserver, Set to 'spawn' when debugging with Pycharm,
 ENV_NAME: VLNCEDecisionTransformerEnv
 
@@ -15,7 +15,7 @@ INFERENCE:
   SPLIT: debug
   USE_CKPT_CONFIG: False
   SAMPLE: False
-  CKPT_PATH: data/checkpoints/decision_transformer_debug/ckpt.269.pth
+  CKPT_PATH: data/checkpoints/decision_transformer_debug/param_search/ckpt.269.pth
   PREDICTIONS_FILE: predictions.json
   FORMAT: r2r
 
@@ -31,7 +31,7 @@ IL:
   checkpoint_frequency: 1
   lr: 1.5e-4
   load_from_ckpt: False # To train from a previous checkpoint
-  ckpt_to_load: data/checkpoints/decision_transformer_debug/ckpt.269.pth # REPLACE
+  ckpt_to_load: data/checkpoints/decision_transformer_debug/param_search/ckpt.269.pth # REPLACE
 
   RECOLLECT_TRAINER:
     gt_file:
@@ -40,7 +40,7 @@ IL:
     recompute_reward: True # allows to apply step penalty and end reward on the fly without recaching the whole dataset...
     sensor_uuid: distance_left
     POINT_GOAL_NAV_REWARD:
-      step_penalty: -0.2
+      step_penalty: -0.05
       success: 1.0
     SPARSE_REWARD:
       step_penalty: -0.01
