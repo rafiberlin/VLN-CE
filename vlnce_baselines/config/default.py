@@ -330,6 +330,10 @@ _C.MODEL.DECISION_TRANSFORMER.block_size = _C.MODEL.DECISION_TRANSFORMER.episode
 _C.MODEL.DECISION_TRANSFORMER.embd_pdrop = 0.1
 _C.MODEL.DECISION_TRANSFORMER.resid_pdrop = 0.1
 _C.MODEL.DECISION_TRANSFORMER.attn_pdrop = 0.1
+_C.MODEL.DECISION_TRANSFORMER.activation_action_drop = 0.3
+_C.MODEL.DECISION_TRANSFORMER.activation_instruction_drop = 0.0
+_C.MODEL.DECISION_TRANSFORMER.activation_rgb_drop = 0.0
+_C.MODEL.DECISION_TRANSFORMER.activation_depth_drop = 0.0
 # The part when attention layers are needed for the Cross Attention Model.
 _C.MODEL.DECISION_TRANSFORMER.ATTENTION_LAYER = CN()
 _C.MODEL.DECISION_TRANSFORMER.ATTENTION_LAYER.episode_horizon = _C.MODEL.DECISION_TRANSFORMER.episode_horizon

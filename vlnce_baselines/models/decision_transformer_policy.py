@@ -121,8 +121,13 @@ class DecisionTransformerNet(Net):
 
         assert model_config.DECISION_TRANSFORMER.reward_type in ["point_nav_reward_to_go", "sparse_reward_to_go", "point_nav_reward", "sparse_reward", "ndtw_reward", "ndtw_reward_to_go"]
         self.reward_type = model_config.DECISION_TRANSFORMER.reward_type
-        self.activation = nn.Sequential(nn.Dropout(p=0.3), NewGELU())
-
+        self.action_activation = nn.Sequential(nn.Dropout(p=self.model_config.DECISION_TRANSFORMER.activation_action_drop), NewGELU())
+        self.instruction_activation = nn.Sequential(
+            nn.Dropout(p=self.model_config.DECISION_TRANSFORMER.activation_instruction_drop), NewGELU())
+        self.rgb_activation = nn.Sequential(
+            nn.Dropout(p=self.model_config.DECISION_TRANSFORMER.activation_rgb_drop), NewGELU())
+        self.depth_activation = nn.Sequential(
+            nn.Dropout(p=self.model_config.DECISION_TRANSFORMER.activation_depth_drop), NewGELU())
 
         # size due to concatenation of instruction, depth, and rgb features
         input_state_size = self.instruction_encoder.output_size \
@@ -190,9 +195,9 @@ class DecisionTransformerNet(Net):
         if not self.model_config.DECISION_TRANSFORMER.use_transformer_encoded_instruction:
             self._flatten_batch(observations, "instruction")
 
-        depth_embedding = self.depth_encoder(observations)
-        rgb_embedding = self.rgb_encoder(observations)
-        instruction_embedding = self.instruction_encoder(observations)
+        depth_embedding = self.depth_activation(self.depth_encoder(observations))
+        rgb_embedding = self.rgb_activation(self.rgb_encoder(observations))
+        instruction_embedding = self.instruction_activation(self.instruction_encoder(observations))
 
 
 
@@ -269,7 +274,7 @@ class DecisionTransformerNet(Net):
 
         # embed each modality with a different head
         state_embeddings = self.embed_state(states)
-        action_embeddings = self.activation(self.embed_action(actions))
+        action_embeddings = self.action_activation(self.embed_action(actions))
         returns_embeddings = self.embed_return(returns_to_go)
         time_embeddings = self.embed_timestep(timesteps)
 
