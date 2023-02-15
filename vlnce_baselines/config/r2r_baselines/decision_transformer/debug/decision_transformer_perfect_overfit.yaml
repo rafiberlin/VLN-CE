@@ -1,3 +1,5 @@
+# Looks like it is dependent on my dataset, don t erase it!
+# commit d04564df58ed2dd7c7e383dae58f334e887e0626
 BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task_debug.yaml
 TRAINER_NAME: decision_transformer # recollect_trainer, dagger
 SIMULATOR_GPU_IDS: [0]
