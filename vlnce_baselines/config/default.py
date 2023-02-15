@@ -40,7 +40,7 @@ _C.EVAL.SAVE_RESULTS = True
 _C.EVAL.EVAL_NONLEARNING = False
 _C.EVAL.NONLEARNING = CN()
 _C.EVAL.NONLEARNING.AGENT = "RandomAgent"
-_C.EVAL.VAL_SEEN_SMALL = "val_seen_ep_50" # only used when ran in train_complete mode
+_C.EVAL.VAL_SEEN_SMALL = "val_seen_50_ep" # only used when ran in train_complete mode
 _C.EVAL.VAL_SEEN = "val_seen" # only used when ran in train_complete mode
 _C.EVAL.VAL_UNSEEN = "val_unseen" # only used when ran in train_complete mode
 # ----------------------------------------------------------------------------
