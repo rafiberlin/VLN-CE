@@ -26,6 +26,7 @@ EVAL:
   USE_CKPT_CONFIG: False
   SPLIT: debug
   EPISODE_COUNT: -1
+  VAL_SEEN_SMALL: "val_seen_80_ep"
   VAL_SEEN: "val_seen"
   VAL_UNSEEN: "val_unseen"
 
