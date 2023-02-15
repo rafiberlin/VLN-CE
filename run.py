@@ -16,15 +16,16 @@ from vlnce_baselines.nonlearning_agents import (
     evaluate_agent,
     nonlearning_inference,
 )
+from vlnce_baselines import utils
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--run-type",
-        choices=["train", "eval", "inference", "create_dataset", "train_eval", "check_dataset"],
+        choices=["train", "eval", "inference", "create_dataset", "train_eval", "check_dataset", "train_complete"],
         required=True,
-        help="run type of the experiment (train, eval, inference, dataset creation only, train + eval, check dataset consistency)",
+        help="run type of the experiment (train, eval, inference, dataset creation only, train + eval, check dataset consistency, train complete (run val seen and unseen on the best model only))",
     )
     parser.add_argument(
         "--exp-config",
@@ -55,6 +56,21 @@ def main():
     else:
         run_exp(**vars(args))
 
+def move_bad_checkpoints(checkpoint_dir, result_dir, keep_best=5):
+    results_per_data_split = utils.get_result_files_per_datasplit(result_dir)
+    poor_iterations = utils.read_results_per_split(results_per_data_split, keep_n_best=keep_best)
+    utils.move_poor_checkpoints(checkpoint_dir, poor_iterations)
+
+def run_eval_for_split(trainer, config, split, keep_best):
+    checkpoint_dir = config.EVAL_CKPT_PATH_DIR
+    result_dir = config.RESULTS_DIR
+    config.defrost()
+    config.EVAL.SPLIT = split
+    config.freeze()
+    trainer.config = config
+    trainer.eval()
+    gc.collect()
+    move_bad_checkpoints(checkpoint_dir, result_dir, keep_best)
 
 def run_exp(exp_config: str, run_type: str, opts=None) -> None:
     """Runs experiment given mode and config
@@ -114,6 +130,13 @@ def run_exp(exp_config: str, run_type: str, opts=None) -> None:
         gc.collect()
     elif run_type == "check_dataset":
         trainer.check_dataset()
+    elif run_type == "train_complete":
+        trainer.train()
+        gc.collect()
+        run_eval_for_split(trainer, config, config.EVAL.VAL_SEEN_SMALL, keep_best=6)
+        run_eval_for_split(trainer, config, config.EVAL.VAL_SEEN, keep_best=3)
+        run_eval_for_split(trainer, config, config.EVAL.VAL_UNSEEN, keep_best=1)
+
 
     # avoids to write to all previous files if running in a loop
     logger.removeHandler(logger.handlers[-1])
