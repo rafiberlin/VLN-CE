@@ -1,4 +1,4 @@
-BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task.yaml #vlnce_task_aug.yaml
+BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task_aug.yaml #vlnce_task.yaml , vlnce_task_aug.yaml
 TRAINER_NAME: decision_transformer # recollect_trainer, dagger
 SIMULATOR_GPU_IDS: [0]
 TORCH_GPU_ID: 0
@@ -51,11 +51,11 @@ IL:
   DAGGER:
     repeat_dataset: 1
     iterations: 1
-    update_size: 10819 # Original size: 10819, EnvDrop+Train: 157232
+    update_size: 157232 # Original size: 10819, EnvDrop+Train: 157232
     p: 1.0
     preload_lmdb_features: False
     lmdb_commit_frequency: 500
-    lmdb_features_dir: data/trajectories_dirs/NORMAL_BUGFREE/trajectories.lmdb
+    lmdb_features_dir: data/trajectories_dirs/AUG_BUGFREE/trajectories.lmdb
 
 
 MODEL:
