@@ -131,9 +131,9 @@ def run_exp(exp_config: str, run_type: str, opts=None) -> None:
     elif run_type == "check_dataset":
         trainer.check_dataset()
     elif run_type == "train_complete":
-        trainer.train()
-        gc.collect()
-        run_eval_for_split(trainer, config, config.EVAL.VAL_SEEN_SMALL, keep_best=6)
+        #trainer.train()
+        #gc.collect()
+        #run_eval_for_split(trainer, config, config.EVAL.VAL_SEEN_SMALL, keep_best=6)
         run_eval_for_split(trainer, config, config.EVAL.VAL_SEEN, keep_best=3)
         run_eval_for_split(trainer, config, config.EVAL.VAL_UNSEEN, keep_best=1)
 

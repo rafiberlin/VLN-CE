@@ -53,14 +53,14 @@ if __name__ == "__main__":
     boundaries = (args.lower_length, args.upper_length)
     split = args.split
 
-    ep_limit = 50
+    ep_limit = 80
 
     directory = '../data/datasets/R2R_VLNCE_v1-3_preprocessed/$split/'
     split_template = Template(directory + "$split.json.gz")
     split_template_gt = Template(directory + '$split')
     # work around, as the template sees the underscore as Regex character
     suffix = "_gt.json.gz"
-    debug_split = "val_seen_50_ep"
+    debug_split = "val_seen_80_ep"
 
     outfile_gt = split_template_gt.substitute(split=debug_split) + suffix
     source_gt = split_template_gt.substitute(split=split) + suffix
