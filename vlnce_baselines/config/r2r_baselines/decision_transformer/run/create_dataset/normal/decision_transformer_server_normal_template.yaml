@@ -1,4 +1,4 @@
-BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task_aug.yaml #vlnce_task.yaml,  vlnce_task_50.yaml, vlnce_task_50_plus.yaml, vlnce_task_aug_50.yaml, vlnce_task_aug_50_plus.yaml
+BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task.yaml #vlnce_task.yaml,  vlnce_task_50.yaml, vlnce_task_50_plus.yaml, vlnce_task_aug_50.yaml, vlnce_task_aug_50_plus.yaml
 TRAINER_NAME: decision_transformer # recollect_trainer, dagger
 SIMULATOR_GPU_IDS: [0]
 TORCH_GPU_ID: 0
