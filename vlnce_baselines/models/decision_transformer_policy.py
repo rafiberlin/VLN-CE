@@ -546,6 +546,7 @@ class DecisionTransformerWithAttendedInstructionsNet(Net):
 
         model_config.defrost()
         model_config.INSTRUCTION_ENCODER.final_state_only = False
+        model_config.DECISION_TRANSFORMER.ATTENTION_LAYER.n_embd = model_config.DECISION_TRANSFORMER.hidden_dim
         model_config.freeze()
 
         self.model_config = model_config

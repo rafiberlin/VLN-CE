@@ -79,7 +79,6 @@ MODEL:
     activation_depth_drop: 0.01
     ATTENTION_LAYER: # only for DecisionTransformerWithAttendedInstructionsNet
       n_head: 8
-      n_embd: 256
       use_instruction_state_embeddings: True
       use_depth_influenced_text: True
       use_rgb_influenced_text: True
