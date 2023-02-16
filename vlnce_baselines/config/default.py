@@ -134,6 +134,7 @@ _C.IL.DECISION_TRANSFORMER = CN()
 _C.IL.DECISION_TRANSFORMER.episode_horizon = 183
 _C.IL.DECISION_TRANSFORMER.reward_type = "POINT_GOAL_NAV_REWARD"  # POINT_GOAL_NAV_REWARD or SPARSE_REWARD
 _C.IL.DECISION_TRANSFORMER.sensor_uuid = "distance_left" # USed to calculate the Return To Go
+_C.IL.DECISION_TRANSFORMER.recompute_reward = True
 _C.IL.DECISION_TRANSFORMER.POINT_GOAL_NAV_REWARD = CN()
 _C.IL.DECISION_TRANSFORMER.POINT_GOAL_NAV_REWARD.step_penalty = -0.01
 _C.IL.DECISION_TRANSFORMER.POINT_GOAL_NAV_REWARD.success = 10.0
@@ -326,7 +327,7 @@ _C.MODEL.DECISION_TRANSFORMER.use_transformer_encoded_instruction = False
 _C.MODEL.DECISION_TRANSFORMER.vocab_size = 4
 _C.MODEL.DECISION_TRANSFORMER.step_size = 3 #We multiply by three because at each time step, we use [reward, action, state].
 _C.MODEL.DECISION_TRANSFORMER.block_size = _C.MODEL.DECISION_TRANSFORMER.episode_horizon *_C.MODEL.DECISION_TRANSFORMER.step_size
-_C.MODEL.DECISION_TRANSFORMER.recompute_reward = True
+
 # dropout hyperparameters
 _C.MODEL.DECISION_TRANSFORMER.embd_pdrop = 0.1
 _C.MODEL.DECISION_TRANSFORMER.resid_pdrop = 0.1
