@@ -1,13 +1,13 @@
 #FAILED TO FIT
 BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task.yaml
 TRAINER_NAME: decision_transformer # recollect_trainer, dagger
-SIMULATOR_GPU_IDS: [0]
-TORCH_GPU_ID: 0
+SIMULATOR_GPU_IDS: [1]
+TORCH_GPU_ID: 1
 NUM_ENVIRONMENTS: 6 #Looks like the sweet spot for dataset creation is 6 envs. If you use more, we might wait too long to reload the next batch....
-TENSORBOARD_DIR: /cache/tensorboard-logdir/dt_enhanced_batch_8_d128
-CHECKPOINT_FOLDER: data/checkpoints/enhanced/dt_enhanced_batch_8_d128
-EVAL_CKPT_PATH_DIR: data/checkpoints/enhanced/dt_enhanced_batch_8_d128
-RESULTS_DIR: data/checkpoints/enhanced/dt_enhanced_batch_8_d128/evals/
+TENSORBOARD_DIR: /cache/tensorboard-logdir/full_dt_batch_8_d128
+CHECKPOINT_FOLDER: data/checkpoints/enhanced/full_dt_batch_8_d128
+EVAL_CKPT_PATH_DIR: data/checkpoints/enhanced/full_dt_batch_8_d128
+RESULTS_DIR: data/checkpoints/enhanced/full_dt_batch_8_d128/evals/
 MULTIPROCESSING: forkserver  # default is forkserver, Set to 'spawn' when debugging with Pycharm,
 ENV_NAME: VLNCEDecisionTransformerEnv
 
@@ -16,8 +16,8 @@ INFERENCE:
   SPLIT: test
   USE_CKPT_CONFIG: False
   SAMPLE: False
-  CKPT_PATH: data/checkpoints/enhanced/dt_enhanced_batch_8_d128/ckpt.269.pth
-  PREDICTIONS_FILE: predictions.json
+  CKPT_PATH: data/checkpoints/enhanced/full_dt_batch_8_d128/ckpt.269.pth
+  PREDICTIONS_FILE: data/checkpoints/full_dt_batch_8_d128/evals/full_dt_batch_8_d128_test_predictions.json
   FORMAT: r2r
 
 
@@ -27,11 +27,11 @@ EVAL:
   EPISODE_COUNT: -1
   VAL_SEEN: val_seen
   VAL_UNSEEN: val_unseen
-  PREDICTIONS_FILE: data/checkpoints/dt_enhanced_batch_8_d128/evals/dt_enhanced_batch_8_d128_test_predictions.json
+  PREDICTIONS_FILE: data/checkpoints/full_dt_batch_8_d128/evals/full_dt_batch_8_d128_test_predictions.json
   FORMAT: r2r
 
 IL:
-  preload_dataloader_size: 100
+  preload_dataloader_size: 6
   dataload_workers: 2
   epochs: 39
   batch_size: 128
@@ -39,7 +39,7 @@ IL:
   mean_loss_to_save_checkpoint: 0.40
   lr: 1.5e-4
   load_from_ckpt: False # To train from a previous checkpoint
-  ckpt_to_load: data/checkpoints/enhanced/dt_enhanced_batch_8_d128/ckpt.7.pth # REPLACE
+  ckpt_to_load: data/checkpoints/enhanced/full_dt_batch_8_d128/ckpt.7.pth # REPLACE
 
   RECOLLECT_TRAINER:
     gt_file:
