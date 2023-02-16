@@ -178,7 +178,7 @@ class AbstractDecisionTransformerNet(Net):
 
         return instruction_embedding, depth_embedding, rgb_embedding
 
-    def handle_instruction_embeddings(self, instruction_embedding, resize_tensor, batch_size, seq_length):
+    def handle_instruction_embeddings(self, observations, resize_tensor, batch_size, seq_length):
         raise not NotImplementedError("Depending, if you get a sentence embedding or the whole word sequence!")
 
     def initialize_instruction_encoder(self):
@@ -281,9 +281,9 @@ class DecisionTransformerNet(AbstractDecisionTransformerNet):
 
 
 
-    def handle_instruction_embeddings(self, instruction_embedding, resize_tensor, batch_size, seq_length):
+    def handle_instruction_embeddings(self, observations, resize_tensor, batch_size, seq_length):
 
-        instruction_embedding = self.instruction_activation(self.instruction_encoder(instruction_embedding))
+        instruction_embedding = self.instruction_activation(self.instruction_encoder(observations))
 
         if not self.model_config.DECISION_TRANSFORMER.use_transformer_encoded_instruction:
             instruction_embedding = resize_tensor(instruction_embedding)
@@ -707,8 +707,7 @@ class DecisionTransformerWithAttendedInstructionsNet(Net):
 
         return action_preds, None
 
-
-class FullDecisionTransformerNet(Net):
+class FullDecisionTransformerNet(AbstractDecisionTransformerNet):
     """DecisionTransformer with 3 different States Embeddings. Finally, a distribution over discrete
     actions (FWD, L, R, STOP) is produced.
     """
@@ -716,216 +715,63 @@ class FullDecisionTransformerNet(Net):
     def __init__(
         self, observation_space: Space, model_config: Config, num_actions: int
     ):
-        super().__init__()
-
         model_config.defrost()
         model_config.INSTRUCTION_ENCODER.final_state_only = False
         model_config.freeze()
+        super().__init__(observation_space, model_config, num_actions)
 
-        self.model_config = model_config
 
-        # Init the instruction encoder
+    def handle_instruction_embeddings(self, observations, resize_tensor, batch_size, seq_length):
+        instruction_embedding = self.instruction_encoder(observations).permute(0, 2, 1)
+        instruction_embedding = resize_tensor(instruction_embedding)
+        return  instruction_embedding
+
+
+    def initialize_instruction_encoder(self):
         self.instruction_encoder = Word2VecEmbeddings(
-            model_config.INSTRUCTION_ENCODER
-        )
-        self.positional_encoding_for_instruction = PositionalEncoding(model_config.DECISION_TRANSFORMER.hidden_dim)
-
-        # Init the depth encoder
-        assert model_config.DEPTH_ENCODER.cnn_type in ["VlnResnetDepthEncoder"]
-        self.depth_encoder = getattr(
-            resnet_encoders, model_config.DEPTH_ENCODER.cnn_type
-        )(
-            observation_space,
-            output_size=model_config.DEPTH_ENCODER.output_size,
-            checkpoint=model_config.DEPTH_ENCODER.ddppo_checkpoint,
-            backbone=model_config.DEPTH_ENCODER.backbone,
-            trainable=model_config.DEPTH_ENCODER.trainable,
+            self.model_config.INSTRUCTION_ENCODER
         )
 
-        self.model_config.defrost()
-        # a step has Reward, Action, Instruction, Depth, RGB
-        # the normal Decision Transformer has Instruction, Depth, RGB conctenated
-        # into only one state
-        #self.model_config.DECISION_TRANSFORMER.step_size = 8
-        self.model_config.DECISION_TRANSFORMER.step_size = 6
-        self.model_config.freeze()
-
-        self.full_transformer = nn.Transformer(d_model=model_config.DECISION_TRANSFORMER.hidden_dim
-                                               , nhead=model_config.DECISION_TRANSFORMER.n_head
-                                               , num_encoder_layers=model_config.DECISION_TRANSFORMER.ENCODER.n_layer
-                                               , num_decoder_layers=model_config.DECISION_TRANSFORMER.n_layer
-                                               , dim_feedforward=model_config.DECISION_TRANSFORMER.hidden_dim * 2
+    def initialize_other_layers(self):
+        self.positional_encoding_for_instruction = PositionalEncoding(self.model_config.DECISION_TRANSFORMER.hidden_dim)
+        self.full_transformer = nn.Transformer(d_model=self.model_config.DECISION_TRANSFORMER.hidden_dim
+                                               , nhead=self.model_config.DECISION_TRANSFORMER.n_head
+                                               ,
+                                               num_encoder_layers=self.model_config.DECISION_TRANSFORMER.ENCODER.n_layer
+                                               , num_decoder_layers=self.model_config.DECISION_TRANSFORMER.n_layer
+                                               , dim_feedforward=self.model_config.DECISION_TRANSFORMER.hidden_dim * 2
                                                , activation="gelu"
                                                , batch_first=True)
-
-        # Init the RGB visual encoder
-        assert model_config.RGB_ENCODER.cnn_type in [
-            "TorchVisionResNet18",
-            "TorchVisionResNet50",
-        ]
-        self.rgb_encoder = getattr(
-            resnet_encoders, model_config.RGB_ENCODER.cnn_type
-        )(
-            model_config.RGB_ENCODER.output_size,
-            normalize_visual_inputs=model_config.normalize_rgb,
-            trainable=model_config.RGB_ENCODER.trainable,
-            spatial_output=False,
-        )
-
-        assert model_config.DECISION_TRANSFORMER.reward_type in ["point_nav_reward_to_go", "sparse_reward_to_go",
-                                                                 "point_nav_reward", "sparse_reward", "ndtw_reward",
-                                                                 "ndtw_reward_to_go"]
-        self.reward_type = model_config.DECISION_TRANSFORMER.reward_type
-
-        self.embed_timestep = nn.Embedding(model_config.DECISION_TRANSFORMER.episode_horizon,
-                                           model_config.DECISION_TRANSFORMER.hidden_dim)
-        self.embed_return = nn.Linear(1, model_config.DECISION_TRANSFORMER.hidden_dim)
         self.instruction_embed_state = nn.Linear(self.instruction_encoder.output_size,
-                                                 model_config.DECISION_TRANSFORMER.hidden_dim)
-        self.rgb_embed_state = nn.Linear(model_config.RGB_ENCODER.output_size,
-                                                 model_config.DECISION_TRANSFORMER.hidden_dim)
-        self.depth_embed_state = nn.Linear(model_config.DEPTH_ENCODER.output_size,
-                                                 model_config.DECISION_TRANSFORMER.hidden_dim)
+                                                 self.model_config.DECISION_TRANSFORMER.hidden_dim)
+        self.rgb_embed_state = nn.Linear(self.model_config.RGB_ENCODER.output_size,
+                                         self.model_config.DECISION_TRANSFORMER.hidden_dim)
+        self.depth_embed_state = nn.Linear(self.model_config.DEPTH_ENCODER.output_size,
+                                           self.model_config.DECISION_TRANSFORMER.hidden_dim)
 
-        self.gpt_encoder = GPT(self.model_config.DECISION_TRANSFORMER)
+    def initialize_transformer_step_size(self):
+        return 6
 
-        # 5 because we have embedding for reward, one for past actions and 3 for states( instructions
-        # rgb and depth). In the origininal transformer, there is only one state instead of 3.
-        self.transformer_step_size = self.model_config.DECISION_TRANSFORMER.step_size
-        # TODO: What do you want to use, linear or embedding? I guess it should be embedding...
-        # But if you want linear you will have to modify your input entry.
-        # instaed of having action 0, 1, 2 or 3 (4 if you try to add a start token), you will have a tensor of size (4,1) filled with 0 or 1.
-        #  and for action 3, you will have a 1 in the 4th row and zero otherwise.
-        self.embed_action = nn.Embedding(num_actions + 1, model_config.DECISION_TRANSFORMER.hidden_dim)
-        self.embed_ln = nn.LayerNorm(model_config.DECISION_TRANSFORMER.hidden_dim)
+    def create_tensors_for_gpt_as_tuple(self, prev_actions, returns_to_go, instruction_embedding,
+                                                             depth_embedding, rgb_embedding, timesteps, batch_size,
+                                                             seq_length):
 
-        self.train()
-
-    def _flatten_batch(self, observations: Tensor, sensor_type: str):
-
-        # quit silently
-        if not sensor_type in observations.keys():
-            return
-
-        dims = observations[sensor_type].size()
-        if len(dims) > 2:
-            observations[sensor_type] = observations[sensor_type].view(-1, *dims[2:])
-
-    def _create_timesteps(self, sequence_length, batch_size):
-
-        timesteps = [torch.arange(0, sequence_length, dtype=torch.long) for _ in range(batch_size)]
-
-        timesteps = torch.stack(timesteps, dim=0).to(self.embed_ln.weight.device)
-        # timesteps = timesteps.view(-1, *timesteps.size()[2:]).unsqueeze(-1).to(self.embed_ln.weight.device)
-
-        return timesteps
-
-    @property
-    def output_size(self):
-        # we retrieve 2 , because it corresponds to the actions an reward dimension that are removed
-        # after GPT processing...
-        return self.model_config.DECISION_TRANSFORMER.hidden_dim*(self.transformer_step_size -2)
-
-
-    @property
-    def is_blind(self):
-        return self.rgb_encoder.is_blind or self.depth_encoder.is_blind
-
-    @property
-    def num_recurrent_layers(self):
-        return self.state_encoder.num_recurrent_layers
-
-    def _prepare_embeddings(self, observations):
-        """
-        read the relevant features from observation and returns it
-        :param observations:
-        :return: instruction_embedding, depth_embedding, rgb_embedding
-        """
-        # for all the following keys, we need tto merge the first 2 dimensions
-        # [batch, sequence length, all other dimensions] to [batch * sequence length, all other dimensions]
-        self._flatten_batch(observations, "rgb")
-        self._flatten_batch(observations, "depth")
-        self._flatten_batch(observations, "rgb_features")
-        self._flatten_batch(observations, "depth_features")
-        self._flatten_batch(observations, "instruction")
-
-        depth_embedding = self.depth_encoder(observations)
-        rgb_embedding = self.rgb_encoder(observations)
-        # we just undo the permutation made in the original implementation
-        instruction_embedding = self.instruction_encoder(observations).permute(0, 2, 1)
-
-        if self.model_config.ablate_instruction:
-            instruction_embedding = instruction_embedding * 0
-        if self.model_config.ablate_depth:
-            depth_embedding = depth_embedding * 0
-        if self.model_config.ablate_rgb:
-            rgb_embedding = rgb_embedding * 0
-
-        return instruction_embedding, depth_embedding, rgb_embedding
-
-    def forward(self, observations, rnn_states, prev_actions, masks):
-
-        # need to be checked now as the function _prepare_embeddings() modifies the
-        # obsevations directly.
-        original_batch_shape = observations["instruction"].shape[0:2]  # excluding the embedding dimensions
-        batch_size, seq_length = original_batch_shape
-
-        instruction_embedding, depth_embedding, rgb_embedding = self._prepare_embeddings(observations)
-
-
-        # the observations were "flattenened" for rnn processing
-        # the first dimension is actually equall to sequence length * orginal batch size.
-        # we also retrieve all other dimensions starting at index 1
-        shape = lambda tensor: tuple([s for s in original_batch_shape] + [s for s in tensor.shape[1:]])
-
-        # Transpose dimension 0 and 1 and let the last one untouched
-        # resize_tensor = lambda tensor: tensor.reshape(shape(tensor)).permute(1,0,-1).contiguous()
-        resize_tensor = lambda tensor: tensor.reshape(shape(tensor))
-
-
-
-        # TODO init correctly form the observations
-        actions = prev_actions
-
-        if self.reward_type in observations.keys():
-            returns_to_go = observations[self.reward_type]
-        else:
-            # If we don t have any rewards from the environment, just take one
-            # as mentioned in the paper during evaluation.
-            returns_to_go = torch.ones_like(prev_actions, dtype=torch.float).unsqueeze(dim=-1)
-        if "timesteps" in observations.keys():
-            timesteps = observations["timesteps"]
-        else:
-            timesteps = self._create_timesteps(seq_length, batch_size)
-
-        instruction_states = resize_tensor(instruction_embedding)
-        # The instructions are repeated for each time step.
-        # here we just want to one representation per batch
-        single_instruction_states = instruction_states[:, 0, :, :]
-        depth_embedding = resize_tensor(depth_embedding)
-        rgb_embedding = resize_tensor(rgb_embedding)
-        if len(timesteps.shape) > 2:
-            timesteps = timesteps.squeeze(-1)
-
-        # The following  comes from https://github.com/huggingface/transformers/blob/main/src/transformers/models/decision_transformer/modeling_decision_transformer.py
-        # https://github.com/huggingface/transformers/commit/707b12a353b69feecf11557e13d3041982bf023f
-
-        # embed each modality with a different head
-        #WARNING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Will probably mess up with dimensonality with the timesteps
-        instruction_state_embeddings = self.positional_encoding_for_instruction(self.instruction_embed_state(single_instruction_states.permute(0,2,1)))
+        single_instruction_states = instruction_embedding[:, 0, :, :]
+        instruction_state_embeddings = self.positional_encoding_for_instruction(
+            self.instruction_embed_state(single_instruction_states.permute(0, 2, 1)))
 
         step_size = 2
 
-        causal_mask = VanillaMultiHeadAttention.create_causal_mask(seq_length * step_size, rgb_embedding.device)[0][0]# only 2D allowed in Pytorch Inmplementation
+        # only 2D allowed in Pytorch Inmplementation
+        causal_mask = VanillaMultiHeadAttention.create_causal_mask(seq_length * step_size, rgb_embedding.device)[0][0]
         text_mask = VanillaMultiHeadAttention.create_padded_mask(instruction_state_embeddings)
 
         rgb_state_embeddings = self.rgb_embed_state(rgb_embedding)
         depth_state_embeddings = self.depth_embed_state(depth_embedding)
 
-        action_embeddings = self.embed_action(actions)
+        action_embeddings = self.embed_action(prev_actions)
         returns_embeddings = self.embed_return(returns_to_go)
         time_embeddings = self.embed_timestep(timesteps)
-
 
         # print(state_embeddings.shape, action_embeddings.shape, returns_embeddings.shape, time_embeddings.shape)
         # time embeddings are treated similar to positional embeddings
@@ -934,49 +780,23 @@ class FullDecisionTransformerNet(Net):
         action_embeddings2 = action_embeddings + time_embeddings
         returns_embeddings2 = returns_embeddings + time_embeddings
 
-
-
         # this makes the sequence look like (R_1, s_instr_1, s_depth_1, s_rgb_1, a_1, R_2, s_instr_2, s_depth_2, s_rgb_2, a_2, ...)
-        # stacked_inputs = (
-        #     torch.stack((returns_embeddings2, rgb_state_embeddings2, depth_state_embeddings2, action_embeddings2), dim=1)
-        #         .permute(0, 2, 1, 3)
-        #         .reshape(batch_size, self.transformer_step_size * seq_length, -1)
-        # )
-        #this makes the sequence look like (s_depth_1, s_rgb_1, s_depth_2, s_rgb_2 ...)
-        stacked_inputs = (
+        vision_inputs = (
             torch.stack((rgb_state_embeddings2, depth_state_embeddings2), dim=1)
                 .permute(0, 2, 1, 3)
                 .reshape(batch_size, step_size * seq_length, -1)
         )
-        #torch.stack((returns_embeddings2, instruction_state_embeddings2, rgb_state_embeddings2, depth_state_embeddings2, depth_influenced_text2, rgb_influenced_text2, state_attended_text2, action_embeddings2), dim=1)
-        stacked_inputs2 = self.embed_ln(stacked_inputs)
+        vision_inputs = self.embed_ln(vision_inputs)
 
-
-
-        output = self.full_transformer(src=instruction_state_embeddings, tgt= stacked_inputs2, src_key_padding_mask=text_mask, tgt_mask=causal_mask)
+        output = self.full_transformer(src=instruction_state_embeddings, tgt=vision_inputs,
+                                       src_key_padding_mask=text_mask, tgt_mask=causal_mask)
 
         # reshape back to original.
-        # In the third dimension (dim=2), returns (0), states (1), or actions (2)
-        # i.e. x[:,1,t] is the token for s_t
-        output = output.reshape(batch_size, seq_length, step_size, -1).permute(0, 2, 1, 3)
+        # it contains instructions seen by depth and instructions seen by rgb...
+        new_instructions = output.reshape(batch_size, seq_length, step_size, -1).permute(0, 2, 1, 3)
 
-        dim_for_concat = 1
-        stacked = returns_embeddings2.unsqueeze(dim_for_concat)
-        stacked = torch.cat((stacked, rgb_state_embeddings2.unsqueeze(dim_for_concat)), dim=dim_for_concat)
-        stacked = torch.cat((stacked, depth_state_embeddings2.unsqueeze(dim_for_concat)), dim=dim_for_concat)
-        stacked = torch.cat((stacked, output), dim=dim_for_concat)
-        stacked = torch.cat((stacked, action_embeddings2.unsqueeze(dim_for_concat)), dim=dim_for_concat).permute(0, 2, 1, 3).reshape(batch_size, self.transformer_step_size* seq_length, -1)
+        return returns_embeddings2, rgb_state_embeddings2, depth_state_embeddings2, new_instructions[:,0], new_instructions[:,1], action_embeddings2
 
-        output = self.gpt_encoder(stacked)
-        output = output.reshape(batch_size, seq_length, self.transformer_step_size, -1).permute(0, 2, 1, 3)
-
-        # get predictions
-        # we are retrieveing rgb, depth and instruction steps...
-        # WARNING: Wrong SLICE?
-        action_preds = output[:,1:self.transformer_step_size - 1].permute(0,2,1,3).reshape(batch_size, seq_length, -1)
-        # return action_preds.view(seq_length*batch_size, -1), state_embeddings
-
-        return action_preds, None
 
 
 class FullDecisionTransformerNet2(Net):
