@@ -92,7 +92,10 @@ def run_exp(exp_config: str, run_type: str, opts=None) -> None:
     """
     config = get_config(exp_config, opts)
     logdir = "/".join(config.LOG_FILE.split("/")[:-1])
-    config_file_root__name = exp_config.split("/")[-1].split(".")[0]
+    if not logdir:
+        logdir = "logs"
+    os.makedirs(logdir, exist_ok=True)
+    config_file_root__name = logdir+"/"+exp_config.split("/")[-1].split(".")[0]
     if logdir:
         os.makedirs(logdir, exist_ok=True)
     log_file = config_file_root__name + "_" + config.LOG_FILE
