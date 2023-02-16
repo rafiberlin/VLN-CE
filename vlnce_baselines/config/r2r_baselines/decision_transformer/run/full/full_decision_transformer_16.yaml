@@ -17,8 +17,8 @@ INFERENCE:
   SPLIT: test
   USE_CKPT_CONFIG: False
   SAMPLE: False
-  CKPT_PATH: data/checkpoints/full_decision_transformer_16/evals/full_decision_transformer_16_test.json
-  PREDICTIONS_FILE: predictions.json
+  CKPT_PATH: data/checkpoints/full_decision_transformer_16/ckpt.269.pth # Change this
+  PREDICTIONS_FILE: data/checkpoints/full_decision_transformer_16/evals/full_decision_transformer_16_test_predictions.json
   FORMAT: r2r
 
 
