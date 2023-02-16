@@ -334,32 +334,17 @@ _C.MODEL.DECISION_TRANSFORMER.activation_action_drop = 0.3
 _C.MODEL.DECISION_TRANSFORMER.activation_instruction_drop = 0.0
 _C.MODEL.DECISION_TRANSFORMER.activation_rgb_drop = 0.0
 _C.MODEL.DECISION_TRANSFORMER.activation_depth_drop = 0.0
-#Only for DecisionTransformerWithAttendedInstructionsNet
-_C.MODEL.DECISION_TRANSFORMER.use_instruction_state_embeddings = True
-_C.MODEL.DECISION_TRANSFORMER.use_depth_influenced_text = True
-_C.MODEL.DECISION_TRANSFORMER.use_rgb_influenced_text = True
-_C.MODEL.DECISION_TRANSFORMER.use_state_attended_text = True
-_C.MODEL.DECISION_TRANSFORMER.use_rgb_state_embeddings = True
-_C.MODEL.DECISION_TRANSFORMER.use_depth_state_embeddings = True
-
-# The part when attention layers are needed for the Cross Attention Model.
-_C.MODEL.DECISION_TRANSFORMER.ATTENTION_LAYER = CN()
-_C.MODEL.DECISION_TRANSFORMER.ATTENTION_LAYER.episode_horizon = _C.MODEL.DECISION_TRANSFORMER.episode_horizon
-_C.MODEL.DECISION_TRANSFORMER.ATTENTION_LAYER.step_size = 1
-_C.MODEL.DECISION_TRANSFORMER.ATTENTION_LAYER.n_embd = 128
-_C.MODEL.DECISION_TRANSFORMER.ATTENTION_LAYER.n_head = 1
-_C.MODEL.DECISION_TRANSFORMER.ATTENTION_LAYER.attn_pdrop = 0.1
-_C.MODEL.DECISION_TRANSFORMER.ATTENTION_LAYER.resid_pdrop = 0.1
-_C.MODEL.DECISION_TRANSFORMER.ATTENTION_LAYER.use_instruction_state_embeddings= True
-_C.MODEL.DECISION_TRANSFORMER.ATTENTION_LAYER.use_depth_influenced_text= True
-_C.MODEL.DECISION_TRANSFORMER.ATTENTION_LAYER.use_rgb_influenced_text= True
-_C.MODEL.DECISION_TRANSFORMER.ATTENTION_LAYER.use_state_attended_text= True  # Here maybe you shouldn t add the time embeddings? As you already did it in the
-_C.MODEL.DECISION_TRANSFORMER.ATTENTION_LAYER.use_rgb_state_embeddings= True
-_C.MODEL.DECISION_TRANSFORMER.ATTENTION_LAYER.use_depth_state_embeddings= True
 _C.MODEL.DECISION_TRANSFORMER.ENCODER = CN()
 _C.MODEL.DECISION_TRANSFORMER.ENCODER.n_layer = 2
 _C.MODEL.DECISION_TRANSFORMER.ENCODER.n_head = 1
+_C.MODEL.DECISION_TRANSFORMER.ENCODER.use_sentence_encoding = False
 
+_C.MODEL.DECISION_TRANSFORMER.ENCODER.use_rgb_state_embeddings = True
+_C.MODEL.DECISION_TRANSFORMER.ENCODER.use_depth_state_embeddings = True
+_C.MODEL.DECISION_TRANSFORMER.ENCODER.use_output_rgb_instructions = True
+_C.MODEL.DECISION_TRANSFORMER.ENCODER.use_output_depth_instructions = True
+_C.MODEL.DECISION_TRANSFORMER.ENCODER.use_output_rgb = True
+_C.MODEL.DECISION_TRANSFORMER.ENCODER.use_output_depth = True
 
 def purge_keys(config: CN, keys: List[str]) -> None:
     for k in keys:
