@@ -14,11 +14,11 @@ ENV_NAME: VLNCEDecisionTransformerEnv
 
 
 INFERENCE:
-  SPLIT: debug
+  SPLIT: test
   USE_CKPT_CONFIG: False
   SAMPLE: False
   CKPT_PATH: data/checkpoints/full_decision_transformer_32/ckpt.269.pth
-  PREDICTIONS_FILE: predictions.json
+  PREDICTIONS_FILE: data/checkpoints/full_decision_transformer_32/evals/full_decision_transformer_32.json
   FORMAT: r2r
 
 
@@ -36,7 +36,7 @@ IL:
   epochs: 39
   batch_size: 32
   checkpoint_frequency: 1
-  mean_loss_to_save_checkpoint: 0.50
+  mean_loss_to_save_checkpoint: 0.40
   lr: 1.5e-4
   load_from_ckpt: False # To train from a previous checkpoint
   ckpt_to_load: data/checkpoints/full_decision_transformer_32/ckpt.269.pth # REPLACE

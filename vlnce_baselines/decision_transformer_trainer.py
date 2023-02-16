@@ -774,7 +774,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         _populate_episode_with_starting_states()
 
         num_eps = sum(envs.count_episodes())
-        pbar = tqdm.tqdm(total=num_eps) if config.use_pbar else None
+        pbar = tqdm.tqdm(total=num_eps) if hasattr(config, "use_pbar") and config.use_pbar else None
 
 
         # if all envs finishes at the same time, the operation is equal to 1.
@@ -844,7 +844,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 observations, batch = self._prepare_observation(observations)
 
 
-                if config.use_pbar:
+                if pbar:
                     pbar.update()
 
 
@@ -892,7 +892,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         envs.close()
         gc.collect()
         self._release_hook()
-        if config.use_pbar:
+        if pbar:
             pbar.close()
 
         if config.INFERENCE.FORMAT == "r2r":

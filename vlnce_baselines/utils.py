@@ -23,11 +23,11 @@ def get_result_files_per_datasplit(eval_dir):
                 print("exp_config", file_path)
 
     return  list_result
-def read_results_per_split(result_path_dict, keep_n_best = 5, criteria="spl"):
-
+def read_results_per_split(result_path_dict, keep_n_best = 5, split=None, criteria="spl"):
     list_of_poor_iterations = {}
-
     for data_split in result_path_dict.keys():
+        if split is not None and data_split != split:
+            continue
         values = {}
         for iteration in reversed(result_path_dict[data_split].keys()):
             with open(result_path_dict[data_split][iteration], 'r') as f:

@@ -80,7 +80,7 @@ _C.IL.ckpt_to_load = "data/checkpoints/ckpt.0.pth"
 # if True, loads the optimizer state, epoch, and step_id from the ckpt dict.
 _C.IL.is_requeue = False
 _C.IL.checkpoint_frequency = 1 # regulates the frequency (epochs % checkpoint_frequency == 0) to save the model.
-_C.IL.mean_loss_to_save_checkpoint = 0.50
+_C.IL.mean_loss_to_save_checkpoint = 0.40
 # ----------------------------------------------------------------------------
 # IL: RECOLLECT TRAINER CONFIG
 # ----------------------------------------------------------------------------

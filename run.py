@@ -56,9 +56,9 @@ def main():
     else:
         run_exp(**vars(args))
 
-def move_bad_checkpoints(checkpoint_dir, result_dir, keep_best=5):
+def move_bad_checkpoints(checkpoint_dir, result_dir, keep_best=5, split=None):
     results_per_data_split = utils.get_result_files_per_datasplit(result_dir)
-    poor_iterations = utils.read_results_per_split(results_per_data_split, keep_n_best=keep_best)
+    poor_iterations = utils.read_results_per_split(results_per_data_split, keep_n_best=keep_best, split=split)
     utils.move_poor_checkpoints(checkpoint_dir, poor_iterations)
 
 def run_eval_for_split(trainer, config, split, keep_best):
@@ -70,7 +70,17 @@ def run_eval_for_split(trainer, config, split, keep_best):
     trainer.config = config
     trainer.eval()
     gc.collect()
-    move_bad_checkpoints(checkpoint_dir, result_dir, keep_best)
+    move_bad_checkpoints(checkpoint_dir, result_dir, keep_best, split)
+
+def run_inference(trainer, config):
+    checkpoint_dir = config.EVAL_CKPT_PATH_DIR
+    for file in os.listdir(checkpoint_dir):
+        if file.endswith(".pth"):
+            config.defrost()
+            config.INFERENCE.CKPT_PATH = os.path.join(checkpoint_dir, file)
+            config.freeze()
+            trainer.inference()
+            gc.collect()
 
 def run_exp(exp_config: str, run_type: str, opts=None) -> None:
     """Runs experiment given mode and config
@@ -132,10 +142,11 @@ def run_exp(exp_config: str, run_type: str, opts=None) -> None:
         trainer.check_dataset()
     elif run_type == "train_complete":
         #trainer.train()
-        #gc.collect()
-        #run_eval_for_split(trainer, config, config.EVAL.VAL_SEEN_SMALL, keep_best=6)
-        run_eval_for_split(trainer, config, config.EVAL.VAL_SEEN, keep_best=3)
-        run_eval_for_split(trainer, config, config.EVAL.VAL_UNSEEN, keep_best=1)
+        gc.collect()
+        #run_eval_for_split(trainer, config, config.EVAL.VAL_SEEN_SMALL, keep_best=8)
+        #run_eval_for_split(trainer, config, config.EVAL.VAL_SEEN, keep_best=4)
+        #run_eval_for_split(trainer, config, config.EVAL.VAL_UNSEEN, keep_best=1)
+        run_inference(trainer, config)
 
 
     # avoids to write to all previous files if running in a loop
