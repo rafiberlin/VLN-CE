@@ -31,7 +31,7 @@ EVAL:
   FORMAT: r2r
 
 IL:
-  preload_dataloader_size: 100
+  preload_dataloader_size: 12
   dataload_workers: 2
   epochs: 39
   batch_size: 64
