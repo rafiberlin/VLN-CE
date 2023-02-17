@@ -17,7 +17,7 @@ INFERENCE:
   USE_CKPT_CONFIG: False
   SAMPLE: False
   CKPT_PATH: data/checkpoints/enhanced/full_dt_batch_32_d128/ckpt.269.pth
-  PREDICTIONS_FILE: data/checkpoints/full_dt_batch_32_d128/evals/full_dt_batch_32_d128_test_predictions.json
+  PREDICTIONS_FILE: data/checkpoints/full/full_dt_batch_32_d128/evals/full_dt_batch_32_d128_test_predictions.json
   FORMAT: r2r
 
 
