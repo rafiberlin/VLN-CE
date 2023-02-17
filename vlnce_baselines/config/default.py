@@ -77,6 +77,7 @@ _C.IL.inflection_weight_coef = 3.2
 # load an already trained model for fine tuning
 _C.IL.load_from_ckpt = False
 _C.IL.ckpt_to_load = "data/checkpoints/ckpt.0.pth"
+_C.IL.continue_ckpt_naming = True
 # if True, loads the optimizer state, epoch, and step_id from the ckpt dict.
 _C.IL.is_requeue = False
 _C.IL.checkpoint_frequency = 1 # regulates the frequency (epochs % checkpoint_frequency == 0) to save the model.

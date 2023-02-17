@@ -10,7 +10,7 @@ from vlnce_baselines.common.dagger_il_trainer import DaggerILTrainer
 from vlnce_baselines.common.env_utils import construct_envs
 
 from torch import Tensor
-
+import re
 import json
 import os
 import time
@@ -1334,6 +1334,15 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         #  So you want to only set 1 worker to be able to set a break point in the next loop...
         #if self.config.MULTIPROCESSING == "spawn":
         #    workers = 1
+
+        # Tries to name the next checkpoints correctly based on the loaded file
+        start_epoch = 0
+        if self.config.IL.load_from_ckpt and self.config.IL.continue_ckpt_naming:
+            checkpoint_name = self.config.IL.ckpt_to_load.split("/")[-1]
+            epochs = re.findall(r"\d+", checkpoint_name)
+            if len(epochs) > 0 :
+                start_epoch = int(epochs[0]) + 1
+
         with TensorboardWriter(
             self.config.TENSORBOARD_DIR,
             flush_secs=self.flush_secs,
@@ -1385,6 +1394,8 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         leave=False,
                         dynamic_ncols=True,
                     ):
+
+                        epoch = start_epoch + epoch
                         (
                             observations_batch,
                             prev_actions_batch,

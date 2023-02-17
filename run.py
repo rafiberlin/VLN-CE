@@ -46,7 +46,7 @@ def main():
         conf_parameter = args.exp_config
         if os.path.isdir(conf_parameter):
             print("Running several config files from:", conf_parameter)
-            for file in os.listdir(conf_parameter):
+            for file in sorted(os.listdir(conf_parameter)):
                 if file.endswith(".yaml") or file.endswith(".yml"):
                     file_path = os.path.join(conf_parameter, file)
                     print("exp_config", file_path)
