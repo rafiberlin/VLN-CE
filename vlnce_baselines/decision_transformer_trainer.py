@@ -1465,6 +1465,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         )
                     if total_loss <= self.config.IL.mean_loss_to_stop_training:
                         logger.info(f"Stopping training early at epoch {epoch}")
+                        break
                 #AuxLosses.deactivate()
 
     def check_dataset(self) -> None:
