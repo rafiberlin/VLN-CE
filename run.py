@@ -149,7 +149,7 @@ def run_exp(exp_config: str, run_type: str, opts=None) -> None:
         run_eval_for_split(trainer, config, config.EVAL.VAL_SEEN_SMALL, keep_best=8)
         run_eval_for_split(trainer, config, config.EVAL.VAL_SEEN, keep_best=4)
         run_eval_for_split(trainer, config, config.EVAL.VAL_UNSEEN, keep_best=1)
-        run_inference(trainer, config)
+        #run_inference(trainer, config)
 
 
     # avoids to write to all previous files if running in a loop
