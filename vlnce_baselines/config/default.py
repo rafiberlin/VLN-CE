@@ -82,6 +82,7 @@ _C.IL.continue_ckpt_naming = True
 _C.IL.is_requeue = False
 _C.IL.checkpoint_frequency = 1 # regulates the frequency (epochs % checkpoint_frequency == 0) to save the model.
 _C.IL.mean_loss_to_save_checkpoint = 0.40
+_C.IL.mean_loss_to_stop_training = 0.05
 # ----------------------------------------------------------------------------
 # IL: RECOLLECT TRAINER CONFIG
 # ----------------------------------------------------------------------------
