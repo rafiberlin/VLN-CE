@@ -26,8 +26,9 @@ EVAL:
   USE_CKPT_CONFIG: False
   SPLIT: debug
   EPISODE_COUNT: -1
-  VAL_SEEN: "val_seen"
-  VAL_UNSEEN: "val_unseen"
+  VAL_SEEN_SMALL: debug #"val_seen_80_ep"
+  VAL_SEEN: debug# #"val_seen"
+  VAL_UNSEEN: debug #"val_unseen"
 
 IL:
   epochs: 70
@@ -66,28 +67,24 @@ MODEL:
   DECISION_TRANSFORMER:
     # Possible values: DecisionTransformerNet, DecisionTransformerEnhancedNet
     # DecisionTransformerWithAttendedInstructionsNet or  FullDecisionTransformerNet
-    net: FullDecisionTransformerNet
+    net: DecisionTransformerNet
     use_extra_start_token: True
     reward_type: point_nav_reward_to_go # point_nav_reward_to_go, sparse_reward_to_go, point_nav_reward, sparse_reward, ndtw_reward, ndtw_reward_to_go
     n_layer: 3
     n_head: 8
-    hidden_dim: 64 # The dimensions for the State, Reward and actions embeddings and in the GPT Backbne
-    use_transformer_encoded_instruction: True
+    hidden_dim: 128 # The dimensions for the State, Reward and actions embeddings and in the GPT Backbne
+    use_transformer_encoded_instruction: False # only for DecisionTransformerNet, DecisionTransformerEnhancedNet
     activation_action_drop: 0.25
     activation_instruction_drop: 0.01
     activation_rgb_drop: 0.01
     activation_depth_drop: 0.01
-    ATTENTION_LAYER: # only for DecisionTransformerWithAttendedInstructionsNet
-      n_head: 8
-      use_instruction_state_embeddings: True
-      use_depth_influenced_text: True
-      use_rgb_influenced_text: True
-      use_state_attended_text: True # Here maybe you shouldn t add the time embeddings? As you already did it in the
-      use_rgb_state_embeddings: True
-      use_depth_state_embeddings: True
     ENCODER: # only for FullDecisionTransformerNet
       n_layer: 3
       n_head: 8
+      use_output_rgb_instructions: True # different instructions for each time steps attended by RGB
+      use_output_depth_instructions: True # different instructions for each time steps attended by depth
+      c.use_output_rgb: True # global RGB attended by instruction
+      use_output_depth: True # global Depth attended by instruction
   policy_name: DecisionTransformerPolicy
   PROGRESS_MONITOR: # This is only used to create the datasets and the reward signals
     use: True
