@@ -17,7 +17,7 @@ INFERENCE:
   USE_CKPT_CONFIG: False
   SAMPLE: False
   CKPT_PATH: data/checkpoints/enhanced/dt_enhanced_batch_8_d128/ckpt.269.pth
-  PREDICTIONS_FILE: data/checkpoints/dt_enhanced_batch_8_d128/evals/dt_enhanced_batch_8_d128_test_predictions.json
+  PREDICTIONS_FILE: data/checkpoints/enhanced/dt_enhanced_batch_8_d128/evals/dt_enhanced_batch_8_d128_test_predictions.json
   FORMAT: r2r
 
 
@@ -27,8 +27,6 @@ EVAL:
   EPISODE_COUNT: -1
   VAL_SEEN: val_seen
   VAL_UNSEEN: val_unseen
-  PREDICTIONS_FILE: data/checkpoints/dt_enhanced_batch_8_d128/evals/dt_enhanced_batch_8_d128_test_predictions.json
-  FORMAT: r2r
 
 IL:
   preload_dataloader_size: 100
