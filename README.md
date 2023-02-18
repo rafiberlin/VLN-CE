@@ -28,10 +28,14 @@ VLN-CE uses [Habitat-Sim](https://github.com/facebookresearch/habitat-sim/tree/v
 conda install -c aihabitat -c conda-forge habitat-sim=0.1.7 headless
 ```
 
-Then install [Habitat-Lab](https://github.com/facebookresearch/habitat-lab/tree/v0.1.7):
+Then install a slightly a corrected version of [Habitat-Lab](https://github.com/rafiberlin/habitat-lab/tree/vlnce-fix):
+
+The [original version]((https://github.com/facebookresearch/habitat-lab/tree/v0.1.7)) with commit "d6ed1c0a0e786f16f261de2beafe347f4186d0d8"
+did not work with VLN-CE (due to some bug in the used version of OpenAI Gym). Further more, there is 
+a slight enhancement of the handling of evaluation mode (not waiting endlessly for new checkpoints to evaluate).
 
 ```bash
-git clone --branch v0.1.7 git@github.com:facebookresearch/habitat-lab.git
+git clone --branch vlnce-fix git@github.com:rafiberlin/habitat-lab.git
 cd habitat-lab
 # installs both habitat and habitat_baselines
 python -m pip install -r requirements.txt
@@ -39,21 +43,6 @@ python -m pip install -r habitat_baselines/rl/requirements.txt
 python -m pip install -r habitat_baselines/rl/ddppo/requirements.txt
 python setup.py develop --all
 ```
-
-Depending on the version of OpenAiGym you use, you might need to amend follow file from habitat-lab:
-
-`habitat-lab/habitat/tasks/vln/vln.py`
-
-line 60, amend
- 
-`self.observation_space = spaces.Discrete(0)`
-
-to
-
-`self.observation_space = spaces.Discrete(4)`
-
-
-Now you can install VLN-CE:
 
 ```bash
 git clone git@github.com:jacobkrantz/VLN-CE.git
@@ -115,14 +104,29 @@ The R2R_VLNCE dataset is a port of the Room-to-Room (R2R) dataset created by [An
 | [R2R_VLNCE_v1-3.zip](https://drive.google.com/file/d/1qrdomxA5fuQ6n44NXzPAJe2dMdxatvma/view) | `data/datasets/R2R_VLNCE_v1-3` | 3 MB |
 | [R2R_VLNCE_v1-3_preprocessed.zip](https://drive.google.com/file/d/1kQ_at68wiK2vAmlWbjJ4EDrLtaM0nfkR/view) | `data/datasets/R2R_VLNCE_v1-3_preprocessed` | 250 MB |
 
-Downloading via CLI:
+Downloading via CLI (only possible for ):
 
 ```bash
 # R2R_VLNCE_v1-3
 gdown https://drive.google.com/uc?id=1qrdomxA5fuQ6n44NXzPAJe2dMdxatvma
 # R2R_VLNCE_v1-3_preprocessed
 gdown https://drive.google.com/uc?id=1kQ_at68wiK2vAmlWbjJ4EDrLtaM0nfkR
+
 ```
+
+
+Additionally, we provide some splits where data are separated by episode length.
+
+Splits named *_50 contains all episodes from the original split up to an episode length of 50 steps.
+Splits named *_50_plus contains all episodes from the original split with episode length higher than 50 steps.
+Splits named *_50_ep or *_80_ep only contains respectively 50 and 80 episodes to speed up some evaluations.
+(The script to create these split is under ./scripts/create_debug_split.py)
+
+
+| Dataset | Extract path | Size |
+|-------------- |---------------------------- |------- |
+| [R2R_VLNCE_v1-3_preprocessed_additional_splits.zip](https://drive.google.com/file/d/1XqOd8t2KSdMvtJWSUziNGlM0ORZoYoUv/view) | `data/datasets/R2R_VLNCE_v1-3_preprocessed` | 265 MB |
+
 
 Remark: Under:
 data/datasets/R2R_VLNCE_v1-3_preprocessed/joint_train_envdrop/
