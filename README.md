@@ -298,6 +298,31 @@ python run.py --exp-config vlnce_baselines/config/r2r_baselines/nonlearning.yaml
 
 For lists of modifiable configuration options, see the default [task config](habitat_extensions/config/default.py) and [experiment config](vlnce_baselines/config/default.py) files.
 
+Additionally to the original set of commands, we added the following:
+
+```bash
+python run.py \
+  --exp-config path/to/experiment_config.yaml \
+  --run-type {create_dataset | train_eval | check_dataset | train_complete}
+```
+create_dataset allow to create the dataset once. You won't need to recreate a new dataset each time a training is started
+(works only for the Transformer related experiments.)
+check_dataset only runs a basic to spot obvious errors in the dataset creation.
+train_eval starts training and run the evaluation on one split.
+train_complete starts training, evaluation on smaller validation set, on val seen, val unseen and finally creates the 
+prediction file for test.
+
+Check also the template `vlnce_baselines/config/r2r_baselines/decision_transformer/templates/local/template.yaml`
+to understand all the parameters needed for transformer models.
+
+Furthermore you can run several config files in one command:
+
+```bash
+python run.py \
+  --exp-config path/to/config_directory/ \
+  --run-type {train | eval | inference | create_dataset | train_eval | check_dataset | train_complete}
+```
+
 ### Training Agents
 
 The `DaggerTrainer` class is the standard trainer and supports teacher forcing or dataset aggregation (DAgger). This trainer saves trajectories consisting of RGB, depth, ground-truth actions, and instructions to disk to avoid time spent in simulation.
