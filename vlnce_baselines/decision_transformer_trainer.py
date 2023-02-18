@@ -5,7 +5,6 @@ import warnings
 import lmdb
 import msgpack_numpy
 import numpy as np
-from vlnce_baselines.common.base_il_trainer import BaseVLNCETrainer
 from vlnce_baselines.common.dagger_il_trainer import DaggerILTrainer
 from vlnce_baselines.common.env_utils import construct_envs
 
@@ -31,7 +30,6 @@ from habitat_baselines.rl.ddppo.algo.ddp_utils import is_slurm_batch_job
 from habitat_baselines.utils.common import batch_obs
 
 from habitat_extensions.utils import generate_video, observations_to_image
-from vlnce_baselines.common.aux_losses import AuxLosses
 from vlnce_baselines.common.env_utils import construct_envs_auto_reset_false
 from vlnce_baselines.common.utils import extract_instruction_tokens
 
@@ -41,6 +39,7 @@ with warnings.catch_warnings():
 import jsonlines
 from typing import Any, Dict, List, Optional, Tuple
 
+
 class ObservationsDict(dict):
     def pin_memory(self):
         for k, v in self.items():
@@ -48,13 +47,13 @@ class ObservationsDict(dict):
 
         return self
 
+
 # Trick to create extra start token directly in the collate_fn
 # we don t need to recreate the whole dataset...
 global EXTRA_START_TOKEN_ID
 global STOP_ACTION_TOKEN_ID
 EXTRA_START_TOKEN_ID = 4
 STOP_ACTION_TOKEN_ID = 0
-
 
 
 def _is_correct_previous_actions(batch):
@@ -67,6 +66,7 @@ def _is_correct_previous_actions(batch):
     return sum([(batch[i][1][1:] == batch[i][2][:-1]).sum() == len(batch[i][1][1:]) for i in range(len(batch))]) == len(
         batch)
 
+
 def collate_fn_check_batch(batch):
     """Each sample in batch: (
         obs,
@@ -76,8 +76,8 @@ def collate_fn_check_batch(batch):
     )
     """
     if not _is_correct_previous_actions(batch):
-        raise Exception("Dataset has not been created correctly! Prev actions and corrected actions not shifted accordingly!")
-
+        raise Exception(
+            "Dataset has not been created correctly! Prev actions and corrected actions not shifted accordingly!")
 
 
 def _block_shuffle(lst, block_size):
@@ -230,7 +230,6 @@ class DecisionTransformerTrainer(DaggerILTrainer):
 
             return hook
 
-
         if not self.config.MODEL.RGB_ENCODER.trainable:
             self.rgb_features = torch.zeros((1,), device="cpu")
             self.rgb_hook = self.policy.net.rgb_encoder.cnn.register_forward_hook(
@@ -254,7 +253,8 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         self.rgb_features = torch.zeros((1,), device="cpu")
         self.depth_features = torch.zeros((1,), device="cpu")
 
-    def _calculate_return_to_go(self, traj_obs: dict, reward_type: str, observation_type: str, scaling_factor=1.0, destination_key= None):
+    def _calculate_return_to_go(self, traj_obs: dict, reward_type: str, observation_type: str, scaling_factor=1.0,
+                                destination_key=None):
         """
         Calculate the return to go. For a given step, sum of all rewards to come
         :param traj_obs:
@@ -285,7 +285,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         if destination_key is None:
             assert observation_type.startswith("raw_")
             destination_key = observation_type.split("raw_")[1] + "_to_go"
-        reward_to_go = np.float32(rewards/scaling_factor)
+        reward_to_go = np.float32(rewards / scaling_factor)
         if isTensor:
             reward_to_go = torch.from_numpy(reward_to_go)
         traj_obs[destination_key] = reward_to_go
@@ -355,7 +355,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             )
             if self.config.MODEL.DECISION_TRANSFORMER.use_extra_start_token:
                 prev_actions = prev_actions + EXTRA_START_TOKEN_ID
-        #store the last images
+        # store the last images
         for i in range(envs.num_envs):
             episodes[i].append({rgb_key: rgb_seq[i][-1], depth_key: depth_seq[i][-1]})
         seq_length = rgb_seq.shape[1]
@@ -509,8 +509,8 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                             axis=0) * -1.0
                         # PReparing entries for sparse rewards
                         traj_obs["raw_sparse_reward"] = np.zeros_like(traj_obs["raw_point_nav_reward"])
-                        scaling_factor = traj_obs[distance_left_uuid].size # Scaling by the episode length
-                        traj_obs[distance_left_uuid]
+                        scaling_factor = traj_obs[distance_left_uuid].size  # Scaling by the episode length
+                        del traj_obs[distance_left_uuid]
                         traj_obs["raw_ndtw_reward"] = np.array([step[3] for step in ep], dtype=np.float16)
                         self._calculate_rewards(traj_obs, scaling_factor)
                         transposed_ep = [
@@ -539,14 +539,11 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                             if (not last_episodes[i].episode_id in ep_ids_collected):
                                 ep_ids_collected.add(current_episodes[i].episode_id)
 
-
                     # In opposition to the RNN logic, where only one state per time step is handled,
                     # We need this to force all sequences in the current batch to finish...
                     if dones[i]:
                         if i not in envs_to_pause:
                             envs_to_pause.append(i)
-
-
 
                 (
                     envs,
@@ -563,7 +560,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                     not_done_masks,
                     prev_actions,
                     batch,
-                    episodes, # A trick, I am using what is thought for the RGB features to reduce this list as well
+                    episodes,  # A trick, I am using what is thought for the RGB features to reduce this list as well
                     episode_features,
                 )
 
@@ -603,7 +600,8 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         observations[i]["depth_features"] = self.depth_features[i]
                         del observations[i]["depth"]
 
-                prev_actions = self._modify_batch_for_transformer(episode_features, batch, self.rgb_features, self.depth_features, envs,
+                prev_actions = self._modify_batch_for_transformer(episode_features, batch, self.rgb_features,
+                                                                  self.depth_features, envs,
                                                                   prev_actions,
                                                                   "rgb_features", "depth_features")
                 batch_size = prev_actions.shape[0]
@@ -662,8 +660,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 # Just add ndtw, if you need it as Reward
                 for i in range(envs.num_envs):
                     obs, prev_act, next_act = episodes[i][-1]
-                    episodes[i][-1] = (obs, prev_act, next_act , infos[i]["ndtw"])
-
+                    episodes[i][-1] = (obs, prev_act, next_act, infos[i]["ndtw"])
 
                 observations, batch = self._prepare_observation(observations)
 
@@ -681,7 +678,6 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         self._release_hook()
         if agent_action:
             print("Dataset Creation with some agent actions.")
-
 
     def inference(
         self,
@@ -756,7 +752,6 @@ class DecisionTransformerTrainer(DaggerILTrainer):
 
         episode_already_predicted = []
 
-
         def _populate_episode_with_starting_states():
             # populate episode_predictions with the starting state
             current_episodes = envs.current_episodes()
@@ -776,11 +771,10 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         num_eps = sum(envs.count_episodes())
         pbar = tqdm.tqdm(total=num_eps) if hasattr(config, "use_pbar") and config.use_pbar else None
 
-
         # if all envs finishes at the same time, the operation is equal to 1.
         # if all env are still processing, the operation is simply zero...
-        has_env_finished_early = lambda envs_that_needs_to_wait : sum(envs_that_needs_to_wait.values()) / len(envs_that_needs_to_wait) > 0
-
+        has_env_finished_early = lambda envs_that_needs_to_wait: sum(envs_that_needs_to_wait.values()) / len(
+            envs_that_needs_to_wait) > 0
 
         while envs.num_envs > 0 and len(episode_already_predicted) < num_eps:
 
@@ -792,7 +786,8 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             del batch["depth"]
             rgb_key = "rgb_features"
             depth_key = "depth_features"
-            prev_actions = self._modify_batch_for_transformer(episodes, batch, self.rgb_features, self.depth_features, envs,
+            prev_actions = self._modify_batch_for_transformer(episodes, batch, self.rgb_features, self.depth_features,
+                                                              envs,
                                                               prev_actions, rgb_key, depth_key)
 
             with torch.no_grad():
@@ -828,7 +823,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 if ep_id not in episode_already_predicted:
                     episode_predictions[ep_id].append(infos[i])
                 # This helps us to generate the transformer sequence
-                #episodes[i].append((cleaned_observations[i], prev_actions[i, -1].item()))
+                # episodes[i].append((cleaned_observations[i], prev_actions[i, -1].item()))
                 if not dones[i]:
                     envs_that_needs_to_wait[i] = False
                     continue
@@ -838,16 +833,14 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 observations[i] = envs.reset_at(i)[0]
                 # This step is usually done in self._prepare_observation(observations)
                 # but now, because we amenbd only one observation, we need to take care of this step manually...
-                observations[i][self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID] = observations[i][self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID]["tokens"]
+                observations[i][self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID] = \
+                observations[i][self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID]["tokens"]
                 self.rgb_features = self.rgb_features.set_(torch.zeros((1,), device="cpu"))
                 self.depth_features = self.depth_features.set_(torch.zeros((1,), device="cpu"))
                 observations, batch = self._prepare_observation(observations)
 
-
                 if pbar:
                     pbar.update()
-
-
 
             envs_to_pause = []
             next_episodes = envs.current_episodes()
@@ -887,7 +880,6 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 prev_actions = None
                 observations, batch = self._prepare_observation(observations)
                 _populate_episode_with_starting_states()
-
 
         envs.close()
         gc.collect()
@@ -929,8 +921,6 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             logger.info(
                 f"Predictions saved to: {config.INFERENCE.PREDICTIONS_FILE}"
             )
-
-
 
     def _eval_checkpoint(
         self,
@@ -1030,14 +1020,13 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         )
         start_time = time.time()
 
-
         # if all envs finishes at the same time, the operation is equal to 1.
         # if all env are still processing, the operation is simply zero...
-        has_env_finished_early = lambda envs_that_needs_to_wait : sum(envs_that_needs_to_wait.values()) / len(envs_that_needs_to_wait) > 0
+        has_env_finished_early = lambda envs_that_needs_to_wait: sum(envs_that_needs_to_wait.values()) / len(
+            envs_that_needs_to_wait) > 0
 
         while envs.num_envs > 0 and len(stats_episodes) < num_eps:
             current_episodes = envs.current_episodes()
-
 
             # caching the outputs of the cnn on one image only
             rgb_encoder(batch)
@@ -1046,7 +1035,8 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             del batch["depth"]
             rgb_key = "rgb_features"
             depth_key = "depth_features"
-            prev_actions = self._modify_batch_for_transformer(episodes, batch, self.rgb_features, self.depth_features, envs,
+            prev_actions = self._modify_batch_for_transformer(episodes, batch, self.rgb_features, self.depth_features,
+                                                              envs,
                                                               prev_actions, rgb_key, depth_key)
 
             with torch.no_grad():
@@ -1085,7 +1075,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                     )
                     rgb_frames[i].append(frame)
                 # This helps us to generate the transformer sequence
-                #episodes[i].append((cleaned_observations[i], prev_actions[i, -1].item()))
+                # episodes[i].append((cleaned_observations[i], prev_actions[i, -1].item()))
                 if not dones[i]:
                     envs_that_needs_to_wait[i] = False
                     continue
@@ -1096,11 +1086,11 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 observations[i] = envs.reset_at(i)[0]
                 # This step is usually done in self._prepare_observation(observations)
                 # but now, because we amenbd only one observation, we need to take care of this step manually...
-                observations[i][self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID] = observations[i][self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID]["tokens"]
+                observations[i][self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID] = \
+                observations[i][self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID]["tokens"]
                 self.rgb_features = self.rgb_features.set_(torch.zeros((1,), device="cpu"))
                 self.depth_features = self.depth_features.set_(torch.zeros((1,), device="cpu"))
                 observations, batch = self._prepare_observation(observations)
-
 
                 if config.use_pbar:
                     pbar.update()
@@ -1164,8 +1154,6 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 observations = envs.reset()
                 prev_actions = None
                 observations, batch = self._prepare_observation(observations)
-
-
 
         envs.close()
         gc.collect()
@@ -1245,7 +1233,6 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             transposed = list(zip(*batch))
             observations_batch = list(transposed[0])
 
-
             if self.config.IL.DECISION_TRANSFORMER.recompute_reward:
                 for o in observations_batch:
                     scaling_factor = len(o["raw_sparse_reward"])
@@ -1291,7 +1278,6 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 if "_reward" in sensor:
                     observations_batch[sensor] = observations_batch[sensor].unsqueeze(-1)
 
-
             prev_actions_batch = torch.stack(prev_actions_batch, dim=stack_dimension)
             corrected_actions_batch = torch.stack(corrected_actions_batch, dim=stack_dimension)
 
@@ -1330,17 +1316,13 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         )
         # Seems to bottleneck on Dataloader access if I have more than 1 worker
         workers = self.config.IL.dataload_workers
-        # If set to spawn, that is made to be able to debug in Pytorch in Ubuntu > 18
-        #  So you want to only set 1 worker to be able to set a break point in the next loop...
-        #if self.config.MULTIPROCESSING == "spawn":
-        #    workers = 1
 
         # Tries to name the next checkpoints correctly based on the loaded file
         start_epoch = 0
         if self.config.IL.load_from_ckpt and self.config.IL.continue_ckpt_naming:
             checkpoint_name = self.config.IL.ckpt_to_load.split("/")[-1]
             epochs = re.findall(r"\d+", checkpoint_name)
-            if len(epochs) > 0 :
+            if len(epochs) > 0:
                 start_epoch = int(epochs[0]) + 1
 
         with TensorboardWriter(
@@ -1383,7 +1365,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 if num_batch == 0:
                     num_batch = 1
                 logger.info(f"Number of batches to process:{num_batch}")
-                #AuxLosses.activate()
+                # AuxLosses.activate()
                 for epoch in tqdm.trange(
                     self.config.IL.epochs, dynamic_ncols=True
                 ):
@@ -1394,7 +1376,6 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         leave=False,
                         dynamic_ncols=True,
                     ):
-
                         epoch = start_epoch + epoch
                         (
                             observations_batch,
@@ -1429,24 +1410,12 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                             ),
                         )
 
-                        #logger.info(f"train_loss: {loss}")
-                        #logger.info(f"train_action_loss: {action_loss}")
-                        #logger.info(f"train_aux_loss: {aux_loss}")
-                        #logger.info(f"Batches processed: {step_id}.")
-                        #logger.info(
-                        #    f"On DAgger iter {dagger_it}, Epoch {epoch}."
-                        #)
                         writer.add_scalar(
                             f"train_loss_iter_{dagger_it}", loss, step_id
                         )
                         writer.add_scalar(
                             f"train_action_loss_iter_{dagger_it}",
                             action_loss,
-                            step_id,
-                        )
-                        writer.add_scalar(
-                            f"train_aux_loss_iter_{dagger_it}",
-                            aux_loss,
                             step_id,
                         )
                         total_loss += loss
@@ -1458,7 +1427,8 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         epoch,
                     )
                     logger.info(f"Mean Loss for DAgger iter {dagger_it}, Epoch {epoch}: {total_loss}")
-                    if total_loss <= self.config.IL.mean_loss_to_save_checkpoint and (epoch + 1) % self.config.IL.checkpoint_frequency == 0:
+                    if total_loss <= self.config.IL.mean_loss_to_save_checkpoint and (
+                        epoch + 1) % self.config.IL.checkpoint_frequency == 0:
                         print("Save", f"ckpt.{dagger_it * self.config.IL.epochs + epoch}.pth")
                         self.save_checkpoint(
                             f"ckpt.{dagger_it * self.config.IL.epochs + epoch}.pth"
@@ -1466,7 +1436,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                     if total_loss <= self.config.IL.mean_loss_to_stop_training:
                         logger.info(f"Stopping training early at epoch {epoch}")
                         break
-                #AuxLosses.deactivate()
+                # AuxLosses.deactivate()
 
     def check_dataset(self) -> None:
         """
@@ -1485,7 +1455,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         workers = self.config.IL.dataload_workers
         # If set to spawn, that is made to be able to debug in Pytorch in Ubuntu > 18
         #  So you want to only set 1 worker to be able to set a break point in the next loop...
-        #if self.config.MULTIPROCESSING == "spawn":
+        # if self.config.MULTIPROCESSING == "spawn":
         #    workers = 1
         with TensorboardWriter(
             self.config.TENSORBOARD_DIR,
@@ -1527,7 +1497,6 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             ):
                 pass
         print("Dataset seems fine!")
-
 
     def create_dataset(self) -> None:
         """
@@ -1576,7 +1545,6 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             self._update_dataset(0)
         print("Dataset creation completed!")
 
-
     def _update_agent(
         self,
         observations,
@@ -1598,24 +1566,14 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         :param loss_accumulation_scalar:
         :return:
         """
-        T, N = corrected_actions.size()
 
         hidden_states = None
-
-        #AuxLosses.clear()
 
         distribution = self.policy.build_distribution(
             observations, hidden_states, prev_actions, not_done_masks
         )
 
         logits = distribution.logits
-        # you provide the batch in the correct shape already
-        # tensor shape of size Batch * Sequence Length * Number of classes
-        # logits = logits.view(T, N, -1)
-
-        # action_loss = F.cross_entropy(
-        #     logits.permute(0, 2, 1), corrected_actions, reduction="none"
-        # )
 
         # The permutation allows to keep the expected input shape (batch times classes)
         # the third dimension gets interpreted as a sequence correctly, as the target actions
@@ -1625,9 +1583,6 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         )
         action_loss = ((weights * action_loss).sum(0) / weights.sum(0)).mean()
 
-        #aux_mask = (weights > 0).view(-1)
-        #aux_loss = AuxLosses.reduce(aux_mask)
-        # We don't use it here
         aux_loss = 0.0
         loss = action_loss
         loss = loss / loss_accumulation_scalar
