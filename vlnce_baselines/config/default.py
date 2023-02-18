@@ -329,6 +329,9 @@ _C.MODEL.DECISION_TRANSFORMER.use_transformer_encoded_instruction = False
 _C.MODEL.DECISION_TRANSFORMER.vocab_size = 4
 _C.MODEL.DECISION_TRANSFORMER.step_size = 3 #We multiply by three because at each time step, we use [reward, action, state].
 _C.MODEL.DECISION_TRANSFORMER.block_size = _C.MODEL.DECISION_TRANSFORMER.episode_horizon *_C.MODEL.DECISION_TRANSFORMER.step_size
+_C.MODEL.DECISION_TRANSFORMER.allowed_models = ["DecisionTransformerNet",
+                                                "DecisionTransformerEnhancedNet",
+                                                "FullDecisionTransformerNet"]
 
 # dropout hyperparameters
 _C.MODEL.DECISION_TRANSFORMER.embd_pdrop = 0.1

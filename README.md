@@ -1,4 +1,4 @@
-# Vision-and-Language Navigation in Continuous Environments (VLN-CE)
+# Vision-and-Language Navigation in Continuous Environments (VLN-CE) with Transformer Models for R2R
 
 [Project Website](https://jacobkrantz.github.io/vlnce/) — [VLN-CE Challenge](https://eval.ai/web/challenges/challenge-page/719) — [RxR-Habitat Challenge](https://ai.google.com/research/rxr/habitat)
 
@@ -130,8 +130,14 @@ Splits named *_50_ep or *_80_ep only contains respectively 50 and 80 episodes to
 
 Remark: Under:
 data/datasets/R2R_VLNCE_v1-3_preprocessed/joint_train_envdrop/
+You will need to rename the file  joint_train_envdrop.gz to joint_train_envdrop.json.gz
 
-you will need to rename the file  joint_train_envdrop.gz to joint_train_envdrop.json.gz
+##### Transformer Models for R2R
+
+In the file, vlnce_baselines/models/decision_transformer_policy.py, you need to subclass `AbstractDecisionTransformerNet`
+To add your own model. Moreover, you would to allow your model's creation by adding its name in `vlnce_baselines/config/default.py`
+in the variable `_C.MODEL.DECISION_TRANSFORMER.allowed_models`.
+
 
 ##### Encoder Weights
 
