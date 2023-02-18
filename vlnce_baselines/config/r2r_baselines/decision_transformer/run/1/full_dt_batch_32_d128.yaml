@@ -5,9 +5,9 @@ SIMULATOR_GPU_IDS: [1]
 TORCH_GPU_ID: 1
 NUM_ENVIRONMENTS: 6 #Looks like the sweet spot for dataset creation is 6 envs. If you use more, we might wait too long to reload the next batch....
 TENSORBOARD_DIR: /cache/tensorboard-logdir/full_dt_batch_32_d128
-CHECKPOINT_FOLDER: data/checkpoints/enhanced/full_dt_batch_32_d128
-EVAL_CKPT_PATH_DIR: data/checkpoints/enhanced/full_dt_batch_32_d128
-RESULTS_DIR: data/checkpoints/enhanced/full_dt_batch_32_d128/evals/
+CHECKPOINT_FOLDER: data/checkpoints/full/full_dt_batch_32_d128
+EVAL_CKPT_PATH_DIR: data/checkpoints/full/full_dt_batch_32_d128
+RESULTS_DIR: data/checkpoints/full/full_dt_batch_32_d128/evals/
 MULTIPROCESSING: forkserver  # default is forkserver, Set to 'spawn' when debugging with Pycharm,
 ENV_NAME: VLNCEDecisionTransformerEnv
 
@@ -16,7 +16,7 @@ INFERENCE:
   SPLIT: test
   USE_CKPT_CONFIG: False
   SAMPLE: False
-  CKPT_PATH: data/checkpoints/enhanced/full_dt_batch_32_d128/ckpt.269.pth
+  CKPT_PATH: data/checkpoints/full/full_dt_batch_32_d128/ckpt.269.pth
   PREDICTIONS_FILE: data/checkpoints/full/full_dt_batch_32_d128/evals/full_dt_batch_32_d128_test_predictions.json
   FORMAT: r2r
 
@@ -39,7 +39,7 @@ IL:
   mean_loss_to_save_checkpoint: 0.40
   lr: 1.5e-4
   load_from_ckpt: False # To train from a previous checkpoint
-  ckpt_to_load: data/checkpoints/enhanced/full_dt_batch_32_d128/ckpt.7.pth # REPLACE
+  ckpt_to_load: data/checkpoints/full/full_dt_batch_32_d128/ckpt.7.pth # REPLACE
 
   RECOLLECT_TRAINER:
     gt_file:
@@ -67,7 +67,7 @@ IL:
 
 MODEL:
   DECISION_TRANSFORMER:
-    # Possible values: DecisionTransformerNet, DecisionTransformerEnhancedNet
+    # Possible values: DecisionTransformerNet, DecisionTransformerfullNet
     # DecisionTransformerWithAttendedInstructionsNet or  FullDecisionTransformerNet
     net: FullDecisionTransformerNet
     use_extra_start_token: True
@@ -75,7 +75,7 @@ MODEL:
     n_layer: 3
     n_head: 8
     hidden_dim: 128 # The dimensions for the State, Reward and actions embeddings and in the GPT Backbne
-    use_transformer_encoded_instruction: False # only for DecisionTransformerNet, DecisionTransformerEnhancedNet
+    use_transformer_encoded_instruction: False # only for DecisionTransformerNet, DecisionTransformerfullNet
     activation_action_drop: 0.25
     activation_instruction_drop: 0.01
     activation_rgb_drop: 0.01
