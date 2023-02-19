@@ -58,7 +58,7 @@ def main():
 
 def move_bad_checkpoints(checkpoint_dir, result_dir, keep_best=5, split=None):
     results_per_data_split = utils.get_result_files_per_datasplit(result_dir)
-    poor_iterations = utils.read_results_per_split(results_per_data_split, keep_n_best=keep_best, split=split)
+    poor_iterations = utils.read_poor_results_per_split(results_per_data_split, keep_n_best=keep_best, split=split)
     utils.move_poor_checkpoints(checkpoint_dir, poor_iterations)
 
 def run_eval_for_split(trainer, config, split, keep_best):

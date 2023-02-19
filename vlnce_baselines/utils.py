@@ -23,7 +23,7 @@ def get_result_files_per_datasplit(eval_dir):
                 print("exp_config", file_path)
 
     return  list_result
-def read_results_per_split(result_path_dict, keep_n_best = 5, split=None, criteria="spl"):
+def read_results_per_split(result_path_dict, split=None):
     list_of_poor_iterations = {}
     for data_split in result_path_dict.keys():
         if split is not None and data_split != split:
@@ -34,6 +34,16 @@ def read_results_per_split(result_path_dict, keep_n_best = 5, split=None, criter
                 datapoint = json.load(f)
                 values[iteration] = datapoint
         frame = pd.DataFrame.from_dict(values, columns=list(datapoint.keys()), orient="index")
+        poor_iterations = [ k for k in result_path_dict[data_split].keys()]
+        list_of_poor_iterations[data_split] = poor_iterations, frame
+    return list_of_poor_iterations
+
+def read_poor_results_per_split(result_path_dict, keep_n_best = 5, split=None, criteria="spl"):
+    list_of_poor_iterations = read_results_per_split(result_path_dict, split)
+    for data_split in list_of_poor_iterations.keys():
+        if split is not None and data_split != split:
+            continue
+        _ , frame = list_of_poor_iterations[data_split]
         bests = frame[criteria].nlargest(keep_n_best)
         poor_iterations = [ k for k in result_path_dict[data_split].keys() if k not in bests.keys() ]
         list_of_poor_iterations[data_split] = poor_iterations
