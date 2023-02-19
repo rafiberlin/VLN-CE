@@ -29,12 +29,13 @@ def read_results_per_split(result_path_dict, split=None):
         if split is not None and data_split != split:
             continue
         values = {}
-        for iteration in reversed(result_path_dict[data_split].keys()):
+        sorted_keys = sorted(result_path_dict[data_split].keys())
+        for iteration in sorted_keys:
             with open(result_path_dict[data_split][iteration], 'r') as f:
                 datapoint = json.load(f)
                 values[iteration] = datapoint
         frame = pd.DataFrame.from_dict(values, columns=list(datapoint.keys()), orient="index")
-        poor_iterations = [ k for k in result_path_dict[data_split].keys()]
+        poor_iterations = [ k for k in sorted_keys]
         list_of_poor_iterations[data_split] = poor_iterations, frame
     return list_of_poor_iterations
 
