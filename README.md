@@ -132,12 +132,6 @@ Remark: Under:
 data/datasets/R2R_VLNCE_v1-3_preprocessed/joint_train_envdrop/
 You will need to rename the file  joint_train_envdrop.gz to joint_train_envdrop.json.gz
 
-##### Transformer Models for R2R
-
-In the file, vlnce_baselines/models/decision_transformer_policy.py, you need to subclass `AbstractDecisionTransformerNet`
-To add your own model. Moreover, you would to allow your model's creation by adding its name in `vlnce_baselines/config/default.py`
-in the variable `_C.MODEL.DECISION_TRANSFORMER.allowed_models`.
-
 
 ##### Encoder Weights
 
@@ -334,6 +328,15 @@ Both trainers inherit from `BaseVLNCETrainer`.
 ### Evaluating Agents
 
 Evaluation on validation splits can be done by running `python run.py --exp-config path/to/experiment_config.yaml --run-type eval`. If `EVAL.EPISODE_COUNT == -1`, all episodes will be evaluated. If `EVAL_CKPT_PATH_DIR` is a directory, each checkpoint will be evaluated one at a time.
+
+
+### Transformer Based Agents for R2R
+
+In the file, vlnce_baselines/models/decision_transformer_policy.py, you need to subclass `AbstractDecisionTransformerNet`
+to add your own model. Moreover, you would to allow your model's creation by adding its name in `vlnce_baselines/config/default.py`
+in the variable `_C.MODEL.DECISION_TRANSFORMER.allowed_models`.
+
+The training is then done with the `DecisionTransformerTrainer` (`decision_transformer` in the config file).
 
 ### Cuda
 
