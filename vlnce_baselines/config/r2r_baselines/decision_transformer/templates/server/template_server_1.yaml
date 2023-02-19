@@ -84,7 +84,7 @@ MODEL:
       n_head: 8
       use_output_rgb_instructions: True # different instructions for each time steps attended by RGB
       use_output_depth_instructions: True # different instructions for each time steps attended by depth
-      c.use_output_rgb: True # global RGB attended by instruction
+      use_output_rgb: True # global RGB attended by instruction
       use_output_depth: True # global Depth attended by instruction
   policy_name: DecisionTransformerPolicy
   PROGRESS_MONITOR: # This is only used to create the datasets and the reward signals
