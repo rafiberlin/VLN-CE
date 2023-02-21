@@ -218,6 +218,18 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 "step_penalty": config.IL.DECISION_TRANSFORMER.NDTW_REWARD.step_penalty,
                 "success": config.IL.DECISION_TRANSFORMER.NDTW_REWARD.success},
         }
+        device = "cuda:" + str(config.TORCH_GPU_ID)
+
+        self.rgb_depth_stats = {
+            "mean_rgb": torch.as_tensor(np.asarray([0.533, 0.498, 0.453]),
+                                        dtype=torch.float32, device=device),
+            "std_rgb": torch.as_tensor(np.asarray([0.183, 0.185, 0.2020]),
+                                       dtype=torch.float32, device=device),
+            "mean_depth": torch.as_tensor(np.asarray([0.222]), dtype=torch.float32, device=device),
+            "std_depth": torch.as_tensor(np.asarray([0.18]), dtype=torch.float32, device=device)}
+
+
+
         super().__init__(config)
 
     def _create_feature_hooks(self):
@@ -387,6 +399,12 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         '''
         return sum([len(e) > 0 for e in episodes]) == 0
 
+    def _normalize_depth(self, batch):
+        if self.config.MODEL.DECISION_TRANSFORMER.normalize_depth:
+            #batch["rgb"] = (batch["rgb"].float() - self.rgb_depth_stats["mean_rgb"]) / self.rgb_depth_stats["std_rgb"]
+            batch["depth"] = (batch["depth"].float() - self.rgb_depth_stats["mean_depth"]) / self.rgb_depth_stats[
+                "std_depth"]
+
     def _calculate_mean_and_std_for_rgb_depth(self):
         """
         Cache the whole dataset. Data Aggregation can be used, the trained model
@@ -546,8 +564,9 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                     for i in range(envs.num_envs):
                         if self.rgb_features is not None:
                             observations[i]["rgb_features"] = self.rgb_features[i]
-                            channels_sum_rgb[i] += observations[i]["rgb"].astype(precision).mean(axis=(0,1))
-                            channels_squared_sum_rgb[i] += (observations[i]["rgb"].astype(precision) ** 2).mean(axis=(0,1))
+                            rgb = observations[i]["rgb"].astype(precision) / 255.0
+                            channels_sum_rgb[i] += rgb.mean(axis=(0, 1))
+                            channels_squared_sum_rgb[i] += (rgb ** 2).mean(axis=(0, 1))
                             del observations[i]["rgb"]
 
                         if self.depth_features is not None:
@@ -816,7 +835,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                     self.rgb_features = self.rgb_features.set_(torch.zeros((1,), device="cpu"))
                     self.depth_features = self.depth_features.set_(torch.zeros((1,), device="cpu"))
 
-                # caching the outputs of the cnn on one image only
+                self._normalize_depth(batch)
                 rgb_encoder(batch)
                 depth_encoder(batch)
                 for i in range(envs.num_envs):
@@ -1008,6 +1027,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
 
             current_episodes = envs.current_episodes()
             # caching the outputs of the cnn on one image only
+            self._normalize_depth(batch)
             rgb_encoder(batch)
             depth_encoder(batch)
             del batch["rgb"]
@@ -1257,6 +1277,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             current_episodes = envs.current_episodes()
 
             # caching the outputs of the cnn on one image only
+            self._normalize_depth(batch)
             rgb_encoder(batch)
             depth_encoder(batch)
             del batch["rgb"]

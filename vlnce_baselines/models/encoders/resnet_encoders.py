@@ -181,10 +181,10 @@ class TorchVisionResNet(nn.Module):
             """
             imgs = imgs.contiguous() / 255.0
             if self.normalize_visual_inputs:
-                mean_norm = torch.tensor([0.485, 0.456, 0.406]).to(
+                mean_norm = torch.tensor([0.533, 0.498, 0.453]).to(
                     device=imgs.device
                 )[None, :, None, None]
-                std_norm = torch.tensor([0.229, 0.224, 0.225]).to(
+                std_norm = torch.tensor([0.183, 0.185, 0.202]).to(
                     device=imgs.device
                 )[None, :, None, None]
                 return imgs.sub(mean_norm).div(std_norm)

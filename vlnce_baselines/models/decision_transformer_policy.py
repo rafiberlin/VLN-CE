@@ -88,6 +88,8 @@ class AbstractDecisionTransformerNet(Net):
                                                                  "point_nav_reward", "sparse_reward", "ndtw_reward",
                                                                  "ndtw_reward_to_go"]
 
+
+
         n = self.initialize_transformer_step_size()
         self.set_transformer_step_size(n)
         # Init the Depth visual encoder
@@ -105,7 +107,7 @@ class AbstractDecisionTransformerNet(Net):
             resnet_encoders, model_config.RGB_ENCODER.cnn_type
         )(
             model_config.RGB_ENCODER.output_size,
-            normalize_visual_inputs=model_config.normalize_rgb,
+            normalize_visual_inputs=model_config.DECISION_TRANSFORMER.normalize_rgb,
             trainable=model_config.RGB_ENCODER.trainable,
             spatial_output=False,
         )

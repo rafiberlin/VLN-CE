@@ -332,7 +332,8 @@ _C.MODEL.DECISION_TRANSFORMER.block_size = _C.MODEL.DECISION_TRANSFORMER.episode
 _C.MODEL.DECISION_TRANSFORMER.allowed_models = ["DecisionTransformerNet",
                                                 "DecisionTransformerEnhancedNet",
                                                 "FullDecisionTransformerNet"]
-
+_C.MODEL.DECISION_TRANSFORMER.normalize_depth = False # Needs to be done during dataset creation
+_C.MODEL.DECISION_TRANSFORMER.normalize_rgb = False
 # dropout hyperparameters
 _C.MODEL.DECISION_TRANSFORMER.embd_pdrop = 0.1
 _C.MODEL.DECISION_TRANSFORMER.resid_pdrop = 0.1
