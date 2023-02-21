@@ -17,12 +17,14 @@ def get_result_files_per_datasplit(eval_dir):
                 # after this spliting, we get 4 and val_seen.json
                 iteration, data_split = file_path.split("stats_ckpt.")[1].split(".pth_")
                 iteration = int(iteration)
-                #we get val_seen
+                # we get val_seen
                 data_split = data_split.split(".json")[0]
                 list_result[data_split][iteration] = file_path
-                print("exp_config", file_path)
+                # print("exp_config", file_path)
 
-    return  list_result
+    return list_result
+
+
 def read_results_per_split(result_path_dict, split=None):
     list_of_poor_iterations = {}
     for data_split in result_path_dict.keys():
@@ -35,20 +37,22 @@ def read_results_per_split(result_path_dict, split=None):
                 datapoint = json.load(f)
                 values[iteration] = datapoint
         frame = pd.DataFrame.from_dict(values, columns=list(datapoint.keys()), orient="index")
-        poor_iterations = [ k for k in sorted_keys]
+        poor_iterations = [k for k in sorted_keys]
         list_of_poor_iterations[data_split] = poor_iterations, frame
     return list_of_poor_iterations
 
-def read_poor_results_per_split(result_path_dict, keep_n_best = 5, split=None, criteria="spl"):
+
+def read_poor_results_per_split(result_path_dict, keep_n_best=5, split=None, criteria="spl"):
     list_of_poor_iterations = read_results_per_split(result_path_dict, split)
     for data_split in list_of_poor_iterations.keys():
         if split is not None and data_split != split:
             continue
-        _ , frame = list_of_poor_iterations[data_split]
+        _, frame = list_of_poor_iterations[data_split]
         bests = frame[criteria].nlargest(keep_n_best)
-        poor_iterations = [ k for k in result_path_dict[data_split].keys() if k not in bests.keys() ]
+        poor_iterations = [k for k in result_path_dict[data_split].keys() if k not in bests.keys()]
         list_of_poor_iterations[data_split] = poor_iterations
     return list_of_poor_iterations
+
 
 def move_poor_checkpoints(checkpoints_dir, poor_iterations):
     if os.path.isdir(checkpoints_dir):
@@ -64,3 +68,35 @@ def move_poor_checkpoints(checkpoints_dir, poor_iterations):
                     print(f"Moving: {file_name}")
                     shutil.move(file_path, os.path.join(bad_dir, file_name))
 
+
+def list_best_result(result_dir, split, criteria, transformer_type=["normal", "enhanced", "full"], eval_dir="evals"):
+    res_dict = {}
+    keep_n_best = 1
+    for upper_dir in transformer_type:
+        path = os.path.join(result_dir, upper_dir)
+        if os.path.exists(path):
+            l = [d for d in os.listdir(path) if not d.startswith(".") and not d.startswith("_")]
+            if len(l) > 0:
+                for model in l:
+                    model_result_dir = os.path.join(path, model, eval_dir)
+                    if os.path.exists(model_result_dir):
+                        result_files = get_result_files_per_datasplit(model_result_dir)
+                        result_table = read_results_per_split(result_files, split=split)
+                        res_dict[model_result_dir] = result_table
+
+    best_score = 0.0
+    best_model = "No model found"
+    all_best = {}
+    for model_result_dir in res_dict.keys():
+        if split in res_dict[model_result_dir].keys():
+            _, frame = res_dict[model_result_dir][split]
+            best_index = frame[criteria].nlargest(keep_n_best)
+            current_res = frame[criteria][best_index.index]
+            spl = current_res.values[0]
+            all_best[model_result_dir] = spl
+            if spl >= best_score:
+                best_score = spl
+                best_model = model_result_dir
+
+    print("Best:", best_model, split, best_score)
+    return dict(sorted(all_best.items(), key=lambda item: item[1]))
