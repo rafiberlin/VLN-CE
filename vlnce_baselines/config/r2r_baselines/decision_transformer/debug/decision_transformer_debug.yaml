@@ -1,4 +1,4 @@
-BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task_debug.yaml
+BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task.yaml
 TRAINER_NAME: decision_transformer # recollect_trainer, dagger
 SIMULATOR_GPU_IDS: [0]
 TORCH_GPU_ID: 0
@@ -46,14 +46,14 @@ IL:
       success: 1.0
     SPARSE_REWARD:
       step_penalty: -0.01
-      success: 1.0
+      success: 1.0torch.zeros(1, device=self.device)
     NDTW_REWARD:
       step_penalty: -0.01
       success: 1.0
   DAGGER:
     repeat_dataset: 1
     iterations: 1
-    update_size: 8
+    update_size: 10819
     p: 1.0
     preload_lmdb_features: True
     lmdb_commit_frequency: 500

@@ -387,6 +387,234 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         '''
         return sum([len(e) > 0 for e in episodes]) == 0
 
+    def _calculate_mean_and_std_for_rgb_depth(self):
+        """
+        Cache the whole dataset. Data Aggregation can be used, the trained model
+        can output some action for time steps at a given probability. As the whole Task rely on an Oracle that
+        can output the best decision to reach the next trajectory node, even a bad decision of the model can be recovered
+        (imagine backtracking...), hence effectively implementing DAGGER.
+        :param data_it:
+        :return:
+        """
+        if torch.cuda.is_available():
+            with torch.cuda.device(self.device):
+                torch.cuda.empty_cache()
+
+        envs = construct_envs(self.config, get_env_class(self.config.ENV_NAME))
+        expert_uuid = self.config.IL.DAGGER.expert_policy_sensor_uuid
+        hidden_states = torch.zeros(envs.num_envs, 1,
+                                    dtype=torch.float)  # more of a placeholder, we don t need it for the transformer
+
+        prev_actions = None
+        not_done_masks = torch.zeros(
+            envs.num_envs, 1, dtype=torch.uint8, device=self.device
+        )
+
+        observations = envs.reset()
+        observations, batch = self._prepare_observation(observations)
+        # initialize at dim 1 for sequences of frames etc...
+
+        episode_features = [[] for _ in range(envs.num_envs)]
+
+        skips = [False for _ in range(envs.num_envs)]
+        # Populate dones with False initially
+        dones = [False for _ in range(envs.num_envs)]
+
+        ensure_unique_episodes = True
+
+        self._create_feature_hooks()
+
+        rgb_encoder = self.policy.net.rgb_encoder
+        depth_encoder = self.policy.net.depth_encoder
+
+        collected_eps = 0
+        ep_ids_collected = None
+        if ensure_unique_episodes:
+            ep_ids_collected = set()
+
+        dataset_episodes = sum(envs.number_of_episodes)
+        print("Numbers of episodes in the split:", dataset_episodes)
+        if (self.config.IL.DAGGER.update_size > dataset_episodes and ensure_unique_episodes):
+            collect_size = dataset_episodes
+            print("Ensure unique episodes")
+        else:
+            print("Unique episodes not enforced")
+            collect_size = self.config.IL.DAGGER.update_size
+
+        print(f"To be collected: {collect_size} ")
+        horizon = 1
+        agent_action = False
+        precision = np.float64
+
+        channels_sum_rgb = episodes = [ np.zeros(3, dtype=precision) for _ in range(envs.num_envs)]
+        channels_squared_sum_rgb = [ np.zeros(3, dtype=precision)for _ in range(envs.num_envs)]
+        channels_sum_depth = [ np.zeros(1, dtype=precision) for _ in range(envs.num_envs)]
+        channels_squared_sum_depth= [ np.zeros(1, dtype=precision) for _ in range(envs.num_envs)]
+        final_list = {"sum_rgb": np.zeros(3, dtype=precision), "squared_sum_rgb":np.zeros(3, dtype=precision), "sum_depth": np.zeros(1, dtype=precision), "squared_sum_depth": np.zeros(1, dtype=precision), "steps": 0} # stores tuples of mean, square deviation for both rgb and
+
+        def pause_list(envs_to_pause, list_to_pause:list):
+            # pausing envs with no new episode
+            if len(envs_to_pause) > 0:
+                state_index = list(range(envs.num_envs))
+                if list_to_pause is not None:
+                    list_to_pause = [list_to_pause[i] for i in state_index if i not in envs_to_pause]
+            return list_to_pause
+        with torch.no_grad():
+            with tqdm.tqdm(
+                total=collect_size, dynamic_ncols=True
+            ) as pbar:
+                last_episodes = envs.current_episodes()
+                while collected_eps < collect_size:
+                    envs_to_pause = []
+                    current_episodes = envs.current_episodes()
+                    for i in range(envs.num_envs):
+
+                        if dones[i] and not skips[i]:
+
+                            pbar.update()
+                            collected_eps += 1
+                            if ensure_unique_episodes:
+                                if (not last_episodes[i].episode_id in ep_ids_collected):
+                                    ep_ids_collected.add(current_episodes[i].episode_id)
+
+                        # In opposition to the RNN logic, where only one state per time step is handled,
+                        # We need this to force all sequences in the current batch to finish...
+                        if dones[i]:
+                            if i not in envs_to_pause:
+                                envs_to_pause.append(i)
+                                final_list["sum_rgb"] += channels_sum_rgb[i]
+                                final_list["squared_sum_rgb"] += channels_squared_sum_rgb[i]
+                                final_list["sum_depth"] += channels_sum_depth[i]
+                                final_list["squared_sum_depth"] += channels_squared_sum_depth[i]
+                                final_list["steps"] += horizon
+
+                    channels_sum_rgb = pause_list(envs_to_pause, channels_sum_rgb)
+                    channels_squared_sum_rgb = pause_list(envs_to_pause, channels_squared_sum_rgb)
+                    channels_sum_depth = pause_list(envs_to_pause, channels_sum_depth)
+                    channels_squared_sum_depth = pause_list(envs_to_pause, channels_squared_sum_depth)
+
+                    (
+                        envs,
+                        hidden_states,
+                        not_done_masks,
+                        prev_actions,
+                        batch,
+                        episodes,
+                        episode_features,
+                    ) = self._pause_envs(
+                        envs_to_pause,
+                        envs,
+                        hidden_states,
+                        not_done_masks,
+                        prev_actions,
+                        batch,
+                        episodes,  # A trick, I am using what is thought for the RGB features to reduce this list as well
+                        episode_features,
+                    )
+
+                    if envs.num_envs == 0:
+                        envs.resume_all()
+                        observations = envs.reset()
+                        # This piece of code enforce to load only episode
+                        # not previously collected.
+                        to_init = min((collect_size - len(ep_ids_collected)), envs.num_envs)
+                        if ensure_unique_episodes and to_init > 0:
+                            initialized = 0
+                            while initialized < to_init:
+                                if initialized > 0:
+                                    initialized = 0
+                                for env, e in enumerate(envs.current_episodes()):
+                                    if e.episode_id in ep_ids_collected:
+                                        observations[env] = envs.reset_at(env)[0]
+                                    else:
+                                        initialized += 1
+                        current_episodes = envs.current_episodes()
+                        episodes = [[] for _ in range(envs.num_envs)]
+                        episode_features = [[] for _ in range(envs.num_envs)]
+                        channels_sum_rgb = episodes = [np.zeros(3, dtype=precision) for _ in range(envs.num_envs)]
+                        channels_squared_sum_rgb = [np.zeros(3, dtype=precision) for _ in range(envs.num_envs)]
+                        channels_sum_depth = [np.zeros(1, dtype=precision) for _ in range(envs.num_envs)]
+                        channels_squared_sum_depth = [np.zeros(1, dtype=precision) for _ in range(envs.num_envs)]
+                        prev_actions = None
+                        observations, batch = self._prepare_observation(observations)
+                        self.rgb_features = self.rgb_features.set_(torch.zeros((1,), device="cpu"))
+                        self.depth_features = self.depth_features.set_(torch.zeros((1,), device="cpu"))
+
+                    # caching the outputs of the cnn on one image only
+                    rgb_encoder(batch)
+                    depth_encoder(batch)
+                    for i in range(envs.num_envs):
+                        if self.rgb_features is not None:
+                            observations[i]["rgb_features"] = self.rgb_features[i]
+                            channels_sum_rgb[i] += observations[i]["rgb"].astype(precision).mean(axis=(0,1))
+                            channels_squared_sum_rgb[i] += (observations[i]["rgb"].astype(precision) ** 2).mean(axis=(0,1))
+                            del observations[i]["rgb"]
+
+                        if self.depth_features is not None:
+                            observations[i]["depth_features"] = self.depth_features[i]
+                            channels_sum_depth[i] += observations[i]["depth"].astype(precision).mean()
+                            channels_squared_sum_depth[i] += (observations[i]["depth"].astype(precision) ** 2).mean()
+                            del observations[i]["depth"]
+
+                    prev_actions = self._modify_batch_for_transformer(episode_features, batch, self.rgb_features,
+                                                                      self.depth_features, envs,
+                                                                      prev_actions,
+                                                                      "rgb_features", "depth_features")
+
+                    horizon = prev_actions.shape[1]
+
+                    actions = torch.ones_like(batch[expert_uuid].long())
+                    # actions.shape[0] == number of active enviroments
+                    hidden_states = torch.zeros(actions.shape[0], 1, dtype=torch.float)
+
+                    actions = batch[expert_uuid].long()
+
+                    skips = batch[
+                                expert_uuid].long() == -1  # looks like the short path sensor return -1 if there is a problem,, hence you need to skip an environment
+                    actions = torch.where(
+                        skips, torch.zeros_like(actions), actions
+                    )
+                    skips = skips.squeeze(-1).to(device="cpu", non_blocking=True)
+                    prev_actions = torch.cat([prev_actions, actions], dim=1).to(self.device)
+                    # prev_actions.copy_(actions)
+
+                    # When we step, environments can be reloaded automatically.
+                    # we need to cache the previous list of episodes to be able to add them correctly in the part
+                    # where done and not skip is applied.
+                    last_episodes = current_episodes
+                    outputs = envs.step([a[0].item() for a in actions])
+
+                    observations, _, dones, infos = [list(x) for x in zip(*outputs)]
+
+                    observations, batch = self._prepare_observation(observations)
+
+                    not_done_masks = torch.tensor(
+                        [[0] if done else [1] for done in dones],
+                        dtype=torch.uint8,
+                        device=self.device,
+                    )
+
+
+        final_res = {}
+        final_res["mean_rgb"] = final_list["sum_rgb"] / final_list["steps"]
+        final_res["std_rgb"] = (final_list["squared_sum_rgb"]/ final_list["steps"] - final_res["mean_rgb"]**2) ** 0.5
+        final_res["mean_depth"] = final_list["sum_depth"] / final_list["steps"]
+        final_res["std_depth"] = (final_list["squared_sum_depth"]/ final_list["steps"] - final_res["mean_depth"]**2) ** 0.5
+        envs.close()
+
+        final_res["std_rgb"] = final_res["std_rgb"].tolist()
+        final_res["mean_rgb"] = final_res["mean_rgb"].tolist()
+        final_res["mean_depth"] = final_res["mean_depth"].tolist()
+        final_res["std_depth"] = final_res["std_depth"].tolist()
+        envs = None
+
+        self._release_hook()
+
+        with open("rgb_depth_stats.json", "w") as outfile:
+            json.dump(final_res, outfile)
+        logger.info(final_res)
+        return final_res
+
     def _update_dataset(self, data_it):
         """
         Cache the whole dataset. Data Aggregation can be used, the trained model
@@ -1497,6 +1725,32 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             ):
                 pass
         print("Dataset seems fine!")
+
+    def calculate_mean(self):
+
+        EPS = self.config.IL.DAGGER.expert_policy_sensor
+        if EPS not in self.config.TASK_CONFIG.TASK.SENSORS:
+            self.config.TASK_CONFIG.TASK.SENSORS.append(EPS)
+
+        self.config.defrost()
+
+        # if doing teacher forcing, don't switch the scene until it is complete
+        if self.config.IL.DAGGER.p == 1.0:
+            self.config.TASK_CONFIG.ENVIRONMENT.ITERATOR_OPTIONS.MAX_SCENE_REPEAT_STEPS = (
+                -1
+            )
+        self.config.freeze()
+
+        observation_space, action_space = self._get_spaces(self.config)
+
+        self._initialize_policy(
+            self.config,
+            self.config.IL.load_from_ckpt,
+            observation_space=observation_space,
+            action_space=action_space,
+        )
+
+        self._calculate_mean_and_std_for_rgb_depth()
 
     def create_dataset(self) -> None:
         """

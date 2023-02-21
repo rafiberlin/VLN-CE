@@ -23,7 +23,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--run-type",
-        choices=["train", "eval", "inference", "create_dataset", "train_eval", "check_dataset", "train_complete"],
+        choices=["train", "eval", "inference", "create_dataset", "train_eval", "check_dataset", "train_complete", "calculate_mean"],
         required=True,
         help="run type of the experiment (train, eval, inference, dataset creation only, train + eval, check dataset consistency, train complete (run val seen and unseen on the best model only))",
     )
@@ -150,6 +150,8 @@ def run_exp(exp_config: str, run_type: str, opts=None) -> None:
         run_eval_for_split(trainer, config, config.EVAL.VAL_SEEN, keep_best=4)
         run_eval_for_split(trainer, config, config.EVAL.VAL_UNSEEN, keep_best=1)
         #run_inference(trainer, config)
+    elif run_type == "calculate_mean":
+        trainer.calculate_mean()
 
 
     # avoids to write to all previous files if running in a loop
