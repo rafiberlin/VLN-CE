@@ -69,6 +69,7 @@ MODEL:
   DECISION_TRANSFORMER:
     # Possible values: DecisionTransformerNet, DecisionTransformerEnhancedNet
     # DecisionTransformerWithAttendedInstructionsNet or  FullDecisionTransformerNet
+    include_past_action_for_prediction: True
     net: DecisionTransformerNet
     use_extra_start_token: True
     reward_type: point_nav_reward_to_go # point_nav_reward_to_go, sparse_reward_to_go, point_nav_reward, sparse_reward, ndtw_reward, ndtw_reward_to_go

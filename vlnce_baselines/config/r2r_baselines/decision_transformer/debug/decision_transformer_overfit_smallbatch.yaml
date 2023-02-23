@@ -29,11 +29,12 @@ EVAL:
   VAL_UNSEEN: val_unseen
 
 IL:
+  use_iw: False
   preload_dataloader_size: 100
-  optimizer: torch.optim.Adam
+  optimizer: torch.optim.AdamW
   epochs: 70
   batch_size: 3
-  checkpoint_frequency: 10
+  checkpoint_frequency: 2
   mean_loss_to_save_checkpoint: 0.25
   lr: 1e-3
   load_from_ckpt: False # To train from a previous checkpoint
@@ -70,6 +71,7 @@ MODEL:
     # DecisionTransformerWithAttendedInstructionsNet or  FullDecisionTransformerNet
     net: DecisionTransformerNet
     use_extra_start_token: True
+    include_past_action_for_prediction: True
     reward_type: point_nav_reward_to_go # point_nav_reward_to_go, sparse_reward_to_go, point_nav_reward, sparse_reward, ndtw_reward, ndtw_reward_to_go
     n_layer: 3
     n_head: 8
