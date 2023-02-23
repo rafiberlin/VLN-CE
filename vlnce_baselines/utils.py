@@ -92,11 +92,23 @@ def list_best_result(result_dir, split, criteria, transformer_type=["normal", "e
             _, frame = res_dict[model_result_dir][split]
             best_index = frame[criteria].nlargest(keep_n_best)
             current_res = frame[criteria][best_index.index]
-            spl = current_res.values[0]
-            all_best[model_result_dir] = spl
-            if spl >= best_score:
-                best_score = spl
+            metrics = current_res.values[0]
+            all_best[model_result_dir] = metrics, best_index.index.values[0]
+            if metrics >= best_score:
+                best_score = metrics
                 best_model = model_result_dir
 
     print("Best:", best_model, split, best_score)
-    return dict(sorted(all_best.items(), key=lambda item: item[1]))
+    return dict(sorted(all_best.items(), key=lambda item: item[1][0]))
+
+
+if __name__ == "__main__" :
+    transformer_type = ["normal", "enhanced", "full"]  # ["normal", "enhanced", "full"]
+    split = "val_seen"
+    result_dir = "../data/checkpoints"
+    criteria = "success"
+
+    all_best_res = list_best_result(result_dir, split, criteria, transformer_type)
+
+    for k, v in all_best_res.items():
+        print(k, ",epoch:", v[1], f",{criteria}:", v[0])
