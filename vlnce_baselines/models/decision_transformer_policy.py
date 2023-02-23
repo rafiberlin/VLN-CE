@@ -46,10 +46,9 @@ class DecisionTransformerPolicy(ILPolicy):
         masks,
         deterministic=False,
     ):
-
         actions, rnn_states = super().act(observations, rnn_states, prev_actions, masks, deterministic)
-        #We just want to return the last action of the transformer sequence...
-        return actions[:,-1,:], rnn_states
+        # We just want to return the last action of the transformer sequence...
+        return actions[:, -1, :], rnn_states
 
     @classmethod
     def from_config(
@@ -64,6 +63,7 @@ class DecisionTransformerPolicy(ILPolicy):
             action_space=action_space,
             model_config=config.MODEL,
         )
+
 
 class AbstractDecisionTransformerNet(Net):
     # Decision Transformer where each time step is fed into a GPT backbone.
@@ -88,8 +88,6 @@ class AbstractDecisionTransformerNet(Net):
                                                                  "point_nav_reward", "sparse_reward", "ndtw_reward",
                                                                  "ndtw_reward_to_go"]
 
-
-
         n = self.initialize_transformer_step_size()
         self.set_transformer_step_size(n)
         # Init the Depth visual encoder
@@ -111,11 +109,17 @@ class AbstractDecisionTransformerNet(Net):
             trainable=model_config.RGB_ENCODER.trainable,
             spatial_output=False,
         )
+        self.dim_not_included_for_predictions = 2  # Action and reward
+        self.include_past_action_for_prediction = model_config.DECISION_TRANSFORMER.include_past_action_for_prediction
+        if self.include_past_action_for_prediction:
+            self.dim_not_included_for_predictions = 1
+
 
         self.initialize_instruction_encoder()
 
         self.reward_type = model_config.DECISION_TRANSFORMER.reward_type
-        self.action_activation = nn.Sequential(nn.Dropout(p=self.model_config.DECISION_TRANSFORMER.activation_action_drop), NewGELU())
+        self.action_activation = nn.Sequential(
+            nn.Dropout(p=self.model_config.DECISION_TRANSFORMER.activation_action_drop), NewGELU())
         self.instruction_activation = nn.Sequential(
             nn.Dropout(p=self.model_config.DECISION_TRANSFORMER.activation_instruction_drop), NewGELU())
         self.rgb_activation = nn.Sequential(
@@ -124,14 +128,13 @@ class AbstractDecisionTransformerNet(Net):
             nn.Dropout(p=self.model_config.DECISION_TRANSFORMER.activation_depth_drop), NewGELU())
         self.gpt_encoder = GPT(self.model_config.DECISION_TRANSFORMER)
         self.transformer_step_size = self.model_config.DECISION_TRANSFORMER.step_size
-        self.embed_timestep = nn.Embedding(model_config.DECISION_TRANSFORMER.episode_horizon, model_config.DECISION_TRANSFORMER.hidden_dim)
+        self.embed_timestep = nn.Embedding(model_config.DECISION_TRANSFORMER.episode_horizon,
+                                           model_config.DECISION_TRANSFORMER.hidden_dim)
         self.embed_return = nn.Linear(1, model_config.DECISION_TRANSFORMER.hidden_dim)
         self.embed_action = nn.Embedding(num_actions + 1, model_config.DECISION_TRANSFORMER.hidden_dim)
         self.embed_ln = nn.LayerNorm(model_config.DECISION_TRANSFORMER.hidden_dim)
         self.initialize_other_layers()
         self.train()
-
-
 
     def _prepare_embeddings(self, observations):
         """
@@ -190,9 +193,10 @@ class AbstractDecisionTransformerNet(Net):
         raise not NotImplementedError("Should return the value needed for set_transformer_step_size(self, n) ")
 
     def create_tensors_for_gpt_as_tuple(self, prev_actions, returns_to_go, instruction_embedding,
-                                                             depth_embedding, rgb_embedding, timesteps, batch_size,
-                                                             seq_length):
-        raise not NotImplementedError("do the mo del specific work and return a tuple of tensors like (Action, S1, ... Sn, Reward)")
+                                        depth_embedding, rgb_embedding, timesteps, batch_size,
+                                        seq_length):
+        raise not NotImplementedError(
+            "do the mo del specific work and return a tuple of tensors like (Action, S1, ... Sn, Reward)")
 
     def set_transformer_step_size(self, n):
         self.model_config.defrost()
@@ -213,7 +217,8 @@ class AbstractDecisionTransformerNet(Net):
 
     @property
     def output_size(self):
-        return self.model_config.DECISION_TRANSFORMER.hidden_dim * (self.transformer_step_size - 2)# - 2 because we exclude reward / actions for categorical layer
+        return self.model_config.DECISION_TRANSFORMER.hidden_dim * (
+                self.transformer_step_size - self.dim_not_included_for_predictions)  # - 2 because we exclude reward / actions for categorical layer
 
     def create_timesteps(self, sequence_length, batch_size):
 
@@ -258,21 +263,29 @@ class AbstractDecisionTransformerNet(Net):
                                                              seq_length)
 
         stacked = (
-            torch.stack(tensor_tuples, dim=1).permute(0, 2, 1, 3).reshape(batch_size, self.transformer_step_size * seq_length, -1)
+            torch.stack(tensor_tuples, dim=1).permute(0, 2, 1, 3).reshape(batch_size,
+                                                                          self.transformer_step_size * seq_length, -1)
         )
 
         output = self.gpt_encoder(self.embed_ln(stacked))
         output = output.reshape(batch_size, seq_length, self.transformer_step_size, -1).permute(0, 2, 1, 3)
 
+        start_dim = 1
+        if self.include_past_action_for_prediction:
+            start_dim = 0
+
         # get predictions
-        action_preds = output[:, 1:self.transformer_step_size - 1].permute(0, 2, 1, 3).reshape(batch_size, seq_length,
-                                                                                               -1)
+        action_preds = output[:, start_dim:self.transformer_step_size - 1].permute(0, 2, 1, 3).reshape(batch_size,
+                                                                                                       seq_length,
+                                                                                                       -1)
 
         return action_preds, None
+
 
 class DecisionTransformerNet(AbstractDecisionTransformerNet):
     """Decision Transformer, where RGB, DEPTH and Instructions are concatenated into one state.
     """
+
     def __init__(
         self, observation_space: Space, model_config: Config, num_actions: int
     ):
@@ -328,6 +341,7 @@ class DecisionTransformerNet(AbstractDecisionTransformerNet):
         # reward, state, action
         return 3
 
+
 class DecisionTransformerEnhancedNet(DecisionTransformerNet):
 
     def __init__(
@@ -382,8 +396,7 @@ class FullDecisionTransformerNet(AbstractDecisionTransformerNet):
     def handle_instruction_embeddings(self, observations, resize_tensor, batch_size, seq_length):
         instruction_embedding = self.instruction_encoder(observations).permute(0, 2, 1)
         instruction_embedding = resize_tensor(instruction_embedding)
-        return  instruction_embedding
-
+        return instruction_embedding
 
     def initialize_instruction_encoder(self):
         self.instruction_encoder = Word2VecEmbeddings(
@@ -401,12 +414,12 @@ class FullDecisionTransformerNet(AbstractDecisionTransformerNet):
 
         def prepare_transformer_layer(model_config):
             return nn.Transformer(d_model=model_config.DECISION_TRANSFORMER.hidden_dim
-                                               , nhead=model_config.DECISION_TRANSFORMER.n_head
-                                               , num_encoder_layers=model_config.DECISION_TRANSFORMER.ENCODER.n_layer
-                                               , num_decoder_layers=model_config.DECISION_TRANSFORMER.n_layer
-                                               , dim_feedforward=model_config.DECISION_TRANSFORMER.hidden_dim * 2
-                                               , activation="gelu"
-                                               , batch_first=True)
+                                  , nhead=model_config.DECISION_TRANSFORMER.n_head
+                                  , num_encoder_layers=model_config.DECISION_TRANSFORMER.ENCODER.n_layer
+                                  , num_decoder_layers=model_config.DECISION_TRANSFORMER.n_layer
+                                  , dim_feedforward=model_config.DECISION_TRANSFORMER.hidden_dim * 2
+                                  , activation="gelu"
+                                  , batch_first=True)
 
         self.encoder_instruction_to_rgb = prepare_transformer_layer(self.model_config)
         self.encoder_instruction_to_depth = prepare_transformer_layer(self.model_config)
@@ -432,8 +445,8 @@ class FullDecisionTransformerNet(AbstractDecisionTransformerNet):
         return step_size
 
     def create_tensors_for_gpt_as_tuple(self, prev_actions, returns_to_go, instruction_embedding,
-                                                             depth_embedding, rgb_embedding, timesteps, batch_size,
-                                                             seq_length):
+                                        depth_embedding, rgb_embedding, timesteps, batch_size,
+                                        seq_length):
         single_instruction_states = instruction_embedding[:, 0, :, :]
         # embed each modality with a different head
         instruction_state_embeddings = self.positional_encoding_for_instruction(
@@ -462,19 +475,25 @@ class FullDecisionTransformerNet(AbstractDecisionTransformerNet):
         rgb_mask = VanillaMultiHeadAttention.create_padded_mask(rgb_state_embeddings2)
         depth_mask = VanillaMultiHeadAttention.create_padded_mask(depth_state_embeddings2)
 
-        output_rgb_instructions = self.encoder_instruction_to_rgb(src=instruction_state_embeddings, tgt=rgb_state_embeddings2,
-                                                   src_key_padding_mask=text_mask, tgt_mask=vision_causal_mask)
+        output_rgb_instructions = self.encoder_instruction_to_rgb(src=instruction_state_embeddings,
+                                                                  tgt=rgb_state_embeddings2,
+                                                                  src_key_padding_mask=text_mask,
+                                                                  tgt_mask=vision_causal_mask)
 
-        output_depth_instructions = self.encoder_instruction_to_depth(src=instruction_state_embeddings, tgt=depth_state_embeddings2,
-                                                   src_key_padding_mask=text_mask, tgt_mask=vision_causal_mask)
+        output_depth_instructions = self.encoder_instruction_to_depth(src=instruction_state_embeddings,
+                                                                      tgt=depth_state_embeddings2,
+                                                                      src_key_padding_mask=text_mask,
+                                                                      tgt_mask=vision_causal_mask)
 
         output_rgb = self.encoder_rgb_to_instruction(src=rgb_state_embeddings2, tgt=instruction_state_embeddings,
                                                      src_key_padding_mask=rgb_mask, tgt_mask=causal_text_mask)
         output_depth = self.encoder_depth_to_instruction(src=depth_state_embeddings2, tgt=instruction_state_embeddings,
                                                          src_key_padding_mask=depth_mask, tgt_mask=causal_text_mask)
 
-        output_rgb = self.instruction_activation(self.visual_to_sentence_embed(output_rgb.permute(0, 2, 1)).permute(0, 2, 1)) + time_embeddings
-        output_depth = self.instruction_activation(self.visual_to_sentence_embed(output_depth.permute(0, 2, 1)).permute(0, 2, 1)) + time_embeddings
+        output_rgb = self.instruction_activation(
+            self.visual_to_sentence_embed(output_rgb.permute(0, 2, 1)).permute(0, 2, 1)) + time_embeddings
+        output_depth = self.instruction_activation(
+            self.visual_to_sentence_embed(output_depth.permute(0, 2, 1)).permute(0, 2, 1)) + time_embeddings
 
         c = self.model_config.DECISION_TRANSFORMER.ENCODER
         t = [returns_embeddings2]
@@ -494,4 +513,3 @@ class FullDecisionTransformerNet(AbstractDecisionTransformerNet):
         assert len(t) >= 3
 
         return tuple(t)
-
