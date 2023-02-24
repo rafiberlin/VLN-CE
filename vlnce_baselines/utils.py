@@ -103,7 +103,7 @@ def list_best_result(result_dir, split, criteria, transformer_type=["normal", "e
 
 
 if __name__ == "__main__" :
-    transformer_type = ["normal", "enhanced", "full"]  # ["normal", "enhanced", "full"]
+    transformer_type = ["enhanced"]  # ["normal", "enhanced", "full"]
     split = "val_seen"
     result_dir = "../data/checkpoints"
     criteria = "success"
