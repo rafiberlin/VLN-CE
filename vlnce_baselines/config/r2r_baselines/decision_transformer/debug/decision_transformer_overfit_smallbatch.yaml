@@ -69,7 +69,7 @@ MODEL:
   DECISION_TRANSFORMER:
     # Possible values: DecisionTransformerNet, DecisionTransformerEnhancedNet
     # DecisionTransformerWithAttendedInstructionsNet or  FullDecisionTransformerNet
-    net: DecisionTransformerNet
+    net: FullDecisionTransformerSingleVisionStateNet
     use_extra_start_token: True
     include_past_action_for_prediction: True
     reward_type: point_nav_reward_to_go # point_nav_reward_to_go, sparse_reward_to_go, point_nav_reward, sparse_reward, ndtw_reward, ndtw_reward_to_go
@@ -89,6 +89,8 @@ MODEL:
     ENCODER: # only for FullDecisionTransformerNet
       n_layer: 3
       n_head: 8
+      use_output_state_instructions: True
+      use_output_state: False
   policy_name: DecisionTransformerPolicy
   PROGRESS_MONITOR: # This is only used to create the datasets and the reward signals
     use: True

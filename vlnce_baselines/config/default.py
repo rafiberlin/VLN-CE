@@ -334,7 +334,8 @@ _C.MODEL.DECISION_TRANSFORMER.step_size = 3 #We multiply by three because at eac
 _C.MODEL.DECISION_TRANSFORMER.block_size = _C.MODEL.DECISION_TRANSFORMER.episode_horizon *_C.MODEL.DECISION_TRANSFORMER.step_size
 _C.MODEL.DECISION_TRANSFORMER.allowed_models = ["DecisionTransformerNet",
                                                 "DecisionTransformerEnhancedNet",
-                                                "FullDecisionTransformerNet"]
+                                                "FullDecisionTransformerNet",
+                                                "FullDecisionTransformerSingleVisionStateNet"]
 _C.MODEL.DECISION_TRANSFORMER.include_past_action_for_prediction = False
 _C.MODEL.DECISION_TRANSFORMER.normalize_depth = False # Needs to be done during dataset creation
 _C.MODEL.DECISION_TRANSFORMER.normalize_rgb = False
@@ -350,13 +351,16 @@ _C.MODEL.DECISION_TRANSFORMER.ENCODER = CN()
 _C.MODEL.DECISION_TRANSFORMER.ENCODER.n_layer = 2
 _C.MODEL.DECISION_TRANSFORMER.ENCODER.n_head = 1
 _C.MODEL.DECISION_TRANSFORMER.ENCODER.use_sentence_encoding = True
-
+# Only for FullDecisionTransformerNet
 _C.MODEL.DECISION_TRANSFORMER.ENCODER.use_rgb_state_embeddings = True
 _C.MODEL.DECISION_TRANSFORMER.ENCODER.use_depth_state_embeddings = True
 _C.MODEL.DECISION_TRANSFORMER.ENCODER.use_output_rgb_instructions = True
 _C.MODEL.DECISION_TRANSFORMER.ENCODER.use_output_depth_instructions = True
 _C.MODEL.DECISION_TRANSFORMER.ENCODER.use_output_rgb = True
 _C.MODEL.DECISION_TRANSFORMER.ENCODER.use_output_depth = True
+# Only for FullDecisionTransformerSingleVisionStateNet
+_C.MODEL.DECISION_TRANSFORMER.ENCODER.use_output_state_instructions = True
+_C.MODEL.DECISION_TRANSFORMER.ENCODER.use_output_state = True
 
 def purge_keys(config: CN, keys: List[str]) -> None:
     for k in keys:

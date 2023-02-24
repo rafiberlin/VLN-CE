@@ -393,6 +393,15 @@ class FullDecisionTransformerNet(AbstractDecisionTransformerNet):
         model_config.freeze()
         super().__init__(observation_space, model_config, num_actions)
 
+    def prepare_transformer_layer(self, model_config):
+        return nn.Transformer(d_model=model_config.DECISION_TRANSFORMER.hidden_dim
+                              , nhead=model_config.DECISION_TRANSFORMER.n_head
+                              , num_encoder_layers=model_config.DECISION_TRANSFORMER.ENCODER.n_layer
+                              , num_decoder_layers=model_config.DECISION_TRANSFORMER.n_layer
+                              , dim_feedforward=model_config.DECISION_TRANSFORMER.hidden_dim * 2
+                              , activation="gelu"
+                              , batch_first=True)
+
     def handle_instruction_embeddings(self, observations, resize_tensor, batch_size, seq_length):
         instruction_embedding = self.instruction_encoder(observations).permute(0, 2, 1)
         instruction_embedding = resize_tensor(instruction_embedding)
@@ -412,19 +421,12 @@ class FullDecisionTransformerNet(AbstractDecisionTransformerNet):
         self.depth_embed_state = nn.Linear(self.model_config.DEPTH_ENCODER.output_size,
                                            self.model_config.DECISION_TRANSFORMER.hidden_dim)
 
-        def prepare_transformer_layer(model_config):
-            return nn.Transformer(d_model=model_config.DECISION_TRANSFORMER.hidden_dim
-                                  , nhead=model_config.DECISION_TRANSFORMER.n_head
-                                  , num_encoder_layers=model_config.DECISION_TRANSFORMER.ENCODER.n_layer
-                                  , num_decoder_layers=model_config.DECISION_TRANSFORMER.n_layer
-                                  , dim_feedforward=model_config.DECISION_TRANSFORMER.hidden_dim * 2
-                                  , activation="gelu"
-                                  , batch_first=True)
 
-        self.encoder_instruction_to_rgb = prepare_transformer_layer(self.model_config)
-        self.encoder_instruction_to_depth = prepare_transformer_layer(self.model_config)
-        self.encoder_rgb_to_instruction = prepare_transformer_layer(self.model_config)
-        self.encoder_depth_to_instruction = prepare_transformer_layer(self.model_config)
+
+        self.encoder_instruction_to_rgb = self.prepare_transformer_layer(self.model_config)
+        self.encoder_instruction_to_depth = self.prepare_transformer_layer(self.model_config)
+        self.encoder_rgb_to_instruction = self.prepare_transformer_layer(self.model_config)
+        self.encoder_depth_to_instruction = self.prepare_transformer_layer(self.model_config)
         self.visual_to_sentence_embed = nn.AdaptiveAvgPool1d(1)
 
     def initialize_transformer_step_size(self):
@@ -511,5 +513,92 @@ class FullDecisionTransformerNet(AbstractDecisionTransformerNet):
             t.append(output_depth)
         t.append(action_embeddings2)
         assert len(t) >= 3
+
+        return tuple(t)
+
+class FullDecisionTransformerSingleVisionStateNet(FullDecisionTransformerNet):
+    def __init__(
+        self, observation_space: Space, model_config: Config, num_actions: int
+    ):
+        super().__init__(observation_space, model_config, num_actions)
+
+    def initialize_other_layers(self):
+        self.positional_encoding_for_instruction = PositionalEncoding(self.model_config.DECISION_TRANSFORMER.hidden_dim)
+        self.instruction_embed_state = nn.Linear(self.instruction_encoder.output_size,
+                                                 self.model_config.DECISION_TRANSFORMER.hidden_dim)
+        self.rgb_embed_state = nn.Linear(self.model_config.RGB_ENCODER.output_size,
+                                         self.model_config.DECISION_TRANSFORMER.hidden_dim)
+        self.depth_embed_state = nn.Linear(self.model_config.DEPTH_ENCODER.output_size,
+                                           self.model_config.DECISION_TRANSFORMER.hidden_dim)
+
+        self.embed_state = nn.Linear(self.rgb_embed_state.out_features + self.depth_embed_state.out_features,
+                                         self.model_config.DECISION_TRANSFORMER.hidden_dim)
+
+        self.encoder_instruction_to_state = self.prepare_transformer_layer(self.model_config)
+        self.encoder_state_to_instruction = self.prepare_transformer_layer(self.model_config)
+        self.visual_to_sentence_embed = nn.AdaptiveAvgPool1d(1)
+
+    def initialize_transformer_step_size(self):
+        step_size = 3
+        c = self.model_config.DECISION_TRANSFORMER.ENCODER
+        if c.use_output_state_instructions is True: # like a different representation of instructions at each time steps
+            step_size += 1
+        if c.use_output_state is True: # A single state representation of the whole sequence...
+            step_size += 1
+        return step_size
+
+    def create_tensors_for_gpt_as_tuple(self, prev_actions, returns_to_go, instruction_embedding,
+                                        depth_embedding, rgb_embedding, timesteps, batch_size,
+                                        seq_length):
+        single_instruction_states = instruction_embedding[:, 0, :, :]
+        # embed each modality with a different head
+        instruction_state_embeddings = self.positional_encoding_for_instruction(
+            self.instruction_embed_state(single_instruction_states.permute(0, 2, 1)))
+
+        # only 2D allowed in Pytorch Implementation
+        vision_causal_mask = VanillaMultiHeadAttention.create_causal_mask(seq_length, rgb_embedding.device)[0][0]
+        text_mask = VanillaMultiHeadAttention.create_padded_mask(instruction_state_embeddings)
+
+        rgb_state_embeddings = self.rgb_activation(self.embed_ln(self.rgb_embed_state(rgb_embedding)))
+        depth_state_embeddings = self.depth_activation(self.embed_ln(self.depth_embed_state(depth_embedding)))
+
+        states = torch.cat(
+            [rgb_state_embeddings, depth_state_embeddings], dim=2
+        )
+        # embed each modality with a different head
+        state_embeddings = self.embed_ln(self.embed_state(states))
+
+        action_embeddings = self.action_activation(self.embed_action(prev_actions))
+        returns_embeddings = self.embed_return(returns_to_go)
+        time_embeddings = self.embed_timestep(timesteps)
+
+        # print(state_embeddings.shape, action_embeddings.shape, returns_embeddings.shape, time_embeddings.shape)
+        # time embeddings are treated similar to positional embeddings
+        state_embeddings2 = state_embeddings + time_embeddings
+        action_embeddings2 = action_embeddings + time_embeddings
+        returns_embeddings2 = returns_embeddings + time_embeddings
+
+        causal_text_mask = VanillaMultiHeadAttention.create_causal_mask(instruction_state_embeddings.shape[1],
+                                                                        instruction_state_embeddings.device)[0][0]
+        state_mask = VanillaMultiHeadAttention.create_padded_mask(state_embeddings2)
+
+        output_state_instructions = self.encoder_instruction_to_state(src=instruction_state_embeddings,
+                                                                    tgt=state_embeddings2,
+                                                                    src_key_padding_mask=text_mask,
+                                                                    tgt_mask=vision_causal_mask)
+
+        output_state = self.encoder_state_to_instruction(src=state_embeddings2, tgt=instruction_state_embeddings,
+                                                         src_key_padding_mask=state_mask, tgt_mask=causal_text_mask)
+
+        output_state = self.instruction_activation(
+            self.visual_to_sentence_embed(output_state.permute(0, 2, 1)).permute(0, 2, 1)) + time_embeddings
+
+        c = self.model_config.DECISION_TRANSFORMER.ENCODER
+        t = [returns_embeddings2, state_embeddings2]
+        if c.use_output_state_instructions is True:  # like a different representation of instructions at each time steps
+            t.append(output_state_instructions)
+        if c.use_output_state is True:  # A single state representation of the whole sequence...
+            t.append(output_state)
+        t.append(action_embeddings2)
 
         return tuple(t)
