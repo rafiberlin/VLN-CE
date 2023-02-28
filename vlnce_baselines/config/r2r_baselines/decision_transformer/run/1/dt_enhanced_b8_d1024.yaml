@@ -3,7 +3,7 @@ BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task.yaml
 TRAINER_NAME: decision_transformer # recollect_trainer, dagger
 SIMULATOR_GPU_IDS: [1]
 TORCH_GPU_ID: 1
-NUM_ENVIRONMENTS: 8 #Looks like the sweet spot for dataset creation is 6 envs. If you use more, we might wait too long to reload the next batch....
+NUM_ENVIRONMENTS: 6 #Looks like the sweet spot for dataset creation is 6 envs. If you use more, we might wait too long to reload the next batch....
 TENSORBOARD_DIR: /cache/tensorboard-logdir/dt_enhanced_b8_d1024
 CHECKPOINT_FOLDER: data/checkpoints/enhanced/enhanced/dt_enhanced_b8_d1024
 EVAL_CKPT_PATH_DIR: data/checkpoints/enhanced/enhanced/dt_enhanced_b8_d1024
@@ -31,7 +31,7 @@ EVAL:
 IL:
   preload_dataloader_size: 100
   dataload_workers: 2
-  epochs: 42
+  epochs: 0
   batch_size: 8
   checkpoint_frequency: 1
   mean_loss_to_save_checkpoint: 0.40
