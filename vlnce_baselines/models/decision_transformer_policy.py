@@ -110,9 +110,10 @@ class AbstractDecisionTransformerNet(Net):
             spatial_output=False,
         )
         self.dim_not_included_for_predictions = 2  # Action and reward
-        self.include_past_action_for_prediction = model_config.DECISION_TRANSFORMER.include_past_action_for_prediction
-        if self.include_past_action_for_prediction:
+        self.exclude_past_action_for_prediction = model_config.DECISION_TRANSFORMER.exclude_past_action_for_prediction
+        if self.exclude_past_action_for_prediction:
             self.dim_not_included_for_predictions = 1
+        self.return_to_go_inference = model_config.DECISION_TRANSFORMER.return_to_go_inference
 
         self.initialize_instruction_encoder()
 
@@ -246,7 +247,8 @@ class AbstractDecisionTransformerNet(Net):
         else:
             # If we don t have any rewards from the environment, just take one
             # as mentioned in the paper during evaluation.
-            returns_to_go = torch.ones_like(prev_actions, dtype=torch.float).unsqueeze(dim=-1)
+            returns_to_go = torch.ones_like(prev_actions, dtype=torch.float).unsqueeze(
+                dim=-1) * self.return_to_go_inference
         if "timesteps" in observations.keys():
             timesteps = observations["timesteps"]
         else:
@@ -270,7 +272,7 @@ class AbstractDecisionTransformerNet(Net):
         output = output.reshape(batch_size, seq_length, self.transformer_step_size, -1).permute(0, 2, 1, 3)
 
         start_dim = 1
-        if self.include_past_action_for_prediction:
+        if self.exclude_past_action_for_prediction:
             start_dim = 0
 
         # get predictions
