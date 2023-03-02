@@ -114,7 +114,6 @@ class AbstractDecisionTransformerNet(Net):
         if self.include_past_action_for_prediction:
             self.dim_not_included_for_predictions = 1
 
-
         self.initialize_instruction_encoder()
 
         self.reward_type = model_config.DECISION_TRANSFORMER.reward_type
@@ -218,7 +217,7 @@ class AbstractDecisionTransformerNet(Net):
     @property
     def output_size(self):
         return self.model_config.DECISION_TRANSFORMER.hidden_dim * (
-                self.transformer_step_size - self.dim_not_included_for_predictions)  # - 2 because we exclude reward / actions for categorical layer
+            self.transformer_step_size - self.dim_not_included_for_predictions)  # - 2 because we exclude reward / actions for categorical layer
 
     def create_timesteps(self, sequence_length, batch_size):
 
@@ -421,8 +420,6 @@ class FullDecisionTransformerNet(AbstractDecisionTransformerNet):
         self.depth_embed_state = nn.Linear(self.model_config.DEPTH_ENCODER.output_size,
                                            self.model_config.DECISION_TRANSFORMER.hidden_dim)
 
-
-
         self.encoder_instruction_to_rgb = self.prepare_transformer_layer(self.model_config)
         self.encoder_instruction_to_depth = self.prepare_transformer_layer(self.model_config)
         self.encoder_rgb_to_instruction = self.prepare_transformer_layer(self.model_config)
@@ -516,6 +513,7 @@ class FullDecisionTransformerNet(AbstractDecisionTransformerNet):
 
         return tuple(t)
 
+
 class FullDecisionTransformerSingleVisionStateNet(FullDecisionTransformerNet):
     def __init__(
         self, observation_space: Space, model_config: Config, num_actions: int
@@ -532,7 +530,7 @@ class FullDecisionTransformerSingleVisionStateNet(FullDecisionTransformerNet):
                                            self.model_config.DECISION_TRANSFORMER.hidden_dim)
 
         self.embed_state = nn.Linear(self.rgb_embed_state.out_features + self.depth_embed_state.out_features,
-                                         self.model_config.DECISION_TRANSFORMER.hidden_dim)
+                                     self.model_config.DECISION_TRANSFORMER.hidden_dim)
 
         self.encoder_instruction_to_state = self.prepare_transformer_layer(self.model_config)
         self.encoder_state_to_instruction = self.prepare_transformer_layer(self.model_config)
@@ -541,9 +539,9 @@ class FullDecisionTransformerSingleVisionStateNet(FullDecisionTransformerNet):
     def initialize_transformer_step_size(self):
         step_size = 3
         c = self.model_config.DECISION_TRANSFORMER.ENCODER
-        if c.use_output_state_instructions is True: # like a different representation of instructions at each time steps
+        if c.use_output_state_instructions is True:  # like a different representation of instructions at each time steps
             step_size += 1
-        if c.use_output_state is True: # A single state representation of the whole sequence...
+        if c.use_output_state is True:  # A single state representation of the whole sequence...
             step_size += 1
         return step_size
 
@@ -583,9 +581,9 @@ class FullDecisionTransformerSingleVisionStateNet(FullDecisionTransformerNet):
         state_mask = VanillaMultiHeadAttention.create_padded_mask(state_embeddings2)
 
         output_state_instructions = self.encoder_instruction_to_state(src=instruction_state_embeddings,
-                                                                    tgt=state_embeddings2,
-                                                                    src_key_padding_mask=text_mask,
-                                                                    tgt_mask=vision_causal_mask)
+                                                                      tgt=state_embeddings2,
+                                                                      src_key_padding_mask=text_mask,
+                                                                      tgt_mask=vision_causal_mask)
 
         output_state = self.encoder_state_to_instruction(src=state_embeddings2, tgt=instruction_state_embeddings,
                                                          src_key_padding_mask=state_mask, tgt_mask=causal_text_mask)
