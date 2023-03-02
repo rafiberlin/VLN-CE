@@ -5,9 +5,9 @@ SIMULATOR_GPU_IDS: [1]
 TORCH_GPU_ID: 1
 NUM_ENVIRONMENTS: 6 #Looks like the sweet spot for dataset creation is 6 envs. If you use more, we might wait too long to reload the next batch....
 TENSORBOARD_DIR: /cache/tensorboard-logdir/dt_enhanced_b8_d512
-CHECKPOINT_FOLDER: data/checkpoints/enhanced/enhanced/dt_enhanced_b8_d512
-EVAL_CKPT_PATH_DIR: data/checkpoints/enhanced/enhanced/dt_enhanced_b8_d512
-RESULTS_DIR: data/checkpoints/enhanced/enhanced/dt_enhanced_b8_d512/evals/
+CHECKPOINT_FOLDER: data/checkpoints/enhanced/dt_enhanced_b8_d512
+EVAL_CKPT_PATH_DIR: data/checkpoints/enhanced/dt_enhanced_b8_d512
+RESULTS_DIR: data/checkpoints/enhanced/dt_enhanced_b8_d512/evals/
 MULTIPROCESSING: forkserver  # default is forkserver, Set to 'spawn' when debugging with Pycharm,
 ENV_NAME: VLNCEDecisionTransformerEnv
 
@@ -16,8 +16,8 @@ INFERENCE:
   SPLIT: test
   USE_CKPT_CONFIG: False
   SAMPLE: False
-  CKPT_PATH: data/checkpoints/enhanced/enhanced/dt_enhanced_b8_d512/ckpt.269.pth
-  PREDICTIONS_FILE: data/checkpoints/enhanced/enhanced/dt_enhanced_b8_d512/evals/enhanced/dt_enhanced_b8_d512_test_predictions.json
+  CKPT_PATH: data/checkpoints/enhanced/dt_enhanced_b8_d512/ckpt.269.pth
+  PREDICTIONS_FILE: data/checkpoints/enhanced/dt_enhanced_b8_d512/evals/enhanced/dt_enhanced_b8_d512_test_predictions.json
   FORMAT: r2r
 
 
@@ -37,7 +37,7 @@ IL:
   mean_loss_to_save_checkpoint: 0.35
   lr: 1.5e-4
   load_from_ckpt: False # To train from a previous checkpoint
-  ckpt_to_load: data/checkpoints/enhanced/enhanced/dt_enhanced_b8_d512/ckpt.7.pth # REPLACE
+  ckpt_to_load: data/checkpoints/enhanced/dt_enhanced_b8_d512/ckpt.7.pth # REPLACE
 
   RECOLLECT_TRAINER:
     gt_file:
