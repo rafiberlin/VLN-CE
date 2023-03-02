@@ -34,7 +34,7 @@ IL:
   epochs: 42
   batch_size: 8
   checkpoint_frequency: 1
-  mean_loss_to_save_checkpoint: 0.40
+  mean_loss_to_save_checkpoint: 0.35
   lr: 1.5e-4
   load_from_ckpt: False # To train from a previous checkpoint
   ckpt_to_load: data/checkpoints/enhanced/enhanced/dt_enhanced_b8_d256/ckpt.7.pth # REPLACE
