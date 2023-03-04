@@ -1078,14 +1078,14 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 envs_that_needs_to_wait[i] = True
                 episodes[i] = []
                 episode_already_predicted.append(ep_id)
-                observations[i] = envs.reset_at(i)[0]
+                # observations[i] = envs.reset_at(i)[0]
                 # This step is usually done in self._prepare_observation(observations)
                 # but now, because we amenbd only one observation, we need to take care of this step manually...
-                observations[i][self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID] = \
-                observations[i][self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID]["tokens"]
-                self.rgb_features = self.rgb_features.set_(torch.zeros((1,), device="cpu"))
-                self.depth_features = self.depth_features.set_(torch.zeros((1,), device="cpu"))
-                observations, batch = self._prepare_observation(observations)
+                # observations[i][self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID] = \
+                # observations[i][self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID]["tokens"]
+                # self.rgb_features = self.rgb_features.set_(torch.zeros((1,), device="cpu"))
+                # self.depth_features = self.depth_features.set_(torch.zeros((1,), device="cpu"))
+                # observations, batch = self._prepare_observation(observations)
 
                 if pbar:
                     pbar.update()
