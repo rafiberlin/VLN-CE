@@ -78,7 +78,7 @@ MODEL:
     activation_instruction_drop: 0.01
     activation_rgb_drop: 0.01
     activation_depth_drop: 0.01
-    return_to_go_inference: 1.0
+    return_to_go_inference: 0.0
     ENCODER: # only for FullDecisionTransformerNet
       n_layer: 3
       n_head: 8
