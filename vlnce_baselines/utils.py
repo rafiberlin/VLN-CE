@@ -11,7 +11,7 @@ def get_result_files_per_datasplit(eval_dir):
         print("Running several config files from:", eval_dir)
         list_result = defaultdict(OrderedDict)
         for file in os.listdir(eval_dir):
-            if file.endswith(".json"):
+            if file.endswith(".json") and "predictions" not in file:
                 file_path = os.path.join(eval_dir, file)
                 # The file name is like this: stats_ckpt.4.pth_val_seen.json
                 # after this spliting, we get 4 and val_seen.json
