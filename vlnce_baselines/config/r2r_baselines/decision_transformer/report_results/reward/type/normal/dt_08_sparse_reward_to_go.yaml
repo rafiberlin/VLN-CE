@@ -11,14 +11,14 @@ EVAL_CKPT_PATH_DIR: data/checkpoints/normal/dt_08_sparse_reward_to_go
 RESULTS_DIR: data/checkpoints/normal/dt_08_sparse_reward_to_go/evals
 MULTIPROCESSING: spawn  # default is forkserver, Set to 'spawn' when debugging with Pycharm,
 ENV_NAME: VLNCEDecisionTransformerEnv
-use_pbar: False
+use_pbar: True
 
 INFERENCE:
   SPLIT: test
   USE_CKPT_CONFIG: False
   SAMPLE: False
-  CKPT_PATH: data/checkpoints/normal/dt_08_sparse_reward_to_go/ckpt.269.pth # Change this
-  PREDICTIONS_FILE: data/checkpoints/normal/dt_08_sparse_reward_to_go/evals/normal/dt_08_sparse_reward_to_go_test_predictions.json
+  CKPT_PATH: data/checkpoints/normal/dt_08_sparse_reward_to_go/ckpt.29.pth # Change this
+  PREDICTIONS_FILE: data/checkpoints/normal/dt_08_sparse_reward_to_go/evals/dt_08_sparse_reward_to_go_test_predictions.json
   FORMAT: r2r
 
 
