@@ -60,7 +60,7 @@ IL:
     p: 1.0
     preload_lmdb_features: True
     lmdb_commit_frequency: 500
-    lmdb_features_dir: data/trajectories_dirs/NORMAL_BUGFREE/trajectories.lmdb
+    lmdb_features_dir: data/trajectories_dirs/_normal_gold_/trajectories.lmdb
 
 
 MODEL:
