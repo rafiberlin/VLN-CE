@@ -51,7 +51,7 @@ IL:
       success: 1.0
     SPARSE_REWARD:
       step_penalty: -0.05
-      success: 0.1
+      success: 0.5
     NDTW_REWARD:
       step_penalty: -0.05
       success: 1.0
