@@ -319,6 +319,7 @@ _C.MODEL.WAYPOINT.offset_temperature = 1.0
 # DECISION TRANSFORMER CONFIG
 # ----------------------------------------------------------------------------
 _C.MODEL.DECISION_TRANSFORMER = CN()
+_C.MODEL.DECISION_TRANSFORMER.use_re_zero = False # https://arxiv.org/abs/2003.04887
 _C.MODEL.DECISION_TRANSFORMER.hidden_dim = 128
 # the max in the training split.
 _C.MODEL.DECISION_TRANSFORMER.episode_horizon = _C.IL.DECISION_TRANSFORMER.episode_horizon
