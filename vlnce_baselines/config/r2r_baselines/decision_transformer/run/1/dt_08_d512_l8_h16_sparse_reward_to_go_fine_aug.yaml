@@ -58,11 +58,11 @@ IL:
   DAGGER:
     repeat_dataset: 1
     iterations: 1
-    update_size: 10819 # Original size: 10819, EnvDrop+Train: 157232
+    update_size: 157232 # Original size: 10819, EnvDrop+Train: 157232
     p: 1.0
     preload_lmdb_features: True
     lmdb_commit_frequency: 500
-    lmdb_features_dir: data/trajectories_dirs/_normal_gold_/trajectories.lmdb
+    lmdb_features_dir: data/trajectories_dirs/_aug_gold_/trajectories.lmdb
 
 
 MODEL:
