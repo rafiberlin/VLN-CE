@@ -35,7 +35,7 @@ IL:
   epochs: 15
   batch_size: 8
   checkpoint_frequency: 1
-  mean_loss_to_save_checkpoint: 0.50
+  mean_loss_to_save_checkpoint: 0.36
   lr: 1.5e-4
   load_from_ckpt: True # To train from a previous checkpoint
   ckpt_to_load: data/checkpoints/normal/dt_08_d512_l8_h16_sparse_reward_to_go/ckpt.38.pth # REPLACE
