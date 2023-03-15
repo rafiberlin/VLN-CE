@@ -242,7 +242,7 @@ class AbstractDecisionTransformerNet(Net):
 
         instruction_embedding, depth_embedding, rgb_embedding = self._prepare_embeddings(observations)
 
-        if self.reward_type in observations.keys():
+        if self.reward_type in observations.keys() and self.training:
             returns_to_go = observations[self.reward_type]
         else:
             # If we don t have any rewards from the environment, just take one

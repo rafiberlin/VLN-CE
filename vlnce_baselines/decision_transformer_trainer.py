@@ -288,6 +288,10 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         rewards[-1] = rewards[-1] + self.rewards[reward_type]["success"]
         # Just save the simple rewards for each time steps, not accumulated if needed
         rewards = np.float32(rewards.squeeze())
+        # In some cases, when using dagger, The agent stops on first action. Hence,
+        # we need to transform the scalar in array...
+        if type(rewards) is np.float32:
+            rewards = np.array([rewards])
         if isTensor:
             simple_reward = torch.from_numpy(rewards)
         else:
@@ -686,11 +690,14 @@ class DecisionTransformerTrainer(DaggerILTrainer):
 
         self._create_feature_hooks()
 
+        # That needs to be turned to eval when doing Dagger! Not on the original implementation
+        self.policy.eval()
+
         rgb_encoder = self.policy.net.rgb_encoder
         depth_encoder = self.policy.net.depth_encoder
 
         collected_eps = 0
-        ep_ids_collected = None
+        ep_ids_collected = []
         if ensure_unique_episodes:
             ep_ids_collected = set()
 
@@ -765,15 +772,20 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                             np.array([step[1] for step in ep], dtype=np.int64),
                             np.array([step[2] for step in ep], dtype=np.int64),
                         ]
-                        txn.put(
-                            str(start_id + collected_eps).encode(),
-                            msgpack_numpy.packb(
-                                transposed_ep, use_bin_type=True
-                            ),
-                        )
-
-                        pbar.update()
+                        # don t add anything that seems weird
+                        if not _detect_wrong_episode(transposed_ep) and infos[i]["success"] == 1.0:
+                            txn.put(
+                                str(start_id + collected_eps).encode(),
+                                msgpack_numpy.packb(
+                                    transposed_ep, use_bin_type=True
+                                ),
+                            )
+                        # incrementinmg here outside the if block is not a bug
+                        # If we can't add successfull episodes (while using dagger),
+                        # we still need a way to exit the update function...
                         collected_eps += 1
+                        pbar.update()
+
 
                         if (
                             collected_eps
@@ -882,7 +894,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         (
                             observations[i],
                             prev_actions[i, -1].item(),  # this is a sequence of actions, we take the last action
-                            batch[expert_uuid][i].item(),
+                            actions[i].item(),#batch[expert_uuid][i].item() This is maybe a big bug here. Because if we do that like this, the sequences won't be aligned anymore
                         )
                     )
 
@@ -925,6 +937,8 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         self._release_hook()
         if agent_action:
             print("Dataset Creation with some agent actions.")
+        # That needs to be turned back on...
+        self.policy.train()
 
     def inference(
         self,
