@@ -717,6 +717,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         def _detect_wrong_episode(transposed_ep):
             return not (transposed_ep[1][1:] == transposed_ep[2][:-1]).sum() == len(transposed_ep[1][1:])
 
+        collected_eps_for_real = 0
         with tqdm.tqdm(
             total=collect_size, dynamic_ncols=True
         ) as pbar, lmdb.open(
@@ -780,6 +781,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                                     transposed_ep, use_bin_type=True
                                 ),
                             )
+                            collected_eps_for_real += 1
                         # incrementinmg here outside the if block is not a bug
                         # If we can't add successfull episodes (while using dagger),
                         # we still need a way to exit the update function...
@@ -788,7 +790,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
 
 
                         if (
-                            collected_eps
+                            collected_eps_for_real
                             % self.config.IL.DAGGER.lmdb_commit_frequency
                         ) == 0:
                             txn.commit()
