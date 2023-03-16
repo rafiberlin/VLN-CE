@@ -136,13 +136,9 @@ class IWTrajectoryDataset(torch.utils.data.IterableDataset):
                 for _ in range(self.preload_size):
                     if len(self.load_ordering) == 0:
                         break
-
-                    new_preload.append(
-                        msgpack_numpy.unpackb(
-                            txn.get(str(self.load_ordering.pop()).encode()),
-                            raw=False,
-                        )
-                    )
+                    entry = txn.get(str(self.load_ordering.pop()).encode())
+                    unpacked = msgpack_numpy.unpackb(entry,raw=False,)
+                    new_preload.append(unpacked)
 
                     lengths.append(len(new_preload[-1][0]))
 
@@ -776,7 +772,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         # don t add anything that seems weird
                         if not _detect_wrong_episode(transposed_ep) and infos[i]["success"] == 1.0:
                             txn.put(
-                                str(start_id + collected_eps).encode(),
+                                str(start_id + collected_eps_for_real).encode(),
                                 msgpack_numpy.packb(
                                     transposed_ep, use_bin_type=True
                                 ),
@@ -790,7 +786,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
 
 
                         if (
-                            collected_eps_for_real
+                            collected_eps_for_real > 0 and collected_eps_for_real
                             % self.config.IL.DAGGER.lmdb_commit_frequency
                         ) == 0:
                             txn.commit()
