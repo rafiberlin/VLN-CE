@@ -112,8 +112,8 @@ if __name__ == "__main__" :
 
     print(f"\n################  {len(all_best_res)}  results retrieved for {split} #################\n")
 
+    it = 1
     for k, v in all_best_res.items():
-        print(k.split("data/")[1].split("/evals")[0], ",epoch:", v[1], f",best {criteria}:", v[0], ", other: ",
-              {k: v[2][k].values[0] for k in v[2].keys() if k not in [criteria, "oracle_success", "path_length"]})
-
-
+        print(f"\n{it}: " + k.split("checkpoints/")[1].split("/evals")[0], ",epoch:", v[1], f",best {criteria}:", v[0])
+        print({k: v[2][k].values[0] for k in v[2].keys() if k not in [criteria, "oracle_success", "path_length"]})
+        it += 1
