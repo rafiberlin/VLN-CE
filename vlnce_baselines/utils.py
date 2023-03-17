@@ -93,7 +93,7 @@ def list_best_result(result_dir, split, criteria, transformer_type=["normal", "e
             best_index = frame[criteria].nlargest(keep_n_best)
             current_res = frame[criteria][best_index.index]
             metrics = current_res.values[0]
-            all_best[model_result_dir] = metrics, best_index.index.values[0]
+            all_best[model_result_dir] = metrics, best_index.index.values[0], frame.iloc[best_index]
             if metrics >= best_score:
                 best_score = metrics
                 best_model = model_result_dir
@@ -110,5 +110,10 @@ if __name__ == "__main__" :
 
     all_best_res = list_best_result(result_dir, split, criteria, transformer_type)
 
+    print(f"\n################  {len(all_best_res)}  results retrieved for {split} #################\n")
+
     for k, v in all_best_res.items():
-        print(k, ",epoch:", v[1], f",{criteria}:", v[0])
+        print(k.split("data/")[1].split("/evals")[0], ",epoch:", v[1], f",best {criteria}:", v[0], ", other: ",
+              {k: v[2][k].values[0] for k in v[2].keys() if k not in [criteria, "oracle_success", "path_length"]})
+
+
