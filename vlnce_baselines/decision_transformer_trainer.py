@@ -769,8 +769,14 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                             np.array([step[1] for step in ep], dtype=np.int64),
                             np.array([step[2] for step in ep], dtype=np.int64),
                         ]
+
+                        is_episode_perfect = True
+
+                        if self.config.IL.use_perfect_episode_only_for_dagger:
+                            is_episode_perfect  = infos[i]["success"] == 1.0
+
                         # don t add anything that seems weird
-                        if not _detect_wrong_episode(transposed_ep) and infos[i]["success"] == 1.0:
+                        if is_episode_perfect:
                             txn.put(
                                 str(start_id + collected_eps_for_real).encode(),
                                 msgpack_numpy.packb(
@@ -885,14 +891,20 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                     batch[expert_uuid].long(),
                     actions,
                 )
+
+                if self.config.IL.DECISION_TRANSFORMER.use_oracle_actions:
+                    next_actions = batch[expert_uuid][i].item() #This is maybe a big bug for Dagger. Because if we do that like this, the sequences won't be aligned anymore
+                else:
+                    next_actions = actions[i].item()
                 # We gathered images, actions, and sensor feedback for current timestep
                 # time to save the timestep
+
                 for i in range(envs.num_envs):
                     episodes[i].append(
                         (
                             observations[i],
                             prev_actions[i, -1].item(),  # this is a sequence of actions, we take the last action
-                            actions[i].item(),#batch[expert_uuid][i].item() This is maybe a big bug here. Because if we do that like this, the sequences won't be aligned anymore
+                            next_actions,
                         )
                     )
 

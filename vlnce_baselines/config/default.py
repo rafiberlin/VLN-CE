@@ -134,6 +134,8 @@ _C.IL.DAGGER.drop_existing_lmdb_features = True
 
 _C.IL.DECISION_TRANSFORMER = CN()
 _C.IL.DECISION_TRANSFORMER.episode_horizon = 183
+_C.IL.DECISION_TRANSFORMER.use_perfect_episode_only_for_dagger = True
+_C.IL.DECISION_TRANSFORMER.use_oracle_actions = False
 _C.IL.DECISION_TRANSFORMER.reward_type = "POINT_GOAL_NAV_REWARD"  # POINT_GOAL_NAV_REWARD or SPARSE_REWARD
 _C.IL.DECISION_TRANSFORMER.sensor_uuid = "distance_left" # USed to calculate the Return To Go
 _C.IL.DECISION_TRANSFORMER.recompute_reward = True
