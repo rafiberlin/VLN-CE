@@ -8,7 +8,6 @@ import shutil
 def get_result_files_per_datasplit(eval_dir):
     list_result = None
     if os.path.isdir(eval_dir):
-        print("Running several config files from:", eval_dir)
         list_result = defaultdict(OrderedDict)
         for file in os.listdir(eval_dir):
             if file.endswith(".json") and "predictions" not in file:
