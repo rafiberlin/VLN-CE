@@ -772,7 +772,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
 
                         is_episode_perfect = True
 
-                        if self.config.IL.use_perfect_episode_only_for_dagger:
+                        if self.config.IL.DECISION_TRANSFORMER.use_perfect_episode_only_for_dagger:
                             is_episode_perfect  = infos[i]["success"] == 1.0
 
                         # don t add anything that seems weird
@@ -893,9 +893,9 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 )
 
                 if self.config.IL.DECISION_TRANSFORMER.use_oracle_actions:
-                    next_actions = batch[expert_uuid][i].item() #This is maybe a big bug for Dagger. Because if we do that like this, the sequences won't be aligned anymore
+                    next_actions = batch[expert_uuid] #This is maybe a big bug for Dagger. Because if we do that like this, the sequences won't be aligned anymore
                 else:
-                    next_actions = actions[i].item()
+                    next_actions = actions
                 # We gathered images, actions, and sensor feedback for current timestep
                 # time to save the timestep
 
@@ -904,7 +904,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         (
                             observations[i],
                             prev_actions[i, -1].item(),  # this is a sequence of actions, we take the last action
-                            next_actions,
+                            next_actions[i].item(),
                         )
                     )
 
@@ -1500,7 +1500,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 )
                 return torch.cat([t, pad], dim=0)
 
-            if not _is_correct_previous_actions(batch):
+            if not _is_correct_previous_actions(batch) and not self.config.IL.DECISION_TRANSFORMER.use_oracle_actions:
                 raise Exception(
                     "Dataset has not been created correctly! Prev actions and corrected actions not shifted accordingly!")
             transposed = list(zip(*batch))
