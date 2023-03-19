@@ -92,7 +92,7 @@ def list_best_result(result_dir, split, criteria, transformer_type=["normal", "e
             best_index = frame[criteria].nlargest(keep_n_best)
             current_res = frame[criteria][best_index.index]
             metrics = current_res.values[0]
-            all_best[model_result_dir] = metrics, best_index.index.values[0], frame.iloc[best_index]
+            all_best[model_result_dir] = metrics, best_index.index.values[0], frame.loc[best_index.index]
             if metrics >= best_score:
                 best_score = metrics
                 best_model = model_result_dir
@@ -102,10 +102,10 @@ def list_best_result(result_dir, split, criteria, transformer_type=["normal", "e
 
 
 if __name__ == "__main__" :
-    transformer_type = ["enhanced"]  # ["normal", "enhanced", "full"]
+    transformer_type = ["normal"]  # ["normal", "enhanced", "full"]
     split = "val_seen"
     result_dir = "../data/checkpoints"
-    criteria = "success"
+    criteria = "spl"
 
     all_best_res = list_best_result(result_dir, split, criteria, transformer_type)
 
