@@ -38,11 +38,26 @@ a slight enhancement of the handling of evaluation mode (not waiting endlessly f
 git clone --branch vlnce-fix git@github.com:rafiberlin/habitat-lab.git
 cd habitat-lab
 # installs both habitat and habitat_baselines
+# that can takes a long time to build open-cv per wheel. Make sure update pip and have a gcc installed
+# on you machine!
 python -m pip install -r requirements.txt
 python -m pip install -r habitat_baselines/rl/requirements.txt
 python -m pip install -r habitat_baselines/rl/ddppo/requirements.txt
 python setup.py develop --all
 ```
+
+At this point, you need to remove the installe version of torch that was automatically installed previously:
+
+```bash
+pip uninstall torch
+```
+
+And install this version along with torch vision:
+```bash
+pip install torch==1.10.2+cu113 torchvision==0.11.3+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
+```
+
+Then, finish with:
 
 ```bash
 git clone git@github.com:jacobkrantz/VLN-CE.git
