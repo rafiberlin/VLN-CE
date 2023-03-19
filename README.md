@@ -18,7 +18,7 @@ Vision and Language Navigation in Continuous Environments (VLN-CE) is an instruc
 This project is developed with Python 3.6. If you are using [miniconda](https://docs.conda.io/en/latest/miniconda.html) or [anaconda](https://anaconda.org/), you can create an environment:
 
 ```bash
-conda create -n vlnce python3.6
+conda create -n vlnce python=3.6
 conda activate vlnce
 ```
 
@@ -31,7 +31,7 @@ conda install -c aihabitat -c conda-forge habitat-sim=0.1.7 headless
 Then install a slightly a corrected version of [Habitat-Lab](https://github.com/rafiberlin/habitat-lab/tree/vlnce-fix):
 
 The [original version]((https://github.com/facebookresearch/habitat-lab/tree/v0.1.7)) with commit "d6ed1c0a0e786f16f261de2beafe347f4186d0d8"
-did not work with VLN-CE (due to some bug in the used version of OpenAI Gym). Further more, there is 
+did not work with VLN-CE (due to some bug in the used version of OpenAI Gym). Further more, there is
 a slight enhancement of the handling of evaluation mode (not waiting endlessly for new checkpoints to evaluate).
 
 ```bash
@@ -303,7 +303,7 @@ create_dataset allow to create the dataset once. You won't need to recreate a ne
 (works only for the Transformer related experiments.)
 check_dataset only runs a basic to spot obvious errors in the dataset creation.
 train_eval starts training and run the evaluation on one split.
-train_complete starts training, evaluation on smaller validation set, on val seen, val unseen and finally creates the 
+train_complete starts training, evaluation on smaller validation set, on val seen, val unseen and finally creates the
 prediction file for test.
 
 Check also the template `vlnce_baselines/config/r2r_baselines/decision_transformer/templates/local/template.yaml`
