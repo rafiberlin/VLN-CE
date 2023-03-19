@@ -464,7 +464,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         agent_action = False
         precision = np.float64
 
-        channels_sum_rgb = episodes = [ np.zeros(3, dtype=precision) for _ in range(envs.num_envs)]
+        channels_sum_rgb = [ np.zeros(3, dtype=precision) for _ in range(envs.num_envs)]
         channels_squared_sum_rgb = [ np.zeros(3, dtype=precision)for _ in range(envs.num_envs)]
         channels_sum_depth = [ np.zeros(1, dtype=precision) for _ in range(envs.num_envs)]
         channels_squared_sum_depth= [ np.zeros(1, dtype=precision) for _ in range(envs.num_envs)]
@@ -549,7 +549,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         current_episodes = envs.current_episodes()
                         episodes = [[] for _ in range(envs.num_envs)]
                         episode_features = [[] for _ in range(envs.num_envs)]
-                        channels_sum_rgb = episodes = [np.zeros(3, dtype=precision) for _ in range(envs.num_envs)]
+                        channels_sum_rgb = [np.zeros(3, dtype=precision) for _ in range(envs.num_envs)]
                         channels_squared_sum_rgb = [np.zeros(3, dtype=precision) for _ in range(envs.num_envs)]
                         channels_sum_depth = [np.zeros(1, dtype=precision) for _ in range(envs.num_envs)]
                         channels_squared_sum_depth = [np.zeros(1, dtype=precision) for _ in range(envs.num_envs)]
