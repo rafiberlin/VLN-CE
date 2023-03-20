@@ -13,9 +13,18 @@ Vision and Language Navigation in Continuous Environments (VLN-CE) is an instruc
   <img width="775" height="360" src="./data/res/VLN_comparison.gif" alt="VLN-CE comparison to VLN">
 </p>
 
+## Hardware used
+
+To give you an idea of the hardware and drivers at play:
+
+We trained the models on A100 GPUs with nvidia drivers 510.85.02, with cuda 11.6 (headless).
+For dev purposes, we used a RTX 3060 with nvidia drivers 470.161.03  and cuda 11.4 (with attached display, sufficient for transformers with 3 layers, 8 heads  and dimensions of 128).
+
+
 ## Setup
 
 This project is developed with Python 3.6. If you are using [miniconda](https://docs.conda.io/en/latest/miniconda.html) or [anaconda](https://anaconda.org/), you can create an environment:
+
 
 ```bash
 conda create -n vlnce python=3.6
@@ -25,8 +34,13 @@ conda activate vlnce
 VLN-CE uses [Habitat-Sim](https://github.com/facebookresearch/habitat-sim/tree/v0.1.7) 0.1.7 which can be [built from source](https://github.com/facebookresearch/habitat-sim/tree/v0.1.7#installation) or installed from conda:
 
 ```bash
+# For installation on Remote servers / Virtual Machines without display output
 conda install -c aihabitat -c conda-forge habitat-sim=0.1.7 headless
+# Or for machines with display output
+conda install -c aihabitat -c conda-forge habitat-sim=0.1.7
 ```
+
+
 
 Then install a slightly a corrected version of [Habitat-Lab](https://github.com/rafiberlin/habitat-lab/tree/vlnce-fix):
 
@@ -54,6 +68,8 @@ pip uninstall torch
 
 And install this version along with torch vision:
 ```bash
+# it worked even though the cuda version of the drivers was higher.
+# But in case of problems, try to find the version working with your nvidia drivers
 pip install torch==1.10.2+cu113 torchvision==0.11.3+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
 ```
 
