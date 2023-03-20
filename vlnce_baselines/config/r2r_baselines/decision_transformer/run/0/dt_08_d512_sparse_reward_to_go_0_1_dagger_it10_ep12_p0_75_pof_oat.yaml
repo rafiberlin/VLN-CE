@@ -75,7 +75,7 @@ MODEL:
     net: DecisionTransformerNet
     use_extra_start_token: True
     use_re_zero: False
-    reward_type: sparse_reward_to_go_0_1 # point_nav_reward_to_go, sparse_reward_to_go_0_1, point_nav_reward, sparse_reward, ndtw_reward, ndtw_reward_to_go
+    reward_type: sparse_reward_to_go # point_nav_reward_to_go, sparse_reward_to_go_0_1, point_nav_reward, sparse_reward, ndtw_reward, ndtw_reward_to_go
     n_layer: 3
     n_head: 8
     hidden_dim: 512 # The dimensions for the State, Reward and actions embeddings and in the GPT Backbne
