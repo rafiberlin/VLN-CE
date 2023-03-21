@@ -807,25 +807,29 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                     if dones[i]:
                         if i not in envs_to_pause:
                             envs_to_pause.append(i)
-
-                (
-                    envs,
-                    hidden_states,
-                    not_done_masks,
-                    prev_actions,
-                    batch,
-                    episodes,
-                    episode_features,
-                ) = self._pause_envs(
-                    envs_to_pause,
-                    envs,
-                    hidden_states,
-                    not_done_masks,
-                    prev_actions,
-                    batch,
-                    episodes,  # A trick, I am using what is thought for the RGB features to reduce this list as well
-                    episode_features,
-                )
+                try:
+                    (
+                        envs,
+                        hidden_states,
+                        not_done_masks,
+                        prev_actions,
+                        batch,
+                        episodes,
+                        episode_features,
+                    ) = self._pause_envs(
+                        envs_to_pause,
+                        envs,
+                        hidden_states,
+                        not_done_masks,
+                        prev_actions,
+                        batch,
+                        episodes,  # A trick, I am using what is thought for the RGB features to reduce this list as well
+                        episode_features,
+                    )
+                finally:
+                    logger.warning("Something went wrong!")
+                    for j in range(len(current_episodes)):
+                        logger.warning(f"Episode culprit: {current_episodes[j].episode_id}")
 
                 if envs.num_envs == 0:
                     envs.resume_all()
