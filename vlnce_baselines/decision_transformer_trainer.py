@@ -826,10 +826,15 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         episodes,  # A trick, I am using what is thought for the RGB features to reduce this list as well
                         episode_features,
                     )
-                finally:
+                except Exception as e:
                     logger.warning("Something went wrong!")
                     for j in range(len(current_episodes)):
                         logger.warning(f"Episode culprit: {current_episodes[j].episode_id}")
+
+                    logger.warning(f"Current horizon:{horizon}")
+                    logger.warning(envs_to_pause)
+                    logger.warning(f"Num envs :{envs.num_envs}")
+                    raise e
 
                 if envs.num_envs == 0:
                     envs.resume_all()
