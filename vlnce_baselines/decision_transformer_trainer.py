@@ -829,8 +829,9 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 except Exception as e:
                     logger.warning("Something went wrong!")
                     for j in range(len(current_episodes)):
-                        logger.warning(f"Episode culprit: {current_episodes[j].episode_id}")
-
+                        logger.warning(f"Current Episode culprit: {current_episodes[j].episode_id}")
+                    for j in range(len(last_episodes)):
+                        logger.warning(f"Last Episode culprit: {last_episodes[j].episode_id}")
                     logger.warning(f"Current horizon:{horizon}")
                     logger.warning(envs_to_pause)
                     logger.warning(f"Num envs :{envs.num_envs}")
