@@ -1744,9 +1744,9 @@ class DecisionTransformerTrainer(DaggerILTrainer):
         # Seems to bottleneck on Dataloader access if I have more than 1 worker
         workers = self.config.IL.dataload_workers
         # If set to spawn, that is made to be able to debug in Pytorch in Ubuntu > 18
-        #  So you want to only set 1 worker to be able to set a break point in the next loop...
-        # if self.config.MULTIPROCESSING == "spawn":
-        #    workers = 1
+        #  So you want to only set 0 worker to be able to set a break point in the next loop...
+        if self.config.MULTIPROCESSING == "spawn":
+            workers = 0
         with TensorboardWriter(
             self.config.TENSORBOARD_DIR,
             flush_secs=self.flush_secs,

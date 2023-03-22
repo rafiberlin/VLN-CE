@@ -10,7 +10,7 @@ from vlnce_baselines.models.encoders.instruction_encoder import (
     InstructionEncoder, Word2VecEmbeddings, InstructionEncoderWithTransformer
 )
 from vlnce_baselines.models.policy import ILPolicy
-
+import numpy as np
 from torch import Tensor
 
 from vlnce_baselines.models.utils import PositionalEncoding, VanillaMultiHeadAttention
@@ -99,6 +99,7 @@ class AbstractDecisionTransformerNet(Net):
             checkpoint=model_config.DEPTH_ENCODER.ddppo_checkpoint,
             backbone=model_config.DEPTH_ENCODER.backbone,
             trainable=model_config.DEPTH_ENCODER.trainable,
+            spatial_output=model_config.DECISION_TRANSFORMER.spatial_output
         )
         # Init the RGB visual encoder
         self.rgb_encoder = getattr(
@@ -107,8 +108,28 @@ class AbstractDecisionTransformerNet(Net):
             model_config.RGB_ENCODER.output_size,
             normalize_visual_inputs=model_config.DECISION_TRANSFORMER.normalize_rgb,
             trainable=model_config.RGB_ENCODER.trainable,
-            spatial_output=False,
+            spatial_output=model_config.DECISION_TRANSFORMER.spatial_output
         )
+
+        if model_config.DECISION_TRANSFORMER.spatial_output:
+            self.rgb_linear = nn.Sequential(
+                nn.AdaptiveAvgPool1d(1),
+                nn.Flatten(),
+                nn.Linear(
+                    self.rgb_encoder.output_shape[0],
+                    model_config.RGB_ENCODER.output_size,
+                ),
+                nn.ReLU(True),
+            )
+            self.depth_linear = nn.Sequential(
+                nn.Flatten(),
+                nn.Linear(
+                    np.prod(self.depth_encoder.output_shape),
+                    model_config.DEPTH_ENCODER.output_size,
+                ),
+                nn.ReLU(True),
+            )
+
         self.dim_not_included_for_predictions = 2  # Action and reward
         self.exclude_past_action_for_prediction = model_config.DECISION_TRANSFORMER.exclude_past_action_for_prediction
         if self.exclude_past_action_for_prediction:
@@ -163,8 +184,15 @@ class AbstractDecisionTransformerNet(Net):
         if not self.model_config.DECISION_TRANSFORMER.use_transformer_encoded_instruction:
             self._flatten_batch(observations, "instruction")
 
-        depth_embedding = self.depth_activation(self.depth_encoder(observations))
-        rgb_embedding = self.rgb_activation(self.rgb_encoder(observations))
+        depth_embedding = self.depth_encoder(observations)
+        rgb_embedding = self.rgb_encoder(observations)
+        if self.model_config.DECISION_TRANSFORMER.spatial_output:
+            depth_embedding = self.depth_linear(
+                torch.flatten(depth_embedding, 2))
+            rgb_embedding = self.rgb_linear(
+                torch.flatten(rgb_embedding, 2))
+        depth_embedding = self.depth_activation(depth_embedding)
+        rgb_embedding = self.rgb_activation(rgb_embedding)
         # we just undo the permutation made in the original implementation
         instruction_embedding = self.handle_instruction_embeddings(observations, resize_tensor, batch_size, seq_length)
 
