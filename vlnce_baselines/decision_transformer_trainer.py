@@ -734,6 +734,13 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         if not episode_end[i] and i not in envs_to_pause:
                             skips[i] = True
                             envs_to_pause.append(i)
+                    logger.info("Horizon reached")
+                    for j in range(len(current_episodes)):
+                        logger.info(f"Current Episode: {current_episodes[j].episode_id} , env {j}")
+                    for j in range(len(last_episodes)):
+                        logger.info(f"Last Episode: {last_episodes[j].episode_id} , env {j}")
+                    logger.info(envs_to_pause)
+                    logger.info(f"Num envs :{envs.num_envs}")
 
                 for i in range(envs.num_envs):
 
@@ -829,9 +836,9 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                 except Exception as e:
                     logger.warning("Something went wrong!")
                     for j in range(len(current_episodes)):
-                        logger.warning(f"Current Episode culprit: {current_episodes[j].episode_id}")
+                        logger.warning(f"Current Episode culprit: {current_episodes[j].episode_id} , env {j}")
                     for j in range(len(last_episodes)):
-                        logger.warning(f"Last Episode culprit: {last_episodes[j].episode_id}")
+                        logger.warning(f"Last Episode culprit: {last_episodes[j].episode_id} , env {j}")
                     logger.warning(f"Current horizon:{horizon}")
                     logger.warning(envs_to_pause)
                     logger.warning(f"Num envs :{envs.num_envs}")
