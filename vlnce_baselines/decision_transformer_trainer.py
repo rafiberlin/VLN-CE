@@ -834,7 +834,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         episode_features,
                     )
                 except Exception as e:
-                    logger.warning("Something went wrong!")
+                    logger.warning(f"Something went wrong! Dagger It {data_it}")
                     for j in range(len(current_episodes)):
                         logger.warning(f"Current Episode culprit: {current_episodes[j].episode_id} , env {j}")
                     for j in range(len(last_episodes)):
@@ -842,6 +842,11 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                     logger.warning(f"Current horizon:{horizon}")
                     logger.warning(envs_to_pause)
                     logger.warning(f"Num envs :{envs.num_envs}")
+                    save_file = f"ckpt.{data_it * self.config.IL.epochs}.pth"
+                    self.save_checkpoint(
+                        save_file
+                    )
+                    logger.warning(f"Saved : {save_file}")
                     raise e
 
                 if envs.num_envs == 0:
