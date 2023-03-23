@@ -734,13 +734,6 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                         if not episode_end[i] and i not in envs_to_pause:
                             skips[i] = True
                             envs_to_pause.append(i)
-                    logger.info("Horizon reached")
-                    for j in range(len(current_episodes)):
-                        logger.info(f"Current Episode: {current_episodes[j].episode_id} , env {j}")
-                    for j in range(len(last_episodes)):
-                        logger.info(f"Last Episode: {last_episodes[j].episode_id} , env {j}")
-                    logger.info(envs_to_pause)
-                    logger.info(f"Num envs :{envs.num_envs}")
 
                 for i in range(envs.num_envs):
 
@@ -814,6 +807,21 @@ class DecisionTransformerTrainer(DaggerILTrainer):
                     if dones[i]:
                         if i not in envs_to_pause:
                             envs_to_pause.append(i)
+                # I don't why but it happens now and then I haven't been able to fix that
+                # Happens in Dagger
+                # So, force all envs to stop and reset...
+                if envs.num_envs < len(envs_to_pause):
+                    logger.warning("All envs will be paused.")
+                    for j in range(len(current_episodes)):
+                        logger.warning(f"Current Episode: {current_episodes[j].episode_id} , env {j}")
+                    for j in range(len(last_episodes)):
+                        logger.warning(f"Last Episode: {last_episodes[j].episode_id} , env {j}")
+                    logger.warning(f"Current horizon:{horizon}")
+                    logger.warning(envs_to_pause)
+                    logger.warning(f"Num envs :{envs.num_envs}")
+                    logger.warning(f"dones:{dones}")
+                    logger.warning(f"skips:{skips}")
+                    envs_to_pause = [i in range(envs.num_envs)]
                 try:
                     (
                         envs,
@@ -1863,7 +1871,7 @@ class DecisionTransformerTrainer(DaggerILTrainer):
             iteration = max(1, self.config.IL.DAGGER.repeat_dataset)
             print("Dataset will be repeated:", iteration)
         for i in range(iteration):
-            self._update_dataset(0)
+            self._update_dataset(6)
         print("Dataset creation completed!")
 
     def _update_agent(
