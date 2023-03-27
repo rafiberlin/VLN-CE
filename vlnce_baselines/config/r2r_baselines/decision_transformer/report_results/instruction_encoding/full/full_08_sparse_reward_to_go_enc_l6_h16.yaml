@@ -83,7 +83,6 @@ MODEL:
     return_to_go_inference: 1.0
     ENCODER: # only for FullDecisionTransformerNet
       n_layer: 6
-      n_head: 16
   policy_name: DecisionTransformerPolicy
   PROGRESS_MONITOR: # This is only used to create the datasets and the reward signals
     use: True

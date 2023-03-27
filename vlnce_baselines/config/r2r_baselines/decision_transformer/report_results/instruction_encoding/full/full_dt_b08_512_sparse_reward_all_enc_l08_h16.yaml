@@ -81,7 +81,6 @@ MODEL:
     return_to_go_inference: 0.0
     ENCODER: # only for FullDecisionTransformerNet
       n_layer: 8
-      n_head: 16
       use_output_rgb_instructions: True # different instructions for each time steps attended by RGB
       use_output_depth_instructions: True # different instructions for each time steps attended by depth
       use_output_rgb: True # global RGB attended by instruction
