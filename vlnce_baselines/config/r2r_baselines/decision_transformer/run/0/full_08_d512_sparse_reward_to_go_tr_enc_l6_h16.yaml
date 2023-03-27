@@ -35,7 +35,7 @@ IL:
   epochs: 42
   batch_size: 8
   checkpoint_frequency: 1
-  mean_loss_to_save_checkpoint: 0.25
+  mean_loss_to_save_checkpoint: 0.35
   lr: 1.5e-4
   load_from_ckpt: False # To train from a previous checkpoint
   ckpt_to_load: data/checkpoints/full/full_08_d512_sparse_reward_to_go_tr_enc_l6_h16/ckpt.269.pth # REPLACE
@@ -75,7 +75,7 @@ MODEL:
     n_layer: 3
     n_head: 16
     hidden_dim: 512 # The dimensions for the State, Reward and actions embeddings and in the GPT Backbne
-    use_transformer_encoded_instruction: True
+    use_transformer_encoded_instruction: False
     activation_action_drop: 0.25
     activation_instruction_drop: 0.01
     activation_rgb_drop: 0.01
