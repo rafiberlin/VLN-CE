@@ -66,7 +66,7 @@ IL:
     p: 0.75
     preload_lmdb_features: False
     lmdb_commit_frequency: 500
-    lmdb_features_dir: data/trajectories_dirs/dt_08_d512_l8_h16_sparse_reward_to_go_dagger_it10_ep12_p0_75_pof_oat_pretrained_aug/trajectories.lmdb
+    lmdb_features_dir: data/trajectories_dirs/enhanced_08_d512_l10_h16_sparse_reward_to_go_dagger_it10_ep12_p0_75_pof_oat_pretrained_aug/trajectories.lmdb
 
 
 MODEL:
