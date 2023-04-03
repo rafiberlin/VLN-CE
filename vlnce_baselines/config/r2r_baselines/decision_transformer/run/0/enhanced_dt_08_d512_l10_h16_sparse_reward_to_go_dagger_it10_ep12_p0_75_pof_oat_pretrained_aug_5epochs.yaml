@@ -40,7 +40,7 @@ IL:
   lr: 1.5e-4
   load_from_ckpt: True # To train from a previous checkpoint
   continue_ckpt_naming: False
-  ckpt_to_load: data/checkpoints/enhanced/enhanced_b08_512_sparse_reward_l10_h16_enc_transformer_aug_5epochs/ckpt.1.pth # REPLACE
+  ckpt_to_load: data/checkpoints/enhanced/enhanced_b08_512_sparse_reward_l10_h16_enc_transformer_aug_5epochs/ckpt.2.pth # REPLACE
 
   RECOLLECT_TRAINER:
     gt_file:
