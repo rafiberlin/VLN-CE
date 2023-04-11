@@ -407,6 +407,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                 prev_actions,
                 batch,
                 rgb_frames,
+                _
             ) = self._pause_envs(
                 envs_to_pause,
                 envs,
