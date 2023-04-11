@@ -5,7 +5,7 @@ TRAINER_NAME: decision_transformer # recollect_trainer, dagger
 SIMULATOR_GPU_IDS: [1]
 TORCH_GPU_ID: 1
 NUM_ENVIRONMENTS: 5 #Only use one environment for Decision Transformer! An this is probably not working with MUlti Sim GPU
-TENSORBOARD_DIR: /cache/tensorboard-logdir/normal/dt_08_d512_l8_h16_sparse_reward_to_go_dagger_it10_ep12_p0_75_pof_oat_pretrained_aug
+TENSORBOARD_DIR: data/tensorboard-logdir/normal/dt_08_d512_l8_h16_sparse_reward_to_go_dagger_it10_ep12_p0_75_pof_oat_pretrained_aug
 CHECKPOINT_FOLDER: data/checkpoints/normal/dt_08_d512_l8_h16_sparse_reward_to_go_dagger_it10_ep12_p0_75_pof_oat_pretrained_aug
 EVAL_CKPT_PATH_DIR: data/checkpoints/normal/dt_08_d512_l8_h16_sparse_reward_to_go_dagger_it10_ep12_p0_75_pof_oat_pretrained_aug
 RESULTS_DIR: data/checkpoints/normal/dt_08_d512_l8_h16_sparse_reward_to_go_dagger_it10_ep12_p0_75_pof_oat_pretrained_aug/evals
