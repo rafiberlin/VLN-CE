@@ -3,9 +3,18 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+data/checkpoints/
+data/datasets/
+data/ddppo-models/
+data/scene_datasets/
+data/tensorboard_dirs/
+data/trajectories_dirs/
+
+
 # C extensions
 *.so
-
+#Pycharm stuff
+.idea
 # Distribution / packaging
 .Python
 build/
@@ -148,3 +157,4 @@ sbatch_scripts
 
 visualisation/ML/
 
+*.pth

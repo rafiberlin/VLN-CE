@@ -4,7 +4,7 @@ import statistics
 import argparse
 from string import Template
 import os
-
+import random
 
 def read_compressed_json_file(path):
     """
@@ -76,19 +76,22 @@ def filter_preprocessed_data(data, filter: list):
     data["episodes"] = [episodes[episode_id] for episode_id in filter]
 
 
-def get_episode_list(data, boundaries: tuple):
+def get_episode_list(data, boundaries: tuple, limit: int = None):
     """
     Get a list of episodes based on the criteria
     :param data:
-    :param boundaries:
+    :param boundaries: A tuple with lower and upper episode length bound for filtering
+    :param limit: sample a number of episode equal to this value.
     :return:
     """
 
     lower_bound, upper_bound = boundaries
     assert 0 <= lower_bound <= upper_bound
 
-    return [int(id) for id in data if (lower_bound < len(data[id]["actions"]) <= upper_bound)]
-
+    episodes = [int(id) for id in data if (lower_bound < len(data[id]["actions"]) <= upper_bound)]
+    if limit is not None:
+        episodes = random.sample(episodes, limit)
+    return episodes
 if __name__ == "__main__":
     print("Reading...")
 

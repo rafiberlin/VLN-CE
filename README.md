@@ -1,4 +1,4 @@
-# Vision-and-Language Navigation in Continuous Environments (VLN-CE)
+# Vision-and-Language Navigation in Continuous Environments (VLN-CE) with Transformer Models for R2R
 
 [Project Website](https://jacobkrantz.github.io/vlnce/) — [VLN-CE Challenge](https://eval.ai/web/challenges/challenge-page/719) — [RxR-Habitat Challenge](https://ai.google.com/research/rxr/habitat)
 
@@ -13,47 +13,67 @@ Vision and Language Navigation in Continuous Environments (VLN-CE) is an instruc
   <img width="775" height="360" src="./data/res/VLN_comparison.gif" alt="VLN-CE comparison to VLN">
 </p>
 
+## Hardware used
+
+To give you an idea of the hardware and drivers at play:
+
+We trained the models on A100 GPUs with nvidia drivers 510.85.02, with cuda 11.6 (headless).
+For dev purposes, we used a RTX 3060 with nvidia drivers 470.161.03  and cuda 11.4 (with attached display, sufficient for transformers with 3 layers, 8 heads  and dimensions of 128).
+
+
 ## Setup
 
 This project is developed with Python 3.6. If you are using [miniconda](https://docs.conda.io/en/latest/miniconda.html) or [anaconda](https://anaconda.org/), you can create an environment:
 
+
 ```bash
-conda create -n vlnce python3.6
+conda create -n vlnce python=3.6
 conda activate vlnce
 ```
 
 VLN-CE uses [Habitat-Sim](https://github.com/facebookresearch/habitat-sim/tree/v0.1.7) 0.1.7 which can be [built from source](https://github.com/facebookresearch/habitat-sim/tree/v0.1.7#installation) or installed from conda:
 
 ```bash
+# For installation on Remote servers / Virtual Machines without display output
 conda install -c aihabitat -c conda-forge habitat-sim=0.1.7 headless
+# Or for machines with display output
+conda install -c aihabitat -c conda-forge habitat-sim=0.1.7
 ```
 
-Then install [Habitat-Lab](https://github.com/facebookresearch/habitat-lab/tree/v0.1.7):
+
+
+Then install a slightly a corrected version of [Habitat-Lab](https://github.com/rafiberlin/habitat-lab/tree/vlnce-fix):
+
+The [original version]((https://github.com/facebookresearch/habitat-lab/tree/v0.1.7)) with commit "d6ed1c0a0e786f16f261de2beafe347f4186d0d8"
+did not work with VLN-CE (due to some bug in the used version of OpenAI Gym). Further more, there is
+a slight enhancement of the handling of evaluation mode (not waiting endlessly for new checkpoints to evaluate).
 
 ```bash
-git clone --branch v0.1.7 git@github.com:facebookresearch/habitat-lab.git
+git clone --branch vlnce-fix git@github.com:rafiberlin/habitat-lab.git
 cd habitat-lab
 # installs both habitat and habitat_baselines
+# that can takes a long time to build open-cv per wheel. Make sure update pip and have a gcc installed
+# on you machine!
 python -m pip install -r requirements.txt
 python -m pip install -r habitat_baselines/rl/requirements.txt
 python -m pip install -r habitat_baselines/rl/ddppo/requirements.txt
 python setup.py develop --all
 ```
 
-Depending on the version of OpenAiGym you use, you might need to amend follow file from habitat-lab:
+At this point, you need to remove the installe version of torch that was automatically installed previously:
 
-`habitat-lab/habitat/tasks/vln/vln.py`
+```bash
+pip uninstall torch
+```
 
-line 60, amend
- 
-`self.observation_space = spaces.Discrete(0)`
+And install this version along with torch vision:
+```bash
+# it worked even though the cuda version of the drivers was higher.
+# But in case of problems, try to find the version working with your nvidia drivers
+pip install torch==1.10.2+cu113 torchvision==0.11.3+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
+```
 
-to
-
-`self.observation_space = spaces.Discrete(4)`
-
-
-Now you can install VLN-CE:
+Then, finish with:
 
 ```bash
 git clone git@github.com:jacobkrantz/VLN-CE.git
@@ -115,19 +135,34 @@ The R2R_VLNCE dataset is a port of the Room-to-Room (R2R) dataset created by [An
 | [R2R_VLNCE_v1-3.zip](https://drive.google.com/file/d/1qrdomxA5fuQ6n44NXzPAJe2dMdxatvma/view) | `data/datasets/R2R_VLNCE_v1-3` | 3 MB |
 | [R2R_VLNCE_v1-3_preprocessed.zip](https://drive.google.com/file/d/1kQ_at68wiK2vAmlWbjJ4EDrLtaM0nfkR/view) | `data/datasets/R2R_VLNCE_v1-3_preprocessed` | 250 MB |
 
-Downloading via CLI:
+Downloading via CLI (only possible for ):
 
 ```bash
 # R2R_VLNCE_v1-3
 gdown https://drive.google.com/uc?id=1qrdomxA5fuQ6n44NXzPAJe2dMdxatvma
 # R2R_VLNCE_v1-3_preprocessed
 gdown https://drive.google.com/uc?id=1kQ_at68wiK2vAmlWbjJ4EDrLtaM0nfkR
+
 ```
+
+
+Additionally, we provide some splits where data are separated by episode length.
+
+Splits named *_50 contains all episodes from the original split up to an episode length of 50 steps.
+Splits named *_50_plus contains all episodes from the original split with episode length higher than 50 steps.
+Splits named *_50_ep or *_80_ep only contains respectively 50 and 80 episodes to speed up some evaluations.
+(The script to create these split is under ./scripts/create_debug_split.py)
+
+
+| Dataset | Extract path | Size |
+|-------------- |---------------------------- |------- |
+| [R2R_VLNCE_v1-3_preprocessed_additional_splits.zip](https://drive.google.com/file/d/1XqOd8t2KSdMvtJWSUziNGlM0ORZoYoUv/view) | `data/datasets/R2R_VLNCE_v1-3_preprocessed` | 265 MB |
+
 
 Remark: Under:
 data/datasets/R2R_VLNCE_v1-3_preprocessed/joint_train_envdrop/
+You will need to rename the file  joint_train_envdrop.gz to joint_train_envdrop.json.gz
 
-you will need to rename the file  joint_train_envdrop.gz to joint_train_envdrop.json.gz
 
 ##### Encoder Weights
 
@@ -288,6 +323,31 @@ python run.py --exp-config vlnce_baselines/config/r2r_baselines/nonlearning.yaml
 
 For lists of modifiable configuration options, see the default [task config](habitat_extensions/config/default.py) and [experiment config](vlnce_baselines/config/default.py) files.
 
+Additionally to the original set of commands, we added the following:
+
+```bash
+python run.py \
+  --exp-config path/to/experiment_config.yaml \
+  --run-type {create_dataset | train_eval | check_dataset | train_complete}
+```
+create_dataset allow to create the dataset once. You won't need to recreate a new dataset each time a training is started
+(works only for the Transformer related experiments.)
+check_dataset only runs a basic to spot obvious errors in the dataset creation.
+train_eval starts training and run the evaluation on one split.
+train_complete starts training, evaluation on smaller validation set, on val seen, val unseen and finally creates the
+prediction file for test.
+
+Check also the template `vlnce_baselines/config/r2r_baselines/decision_transformer/templates/local/template.yaml`
+to understand all the parameters needed for transformer models.
+
+Furthermore you can run several config files in one command:
+
+```bash
+python run.py \
+  --exp-config path/to/config_directory/ \
+  --run-type {train | eval | inference | create_dataset | train_eval | check_dataset | train_complete}
+```
+
 ### Training Agents
 
 The `DaggerTrainer` class is the standard trainer and supports teacher forcing or dataset aggregation (DAgger). This trainer saves trajectories consisting of RGB, depth, ground-truth actions, and instructions to disk to avoid time spent in simulation.
@@ -299,6 +359,15 @@ Both trainers inherit from `BaseVLNCETrainer`.
 ### Evaluating Agents
 
 Evaluation on validation splits can be done by running `python run.py --exp-config path/to/experiment_config.yaml --run-type eval`. If `EVAL.EPISODE_COUNT == -1`, all episodes will be evaluated. If `EVAL_CKPT_PATH_DIR` is a directory, each checkpoint will be evaluated one at a time.
+
+
+### Transformer Based Agents for R2R
+
+In the file, vlnce_baselines/models/decision_transformer_policy.py, you need to subclass `AbstractDecisionTransformerNet`
+to add your own model. Moreover, you would to allow your model's creation by adding its name in `vlnce_baselines/config/default.py`
+in the variable `_C.MODEL.DECISION_TRANSFORMER.allowed_models`.
+
+The training is then done with the `DecisionTransformerTrainer` (`decision_transformer` in the config file).
 
 ### Cuda
 

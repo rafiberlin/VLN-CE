@@ -65,8 +65,8 @@ class BaseVLNCETrainer(BaseILTrainer):
             action_space=action_space,
         )
         self.policy.to(self.device)
-
-        self.optimizer = torch.optim.Adam(
+        # torch.optim.RAdam or torch.optim.Adam for example
+        self.optimizer = eval(config.IL.optimizer)(
             self.policy.parameters(), lr=self.config.IL.lr
         )
         if load_from_ckpt:
@@ -407,6 +407,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                 prev_actions,
                 batch,
                 rgb_frames,
+                _
             ) = self._pause_envs(
                 envs_to_pause,
                 envs,

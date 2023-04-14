@@ -16,15 +16,16 @@ from vlnce_baselines.nonlearning_agents import (
     evaluate_agent,
     nonlearning_inference,
 )
+from vlnce_baselines import utils
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--run-type",
-        choices=["train", "eval", "inference", "create_dataset", "train_eval"],
+        choices=["train", "eval", "inference", "create_dataset", "train_eval", "check_dataset", "train_complete", "calculate_mean"],
         required=True,
-        help="run type of the experiment (train, eval, inference, dataset creation only, train + eval)",
+        help="run type of the experiment (train, eval, inference, dataset creation only, train + eval, check dataset consistency, train complete (run val seen and unseen on the best model only))",
     )
     parser.add_argument(
         "--exp-config",
@@ -45,7 +46,7 @@ def main():
         conf_parameter = args.exp_config
         if os.path.isdir(conf_parameter):
             print("Running several config files from:", conf_parameter)
-            for file in os.listdir(conf_parameter):
+            for file in sorted(os.listdir(conf_parameter)):
                 if file.endswith(".yaml") or file.endswith(".yml"):
                     file_path = os.path.join(conf_parameter, file)
                     print("exp_config", file_path)
@@ -55,6 +56,31 @@ def main():
     else:
         run_exp(**vars(args))
 
+def move_bad_checkpoints(checkpoint_dir, result_dir, keep_best=5, split=None):
+    results_per_data_split = utils.get_result_files_per_datasplit(result_dir)
+    poor_iterations = utils.read_poor_results_per_split(results_per_data_split, keep_n_best=keep_best, split=split)
+    utils.move_poor_checkpoints(checkpoint_dir, poor_iterations)
+
+def run_eval_for_split(trainer, config, split, keep_best):
+    checkpoint_dir = config.EVAL_CKPT_PATH_DIR
+    result_dir = config.RESULTS_DIR
+    config.defrost()
+    config.EVAL.SPLIT = split
+    config.freeze()
+    trainer.config = config
+    trainer.eval()
+    gc.collect()
+    move_bad_checkpoints(checkpoint_dir, result_dir, keep_best, split)
+
+def run_inference(trainer, config):
+    checkpoint_dir = config.EVAL_CKPT_PATH_DIR
+    for file in os.listdir(checkpoint_dir):
+        if file.endswith(".pth"):
+            config.defrost()
+            config.INFERENCE.CKPT_PATH = os.path.join(checkpoint_dir, file)
+            config.freeze()
+            trainer.inference()
+            gc.collect()
 
 def run_exp(exp_config: str, run_type: str, opts=None) -> None:
     """Runs experiment given mode and config
@@ -65,13 +91,16 @@ def run_exp(exp_config: str, run_type: str, opts=None) -> None:
         opts: list of strings of additional config options.
     """
     config = get_config(exp_config, opts)
-    logger.info(f"config: {config}")
     logdir = "/".join(config.LOG_FILE.split("/")[:-1])
-    config_file_root__name = exp_config.split("/")[-1].split(".")[0]
+    if not logdir:
+        logdir = "logs"
+    os.makedirs(logdir, exist_ok=True)
+    config_file_root__name = logdir+"/"+exp_config.split("/")[-1].split(".")[0]
     if logdir:
         os.makedirs(logdir, exist_ok=True)
     log_file = config_file_root__name + "_" + config.LOG_FILE
     logger.add_filehandler(log_file)
+    logger.info(f"config: {config}")
 
     random.seed(config.TASK_CONFIG.SEED)
     np.random.seed(config.TASK_CONFIG.SEED)
@@ -112,6 +141,18 @@ def run_exp(exp_config: str, run_type: str, opts=None) -> None:
         gc.collect()
         trainer.eval()
         gc.collect()
+    elif run_type == "check_dataset":
+        trainer.check_dataset()
+    elif run_type == "train_complete":
+        trainer.train()
+        gc.collect()
+        run_eval_for_split(trainer, config, config.EVAL.VAL_SEEN_SMALL, keep_best=8)
+        run_eval_for_split(trainer, config, config.EVAL.VAL_SEEN, keep_best=4)
+        run_eval_for_split(trainer, config, config.EVAL.VAL_UNSEEN, keep_best=1)
+        #run_inference(trainer, config)
+    elif run_type == "calculate_mean":
+        trainer.calculate_mean()
+
 
     # avoids to write to all previous files if running in a loop
     logger.removeHandler(logger.handlers[-1])

@@ -1,0 +1,9 @@
+{
+    "distance_to_goal": 8.819007654488086,
+    "success": 0.2625,
+    "spl": 0.2541919654031197,
+    "ndtw": 0.46544424422858083,
+    "path_length": 7.606092534563504,
+    "oracle_success": 0.3,
+    "steps_taken": 56.1
+}

@@ -88,10 +88,21 @@ class Block(nn.Module):
         ))
         m = self.mlp
         self.mlpf = lambda x: m.dropout(m.c_proj(m.act(m.c_fc(x)))) # MLP forward
+        # Add ReZero here
+        self.use_re_zero = config.use_re_zero
+        if self.use_re_zero:
+            self.re_zero_weights_1 = nn.Linear(config.n_embd, config.n_embd)
+            torch.nn.init.normal_(self.re_zero_weights_1.weight, 0, 0.25/config.n_embd)
+            self.re_zero_weights_2 = nn.Linear(config.n_embd, config.n_embd)
+            torch.nn.init.normal_(self.re_zero_weights_2.weight, 0, 0.25/config.n_embd)
 
     def forward(self, x):
-        x = x + self.attn(self.ln_1(x))
-        x = x + self.mlpf(self.ln_2(x))
+        if self.use_re_zero:
+            x = x + self.re_zero_weights_1(self.attn(x))
+            x = x + self.re_zero_weights_2(self.mlpf(x))
+        else:
+            x = x + self.attn(self.ln_1(x))
+            x = x + self.mlpf(self.ln_2(x))
         return x
 
 class GPT(nn.Module):
@@ -104,10 +115,12 @@ class GPT(nn.Module):
         C.model_type = None
         C.n_layer = 2
         C.n_head = 1
-        C.n_embd =  128
+        C.n_embd = 128
         # these options must be filled in externally
         C.vocab_size = 4
         C.block_size = 156
+        C.episode_horizon = 128
+        C.step_size = 1
         # dropout hyperparameters
         C.embd_pdrop = 0.1
         C.resid_pdrop = 0.1
@@ -122,7 +135,12 @@ class GPT(nn.Module):
         self.block_size = config.episode_horizon * config.step_size
         config.defrost()
         config.block_size = self.block_size
-        config.n_embd = config.hidden_dim
+        delete_n_embd = False
+        if not hasattr(config, "n_embd"):
+            delete_n_embd = True
+
+        if hasattr(config, "hidden_dim"):
+            config.n_embd = config.hidden_dim
         type_given = config.model_type is not None and len(config.model_type) > 0
         params_given = all([config.n_layer is not None, config.n_head is not None, config.n_embd is not None])
         assert type_given ^ params_given # exactly one of these (XOR)
@@ -164,7 +182,8 @@ class GPT(nn.Module):
         # report number of parameters (note we don't count the decoder parameters in lm_head)
         n_params = sum(p.numel() for p in self.transformer.parameters())
         print("number of parameters for GPT: %.2fM" % (n_params/1e6,))
-        del config["n_embd"]
+        if delete_n_embd:
+            del config["n_embd"]
         config.freeze()
 
     def _init_weights(self, module):
