@@ -14,7 +14,8 @@ def get_result_files_per_datasplit(eval_dir):
                 file_path = os.path.join(eval_dir, file)
                 # The file name is like this: stats_ckpt.4.pth_val_seen.json
                 # after this spliting, we get 4 and val_seen.json
-                iteration, data_split = file_path.split("stats_ckpt.")[1].split(".pth_")
+                iteration, data_split = file_path.split("stats_ckpt.")[
+                    1].split(".pth_")
                 iteration = int(iteration)
                 # we get val_seen
                 data_split = data_split.split(".json")[0]
@@ -26,6 +27,9 @@ def get_result_files_per_datasplit(eval_dir):
 
 def read_results_per_split(result_path_dict, split=None):
     list_of_poor_iterations = {}
+    if result_path_dict is None:
+        print("Nothing to read")
+        return None
     for data_split in result_path_dict.keys():
         if split is not None and data_split != split:
             continue
@@ -35,20 +39,23 @@ def read_results_per_split(result_path_dict, split=None):
             with open(result_path_dict[data_split][iteration], 'r') as f:
                 datapoint = json.load(f)
                 values[iteration] = datapoint
-        frame = pd.DataFrame.from_dict(values, columns=list(datapoint.keys()), orient="index")
+        frame = pd.DataFrame.from_dict(values, columns=list(datapoint.keys()),
+                                       orient="index")
         poor_iterations = [k for k in sorted_keys]
         list_of_poor_iterations[data_split] = poor_iterations, frame
     return list_of_poor_iterations
 
 
-def read_poor_results_per_split(result_path_dict, keep_n_best=5, split=None, criteria="spl"):
+def read_poor_results_per_split(result_path_dict, keep_n_best=5, split=None,
+                                criteria="spl"):
     list_of_poor_iterations = read_results_per_split(result_path_dict, split)
     for data_split in list_of_poor_iterations.keys():
         if split is not None and data_split != split:
             continue
         _, frame = list_of_poor_iterations[data_split]
         bests = frame[criteria].nlargest(keep_n_best)
-        poor_iterations = [k for k in result_path_dict[data_split].keys() if k not in bests.keys()]
+        poor_iterations = [k for k in result_path_dict[data_split].keys() if
+                           k not in bests.keys()]
         list_of_poor_iterations[data_split] = poor_iterations
     return list_of_poor_iterations
 
@@ -68,19 +75,24 @@ def move_poor_checkpoints(checkpoints_dir, poor_iterations):
                     shutil.move(file_path, os.path.join(bad_dir, file_name))
 
 
-def list_best_result(result_dir, split, criteria, transformer_type=["normal", "enhanced", "full"], eval_dir="evals"):
+def list_best_result(result_dir, split, criteria,
+                     transformer_type=["normal", "enhanced", "full"],
+                     eval_dir="evals"):
     res_dict = {}
     keep_n_best = 1
     for upper_dir in transformer_type:
         path = os.path.join(result_dir, upper_dir)
         if os.path.exists(path):
-            l = [d for d in os.listdir(path) if not d.startswith(".") and not d.startswith("_")]
+            l = [d for d in os.listdir(path) if
+                 not d.startswith(".") and not d.startswith("_")]
             if len(l) > 0:
                 for model in l:
                     model_result_dir = os.path.join(path, model, eval_dir)
                     if os.path.exists(model_result_dir):
-                        result_files = get_result_files_per_datasplit(model_result_dir)
-                        result_table = read_results_per_split(result_files, split=split)
+                        result_files = get_result_files_per_datasplit(
+                            model_result_dir)
+                        result_table = read_results_per_split(result_files,
+                                                              split=split)
                         res_dict[model_result_dir] = result_table
 
     best_score = 0.0
@@ -92,7 +104,8 @@ def list_best_result(result_dir, split, criteria, transformer_type=["normal", "e
             best_index = frame[criteria].nlargest(keep_n_best)
             current_res = frame[criteria][best_index.index]
             metrics = current_res.values[0]
-            all_best[model_result_dir] = metrics, best_index.index.values[0], frame.loc[best_index.index]
+            all_best[model_result_dir] = metrics, best_index.index.values[0], \
+            frame.loc[best_index.index]
             if metrics >= best_score:
                 best_score = metrics
                 best_model = model_result_dir
@@ -101,18 +114,81 @@ def list_best_result(result_dir, split, criteria, transformer_type=["normal", "e
     return dict(sorted(all_best.items(), key=lambda item: item[1][0]))
 
 
-if __name__ == "__main__" :
+import os
+
+
+def list_best_result_all(result_dir, split, criteria,
+                         transformer_type=["normal", "enhanced", "full"],
+                         eval_dir="evals",
+                         col_ordering=["path_length", "distance_to_goal",
+                                       "ndtw", "oracle_success", "success",
+                                       "spl"],
+                         allowed_split=["val_seen", "val_unseen"]):
+    res_dict = {}
+    keep_n_best = 1
+    for upper_dir in transformer_type:
+        path = os.path.join(result_dir, upper_dir)
+        if os.path.exists(path):
+            l = [d for d in os.listdir(path) if
+                 not d.startswith(".") and not d.startswith("_")]
+            if len(l) > 0:
+                for model in l:
+                    model_result_dir = os.path.join(path, model, eval_dir)
+                    if os.path.exists(model_result_dir):
+                        res_dict[model_result_dir] = {}
+                        result_files = get_result_files_per_datasplit(
+                            model_result_dir)
+                        result_table = read_results_per_split(result_files)
+                        if result_table is not None:
+                            res_dict[model_result_dir] = result_table
+
+    best_score = 0.0
+    best_model = "No model found"
+    all_best = {}
+    for model_result_dir in res_dict.keys():
+        if split in res_dict[model_result_dir].keys():
+            _, frame = res_dict[model_result_dir][split]
+            best_index = frame[criteria].nlargest(keep_n_best)
+            current_res = frame[criteria][best_index.index]
+            metrics = current_res.values[0]
+
+            all_res = {s: res_dict[model_result_dir][s][1].loc[
+                best_index.index].reindex(columns=col_ordering) for s in
+                       res_dict[model_result_dir].keys() if s in allowed_split}
+            all_res = pd.concat(all_res, axis=1)
+            all_best[model_result_dir] = metrics, best_index.index.values[
+                0], all_res
+            if metrics >= best_score:
+                best_score = metrics
+                best_model = model_result_dir
+
+    print("Best:", best_model, split, best_score)
+    return dict(sorted(all_best.items(), key=lambda item: item[1][0]))
+
+
+if __name__ == "__main__":
+    # https://stackoverflow.com/questions/13148429/how-to-change-the-order-of-dataframe-columns
+    # https://stackoverflow.com/questions/18528533/pretty-printing-a-pandas-dataframe
+    from IPython.display import display, HTML
+
     transformer_type = ["normal"]  # ["normal", "enhanced", "full"]
-    split = "val_seen"
+    split = "val_unseen"
     result_dir = "../data/checkpoints"
     criteria = "spl"
+    # TL NE nDTW OS SR SP => "path_length", "distance_to_goal", "ndtw", "oracle_success", "success", "spl"
+    # "distance_to_goal", " success", "spl",  "ndtw", "path_length" , "oracle_success", "steps_taken"
+    #
+    all_best_res = list_best_result_all(result_dir, split, criteria,
+                                        transformer_type)
 
-    all_best_res = list_best_result(result_dir, split, criteria, transformer_type)
+    it = len(all_best_res)
+    print(
+        f"\n################  {it}  results retrieved for {split} #################\n")
 
-    print(f"\n################  {len(all_best_res)}  results retrieved for {split} #################\n")
-
-    it = 1
     for k, v in all_best_res.items():
-        print(f"\n{it}: " + k.split("checkpoints/")[1].split("/evals")[0], ",epoch:", v[1], f",best {criteria}:", v[0])
-        print({k: v[2][k].values[0] for k in v[2].keys() if k not in [criteria, "oracle_success", "path_length"]})
-        it += 1
+        print(f"\n{it}: " + k.split("checkpoints/")[1].split("/evals")[0],
+              ",epoch:", v[1], f",best {criteria}:", v[0])
+        # print({k: v[2][k].values[0] for k in v[2].keys() if k not in [criteria, "oracle_success", "path_length"]})
+        # display(HTML(v[2].to_html()))
+        print(v[2].to_markdown())
+        it -= 1

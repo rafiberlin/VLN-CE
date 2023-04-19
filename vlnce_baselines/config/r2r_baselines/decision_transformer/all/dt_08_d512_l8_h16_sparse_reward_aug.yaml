@@ -1,24 +1,24 @@
 # Looks like it is dependent on my dataset, don t erase it!
 # commit d04564df58ed2dd7c7e383dae58f334e887e0626
-BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task.yaml
+BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task_aug.yaml
 TRAINER_NAME: decision_transformer # recollect_trainer, dagger
-SIMULATOR_GPU_IDS: [0]
-TORCH_GPU_ID: 0
+SIMULATOR_GPU_IDS: [1]
+TORCH_GPU_ID: 1
 NUM_ENVIRONMENTS: 10 #Only use one environment for Decision Transformer! An this is probably not working with MUlti Sim GPU
-TENSORBOARD_DIR: /cache/tensorboard-logdir/full/full_08_d512_sparse_reward_to_go_enc_l8_dagger_it10_ep12_p0_75_pof_oat_aug_5epochs
-CHECKPOINT_FOLDER: data/checkpoints/full/full_08_d512_sparse_reward_to_go_enc_l8_dagger_it10_ep12_p0_75_pof_oat_aug_5epochs
-EVAL_CKPT_PATH_DIR: data/checkpoints/full/full_08_d512_sparse_reward_to_go_enc_l8_dagger_it10_ep12_p0_75_pof_oat_aug_5epochs
-RESULTS_DIR: data/checkpoints/full/full_08_d512_sparse_reward_to_go_enc_l8_dagger_it10_ep12_p0_75_pof_oat_aug_5epochs/evals
+TENSORBOARD_DIR: /cache/tensorboard-logdir/normal/dt_08_d512_l8_h16_sparse_reward_aug
+CHECKPOINT_FOLDER: data/checkpoints/normal/dt_08_d512_l8_h16_sparse_reward_aug
+EVAL_CKPT_PATH_DIR: data/checkpoints/normal/dt_08_d512_l8_h16_sparse_reward_aug
+RESULTS_DIR: data/checkpoints/normal/dt_08_d512_l8_h16_sparse_reward_aug/evals
 MULTIPROCESSING: forkserver  # default is forkserver, Set to 'spawn' when debugging with Pycharm,
 ENV_NAME: VLNCEDecisionTransformerEnv
-
+use_pbar: False
 
 INFERENCE:
   SPLIT: test
   USE_CKPT_CONFIG: False
   SAMPLE: False
-  CKPT_PATH: data/checkpoints/full/full_08_d512_sparse_reward_to_go_enc_l8_dagger_it10_ep12_p0_75_pof_oat_aug_5epochs/ckpt.269.pth # Change this
-  PREDICTIONS_FILE: data/checkpoints/full/full_08_d512_sparse_reward_to_go_enc_l8_dagger_it10_ep12_p0_75_pof_oat_aug_5epochs/evals/full_08_d512_sparse_reward_to_go_enc_l8_dagger_it10_ep12_p0_75_pof_oat_aug_5epochs_test_predictions.json
+  CKPT_PATH: data/checkpoints/normal/dt_08_d512_l8_h16_sparse_reward_aug/ckpt.269.pth # Change this
+  PREDICTIONS_FILE: data/checkpoints/normal/dt_08_d512_l8_h16_sparse_reward_aug/evals/normal/dt_08_d512_l8_h16_sparse_reward_aug_test_predictions.json
   FORMAT: r2r
 
 
@@ -37,9 +37,8 @@ IL:
   checkpoint_frequency: 1
   mean_loss_to_save_checkpoint: 0.25
   lr: 1.5e-4
-  load_from_ckpt: True # To train from a previous checkpoint
-  continue_ckpt_naming: False
-  ckpt_to_load: data/checkpoints/full/full_08_d512_sparse_reward_to_go_enc_l8_aug_5epochs/ckpt.1.pth # REPLACE
+  load_from_ckpt: False # To train from a previous checkpoint
+  ckpt_to_load: data/checkpoints/normal/dt_08_d512_l8_h16_sparse_reward_to_go/ckpt.38.pth # REPLACE
 
   RECOLLECT_TRAINER:
     gt_file:
@@ -47,8 +46,6 @@ IL:
   DECISION_TRANSFORMER:
     recompute_reward: True # allows to apply step penalty and end reward on the fly without recaching the whole dataset...
     sensor_uuid: distance_left
-    use_perfect_episode_only_for_dagger: False
-    use_oracle_actions: True
     POINT_GOAL_NAV_REWARD:
       step_penalty: -0.05
       success: 1.0
@@ -60,23 +57,23 @@ IL:
       success: 1.0
   DAGGER:
     repeat_dataset: 1
-    iterations: 0
-    update_size: 5000 # Original size: 10819, EnvDrop+Train: 157232
-    p: 0.75
-    preload_lmdb_features: False
+    iterations: 1
+    update_size: 157232 # Original size: 10819, EnvDrop+Train: 157232
+    p: 1.0
+    preload_lmdb_features: True
     lmdb_commit_frequency: 500
-    lmdb_features_dir: data/trajectories_dirs/full_08_d512_sparse_reward_to_go_enc_l8_dagger_it10_ep12_p0_75_pof_oat_aug_5epochs/trajectories.lmdb
+    lmdb_features_dir: data/trajectories_dirs/_aug_gold_/trajectories.lmdb
 
 
 MODEL:
   DECISION_TRANSFORMER:
     # Possible values: DecisionTransformerNet, DecisionTransformerEnhancedNet
     # DecisionTransformerWithAttendedInstructionsNet or  FullDecisionTransformerNet
-    net: FullDecisionTransformerNet
+    net: DecisionTransformerNet
     use_extra_start_token: True
     reward_type: sparse_reward_to_go # point_nav_reward_to_go, sparse_reward_to_go, point_nav_reward, sparse_reward, ndtw_reward, ndtw_reward_to_go
-    n_layer: 3
-    n_head: 8
+    n_layer: 8
+    n_head: 16
     hidden_dim: 512 # The dimensions for the State, Reward and actions embeddings and in the GPT Backbne
     use_transformer_encoded_instruction: True
     activation_action_drop: 0.25
@@ -84,8 +81,17 @@ MODEL:
     activation_rgb_drop: 0.01
     activation_depth_drop: 0.01
     return_to_go_inference: 0.0
+    ATTENTION_LAYER: # only for DecisionTransformerWithAttendedInstructionsNet
+      n_head: 8
+      use_instruction_state_embeddings: True
+      use_depth_influenced_text: True
+      use_rgb_influenced_text: True
+      use_state_attended_text: True # Here maybe you shouldn t add the time embeddings? As you already did it in the
+      use_rgb_state_embeddings: True
+      use_depth_state_embeddings: True
     ENCODER: # only for FullDecisionTransformerNet
-      n_layer: 8
+      n_layer: 3
+      n_head: 8
   policy_name: DecisionTransformerPolicy
   PROGRESS_MONITOR: # This is only used to create the datasets and the reward signals
     use: True
