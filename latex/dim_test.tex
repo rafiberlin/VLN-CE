@@ -3,18 +3,18 @@
 \caption{\label{tab:dim_test}Subset of experiments' results, grouped by agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.     \newline The agents are based on Decision Transformer ('DT'), Enhanced Decision Transformer ('E-DT') or Full Decision Transformer ('F-DT').}
 \begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
 \toprule
-\textbf{\#} & \textbf{Agent} & \textbf{Training Details} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
- \textbf{~} &     \textbf{~} &                \textbf{~} &       \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} &         \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} \\
+\textbf{\#} & \textbf{Agent} & \textbf{GPT Dim} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+ \textbf{~} &     \textbf{~} &       \textbf{~} &       \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} &         \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} \\
 \midrule
-         31 &             DT &            GPT Dim of 512 &              8.78 &        9.35 &          0.42 &        0.34 &        0.19 &         0.18 &                7.79 &        9.31 &          0.41 &        0.25 &        0.17 &         0.16 \\
-         72 &             DT &            GPT Dim of 128 &              9.13 &        9.05 &          0.44 &        0.33 &        0.20 &         0.18 &                8.54 &        9.97 &          0.39 &        0.24 &        0.15 &         0.14 \\
-        126 &             DT &            GPT Dim of 256 &              9.37 &        9.44 &          0.42 &        0.33 &        0.17 &         0.16 &                8.86 &       10.31 &          0.36 &        0.23 &        0.13 &         0.12 \\
-         73 &           E-DT &            GPT Dim of 128 &              8.70 &        8.68 &          0.45 &        0.35 &        0.23 &         0.22 &                7.79 &        9.37 &          0.41 &        0.24 &        0.15 &         0.14 \\
-         85 &           E-DT &            GPT Dim of 256 &              8.53 &        8.31 &          0.47 &        0.35 &        0.23 &         0.22 &                7.44 &        9.41 &          0.40 &        0.22 &        0.15 &         0.14 \\
-         90 &           E-DT &            GPT Dim of 512 &              8.35 &        7.92 &          0.49 &        0.37 &        0.25 &         0.24 &                7.83 &        9.58 &          0.39 &        0.22 &        0.15 &         0.14 \\
-         64 &           F-DT &            GPT Dim of 512 &              9.10 &        8.70 &          0.45 &        0.34 &        0.22 &         0.21 &                8.33 &        9.63 &          0.40 &        0.26 &        0.16 &         0.15 \\
-         76 &           F-DT &            GPT Dim of 256 &              5.83 &        8.47 &          0.47 &        0.20 &        0.18 &         0.17 &                5.84 &        8.88 &          0.42 &        0.18 &        0.15 &         0.14 \\
-        105 &           F-DT &            GPT Dim of 128 &              8.20 &        8.43 &          0.47 &        0.31 &        0.25 &         0.23 &                7.41 &        9.59 &          0.40 &        0.22 &        0.15 &         0.13 \\
+         31 &             DT &              512 &              8.78 &        9.35 &          0.42 &        0.34 &        0.19 &         0.18 &                7.79 &        9.31 &          0.41 &        0.25 &        0.17 &         0.16 \\
+         72 &             DT &              128 &              9.13 &        9.05 &          0.44 &        0.33 &        0.20 &         0.18 &                8.54 &        9.97 &          0.39 &        0.24 &        0.15 &         0.14 \\
+        126 &             DT &              256 &              9.37 &        9.44 &          0.42 &        0.33 &        0.17 &         0.16 &                8.86 &       10.31 &          0.36 &        0.23 &        0.13 &         0.12 \\
+         73 &           E-DT &              128 &              8.70 &        8.68 &          0.45 &        0.35 &        0.23 &         0.22 &                7.79 &        9.37 &          0.41 &        0.24 &        0.15 &         0.14 \\
+         85 &           E-DT &              256 &              8.53 &        8.31 &          0.47 &        0.35 &        0.23 &         0.22 &                7.44 &        9.41 &          0.40 &        0.22 &        0.15 &         0.14 \\
+         90 &           E-DT &              512 &              8.35 &        7.92 &          0.49 &        0.37 &        0.25 &         0.24 &                7.83 &        9.58 &          0.39 &        0.22 &        0.15 &         0.14 \\
+         64 &           F-DT &              512 &              9.10 &        8.70 &          0.45 &        0.34 &        0.22 &         0.21 &                8.33 &        9.63 &          0.40 &        0.26 &        0.16 &         0.15 \\
+         76 &           F-DT &              256 &              5.83 &        8.47 &          0.47 &        0.20 &        0.18 &         0.17 &                5.84 &        8.88 &          0.42 &        0.18 &        0.15 &         0.14 \\
+        105 &           F-DT &              128 &              8.20 &        8.43 &          0.47 &        0.31 &        0.25 &         0.23 &                7.41 &        9.59 &          0.40 &        0.22 &        0.15 &         0.13 \\
 \bottomrule
 \end{tabular}
 \end{table}
