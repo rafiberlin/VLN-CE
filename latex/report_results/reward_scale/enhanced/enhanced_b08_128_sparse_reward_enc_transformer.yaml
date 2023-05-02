@@ -3,10 +3,10 @@ TRAINER_NAME: decision_transformer # recollect_trainer, dagger
 SIMULATOR_GPU_IDS: [0]
 TORCH_GPU_ID: 0
 NUM_ENVIRONMENTS: 6 #Looks like the sweet spot for dataset creation is 6 envs. If you use more, we might wait too long to reload the next batch....
-TENSORBOARD_DIR: /cache/tensorboard-logdir/enhanced_b08_512_sparse_reward_l8_h16_enc_transformer
-CHECKPOINT_FOLDER: data/checkpoints/enhanced/enhanced_b08_512_sparse_reward_l8_h16_enc_transformer
-EVAL_CKPT_PATH_DIR: data/checkpoints/enhanced/enhanced_b08_512_sparse_reward_l8_h16_enc_transformer
-RESULTS_DIR: data/checkpoints/enhanced/enhanced_b08_512_sparse_reward_l8_h16_enc_transformer/evals/
+TENSORBOARD_DIR: data/tensorboard_dirs/enhanced_b08_128_sparse_reward_enc_transformer
+CHECKPOINT_FOLDER: data/checkpoints/enhanced/enhanced_b08_128_sparse_reward_enc_transformer
+EVAL_CKPT_PATH_DIR: data/checkpoints/enhanced/enhanced_b08_128_sparse_reward_enc_transformer
+RESULTS_DIR: data/checkpoints/enhanced/enhanced_b08_128_sparse_reward_enc_transformer/evals/
 MULTIPROCESSING: forkserver  # default is forkserver, Set to 'spawn' when debugging with Pycharm,
 ENV_NAME: VLNCEDecisionTransformerEnv
 
@@ -15,8 +15,8 @@ INFERENCE:
   SPLIT: test
   USE_CKPT_CONFIG: False
   SAMPLE: False
-  CKPT_PATH: data/checkpoints/enhanced/enhanced_b08_512_sparse_reward_l8_h16_enc_transformer/ckpt.269.pth
-  PREDICTIONS_FILE: data/checkpoints/enhanced/enhanced_b08_512_sparse_reward_l8_h16_enc_transformer/evals/enhanced_b08_512_sparse_reward_l8_h16_enc_transformer_test_predictions.json
+  CKPT_PATH: data/checkpoints/enhanced/enhanced_b08_128_sparse_reward_enc_transformer/ckpt.269.pth
+  PREDICTIONS_FILE: data/checkpoints/enhanced/enhanced_b08_128_sparse_reward_enc_transformer/evals/enhanced_b08_128_sparse_reward_enc_transformer_test_predictions.json
   FORMAT: r2r
 
 
@@ -30,14 +30,14 @@ EVAL:
 
 IL:
   preload_dataloader_size: 200
-  dataload_workers: 2
-  epochs: 42
+  dataload_workers: 1
+  epochs: 0
   batch_size: 8
   checkpoint_frequency: 1
   mean_loss_to_save_checkpoint: 0.30
   lr: 1.5e-4
   load_from_ckpt: False # To train from a previous checkpoint
-  ckpt_to_load: data/checkpoints/enhanced/enhanced_b08_512_sparse_reward_l8_h16_enc_transformer/ckpt.7.pth # REPLACE
+  ckpt_to_load: data/checkpoints/enhanced/enhanced_b08_128_sparse_reward_enc_transformer/ckpt.7.pth # REPLACE
 
   RECOLLECT_TRAINER:
     gt_file:
@@ -60,7 +60,7 @@ IL:
     p: 1.0
     preload_lmdb_features: True
     lmdb_commit_frequency: 500
-    lmdb_features_dir: data/trajectories_dirs/_normal_gold_/trajectories.lmdb
+    lmdb_features_dir: data/trajectories_dirs/NORMAL_BUGFREE/trajectories.lmdb
 
 
 MODEL:
@@ -70,10 +70,9 @@ MODEL:
     net: DecisionTransformerEnhancedNet
     use_extra_start_token: True
     reward_type: sparse_reward_to_go # point_nav_reward_to_go, sparse_reward_to_go, point_nav_reward, sparse_reward, ndtw_reward, ndtw_reward_to_go
-    n_layer: 8
-    n_head: 16
-    hidden_dim: 512 # The dimensions for the State, Reward and actions embeddings and in the GPT Backbne
-    use_transformer_encoded_instruction: True # only for DecisionTransformerNet, DecisionTransformerEnhancedNet
+    n_layer: 3
+    n_head: 8
+    hidden_dim: 128 # The dimensions for the State, Reward and actions embeddings and in the GPT Backbne
     activation_action_drop: 0.25
     activation_instruction_drop: 0.01
     activation_rgb_drop: 0.01
