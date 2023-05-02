@@ -1,0 +1,17 @@
+\begin{table}
+\centering
+\caption{\label{tab:split_training_50}Subset of experiments' results, grouped by agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.     \newline The agents are based on Decision Transformer ('DT'), Enhanced Decision Transformer ('E-DT') or Full Decision Transformer ('F-DT').}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+\textbf{\#} & \textbf{Agent} & \textbf{Training Details} & \multicolumn{6}{l}{\textbf{Val Seen}} & \multicolumn{6}{l}{\textbf{Val Unseen}} \\
+ \textbf{~} &     \textbf{~} &                \textbf{~} &       \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} &         \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} \\
+\midrule
+         11 &             DT &                     train &              7.79 &        8.22 &          0.48 &        0.33 &        0.22 &         0.21 &                6.96 &        8.99 &          0.43 &        0.22 &        0.18 &         0.17 \\
+         95 &             DT &     (train 50)*,train 50+ &              8.57 &        9.13 &          0.40 &        0.29 &        0.15 &         0.14 &                8.28 &        9.44 &          0.40 &        0.26 &        0.15 &         0.14 \\
+         48 &           E-DT &                     train &              7.82 &        8.18 &          0.48 &        0.32 &        0.22 &         0.21 &                6.61 &        8.81 &          0.43 &        0.22 &        0.16 &         0.15 \\
+         88 &           E-DT &     (train 50)*,train 50+ &              9.02 &        8.70 &          0.42 &        0.33 &        0.17 &         0.16 &                9.17 &        9.92 &          0.38 &        0.29 &        0.16 &         0.14 \\
+         39 &           F-DT &                     train &              7.97 &        8.03 &          0.47 &        0.34 &        0.24 &         0.22 &                7.48 &        8.70 &          0.44 &        0.25 &        0.17 &         0.15 \\
+         96 &           F-DT &     (train 50)*,train 50+ &              9.07 &        9.02 &          0.41 &        0.32 &        0.18 &         0.17 &                8.14 &        9.40 &          0.40 &        0.26 &        0.15 &         0.14 \\
+\bottomrule
+\end{tabular}
+\end{table}

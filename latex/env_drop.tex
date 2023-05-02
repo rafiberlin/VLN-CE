@@ -1,0 +1,14 @@
+\begin{table}
+\centering
+\caption{\label{tab:env_drop}Subset of experiments' results, grouped by agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.     \newline The agents are based on Decision Transformer ('DT'), Enhanced Decision Transformer ('E-DT') or Full Decision Transformer ('F-DT').}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+\textbf{\#} & \textbf{Agent} & \textbf{Training Details} & \multicolumn{6}{l}{\textbf{Val Seen}} & \multicolumn{6}{l}{\textbf{Val Unseen}} \\
+ \textbf{~} &     \textbf{~} &                \textbf{~} &       \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} &         \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} \\
+\midrule
+        106 &             DT &                       AUG &              6.48 &        8.76 &          0.45 &        0.21 &        0.17 &         0.16 &                6.27 &        9.35 &          0.41 &        0.17 &        0.14 &         0.13 \\
+         44 &           E-DT &                       AUG &              7.73 &        8.22 &          0.47 &        0.34 &        0.26 &         0.25 &                7.32 &        8.98 &          0.41 &        0.24 &        0.17 &         0.15 \\
+         82 &           F-DT &                       AUG &              6.66 &        8.82 &          0.45 &        0.22 &        0.18 &         0.16 &                6.23 &        9.33 &          0.41 &        0.18 &        0.15 &         0.14 \\
+\bottomrule
+\end{tabular}
+\end{table}
