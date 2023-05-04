@@ -73,6 +73,7 @@ MODEL:
     n_layer: 3
     n_head: 8
     hidden_dim: 128 # The dimensions for the State, Reward and actions embeddings and in the GPT Backbne
+    use_transformer_encoded_instruction: True
     activation_action_drop: 0.25
     activation_instruction_drop: 0.01
     activation_rgb_drop: 0.01
