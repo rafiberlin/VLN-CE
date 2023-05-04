@@ -1,8 +1,8 @@
 #FAILED TO FIT
 BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task.yaml
 TRAINER_NAME: decision_transformer # recollect_trainer, dagger
-SIMULATOR_GPU_IDS: [0]
-TORCH_GPU_ID: 0
+SIMULATOR_GPU_IDS: [1]
+TORCH_GPU_ID: 1
 NUM_ENVIRONMENTS: 6 #Looks like the sweet spot for dataset creation is 6 envs. If you use more, we might wait too long to reload the next batch....
 TENSORBOARD_DIR: /cache/tensorboard-logdir/full_dt_sparse_to_go_attention_ablation_b8_except_rgb_instruct
 CHECKPOINT_FOLDER: data/checkpoints/full/full_dt_sparse_to_go_attention_ablation_b8_except_rgb_instruct
