@@ -5,10 +5,10 @@ TRAINER_NAME: decision_transformer # recollect_trainer, dagger
 SIMULATOR_GPU_IDS: [1]
 TORCH_GPU_ID: 1
 NUM_ENVIRONMENTS: 5 #Only use one environment for Decision Transformer! An this is probably not working with MUlti Sim GPU
-TENSORBOARD_DIR: /cache/tensorboard-logdir/full/full_08_sparse_reward_to_go_10
-CHECKPOINT_FOLDER: data/checkpoints/full/full_08_sparse_reward_to_go_10
-EVAL_CKPT_PATH_DIR: data/checkpoints/full/full_08_sparse_reward_to_go_10
-RESULTS_DIR: data/checkpoints/full/full_08_sparse_reward_to_go_10/evals
+TENSORBOARD_DIR: /cache/tensorboard-logdir/full/full_08_sparse_reward_to_go_0_1
+CHECKPOINT_FOLDER: data/checkpoints/full/full_08_sparse_reward_to_go_0_1
+EVAL_CKPT_PATH_DIR: data/checkpoints/full/full_08_sparse_reward_to_go_0_1
+RESULTS_DIR: data/checkpoints/full/full_08_sparse_reward_to_go_0_1/evals
 MULTIPROCESSING: forkserver  # default is forkserver, Set to 'spawn' when debugging with Pycharm,
 ENV_NAME: VLNCEDecisionTransformerEnv
 
@@ -17,8 +17,8 @@ INFERENCE:
   SPLIT: test
   USE_CKPT_CONFIG: False
   SAMPLE: False
-  CKPT_PATH: data/checkpoints/full/full_08_sparse_reward_to_go_10/ckpt.269.pth # Change this
-  PREDICTIONS_FILE: data/checkpoints/full/full_08_sparse_reward_to_go_10/evals/full/full_08_sparse_reward_to_go_10_test_predictions.json
+  CKPT_PATH: data/checkpoints/full/full_08_sparse_reward_to_go_0_1/ckpt.269.pth # Change this
+  PREDICTIONS_FILE: data/checkpoints/full/full_08_sparse_reward_to_go_0_1/evals/full/full_08_sparse_reward_to_go_0_1_test_predictions.json
   FORMAT: r2r
 
 
@@ -38,7 +38,7 @@ IL:
   mean_loss_to_save_checkpoint: 0.35
   lr: 1.5e-4
   load_from_ckpt: False # To train from a previous checkpoint
-  ckpt_to_load: data/checkpoints/full/full_08_sparse_reward_to_go_10/ckpt.269.pth # REPLACE
+  ckpt_to_load: data/checkpoints/full/full_08_sparse_reward_to_go_0_1/ckpt.269.pth # REPLACE
 
   RECOLLECT_TRAINER:
     gt_file:
@@ -51,7 +51,7 @@ IL:
       success: 1.0
     SPARSE_REWARD:
       step_penalty: -0.05
-      success: 10.0
+      success: 0.1
     NDTW_REWARD:
       step_penalty: -0.05
       success: 1.0
