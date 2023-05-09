@@ -32,7 +32,7 @@ EVAL:
 IL:
   preload_dataloader_size: 200
   dataload_workers: 2
-  epochs: 0
+  epochs: 12
   batch_size: 8
   checkpoint_frequency: 1
   mean_loss_to_save_checkpoint: 0.25
@@ -60,7 +60,7 @@ IL:
       success: 1.0
   DAGGER:
     repeat_dataset: 1
-    iterations: 0
+    iterations: 10
     update_size: 5000 # Original size: 10819, EnvDrop+Train: 157232
     p: 0.75
     preload_lmdb_features: False
