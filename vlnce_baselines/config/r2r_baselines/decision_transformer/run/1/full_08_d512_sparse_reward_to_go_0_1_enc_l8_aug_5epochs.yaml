@@ -32,7 +32,7 @@ EVAL:
 IL:
   preload_dataloader_size: 200
   dataload_workers: 2
-  epochs: 2
+  epochs: 0
   batch_size: 8
   checkpoint_frequency: 1
   mean_loss_to_save_checkpoint: 1.0

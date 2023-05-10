@@ -60,7 +60,7 @@ IL:
       success: 1.0
   DAGGER:
     repeat_dataset: 1
-    iterations: 10
+    iterations: 0
     update_size: 5000 # Original size: 10819, EnvDrop+Train: 157232
     p: 0.75
     preload_lmdb_features: False
