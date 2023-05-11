@@ -3,10 +3,10 @@ TRAINER_NAME: decision_transformer # recollect_trainer, dagger
 SIMULATOR_GPU_IDS: [0]
 TORCH_GPU_ID: 0
 NUM_ENVIRONMENTS: 5 #Looks like the sweet spot for dataset creation is 6 envs. If you use more, we might wait too long to reload the next batch....
-TENSORBOARD_DIR: /cache/tensorboard-logdir/enhanced_b08_128_nav_reward_1_0_tr_enc_10l_dagger_it10_ep12_p0_75_pof_oat
-CHECKPOINT_FOLDER: data/checkpoints/enhanced/enhanced_b08_128_nav_reward_1_0_tr_enc_10l_dagger_it10_ep12_p0_75_pof_oat
-EVAL_CKPT_PATH_DIR: data/checkpoints/enhanced/enhanced_b08_128_nav_reward_1_0_tr_enc_10l_dagger_it10_ep12_p0_75_pof_oat
-RESULTS_DIR: data/checkpoints/enhanced/enhanced_b08_128_nav_reward_1_0_tr_enc_10l_dagger_it10_ep12_p0_75_pof_oat/evals/
+TENSORBOARD_DIR: /cache/tensorboard-logdir/enhanced_b08_128_nav_reward_1_0_tr_enc_10l_dagger_it10_ep12_p0_75_pof_oat_aug_5epochs
+CHECKPOINT_FOLDER: data/checkpoints/enhanced/enhanced_b08_128_nav_reward_1_0_tr_enc_10l_dagger_it10_ep12_p0_75_pof_oat_aug_5epochs
+EVAL_CKPT_PATH_DIR: data/checkpoints/enhanced/enhanced_b08_128_nav_reward_1_0_tr_enc_10l_dagger_it10_ep12_p0_75_pof_oat_aug_5epochs
+RESULTS_DIR: data/checkpoints/enhanced/enhanced_b08_128_nav_reward_1_0_tr_enc_10l_dagger_it10_ep12_p0_75_pof_oat_aug_5epochs/evals/
 MULTIPROCESSING: forkserver  # default is forkserver, Set to 'spawn' when debugging with Pycharm,
 ENV_NAME: VLNCEDecisionTransformerEnv
 
@@ -15,8 +15,8 @@ INFERENCE:
   SPLIT: test
   USE_CKPT_CONFIG: False
   SAMPLE: False
-  CKPT_PATH: data/checkpoints/enhanced/enhanced_b08_128_nav_reward_1_0_tr_enc_10l_dagger_it10_ep12_p0_75_pof_oat/ckpt.269.pth
-  PREDICTIONS_FILE: data/checkpoints/enhanced/enhanced_b08_128_nav_reward_1_0_tr_enc_10l_dagger_it10_ep12_p0_75_pof_oat/evals/full_dt_b16_128_nav_reward_test_predictions.json
+  CKPT_PATH: data/checkpoints/enhanced/enhanced_b08_128_nav_reward_1_0_tr_enc_10l_dagger_it10_ep12_p0_75_pof_oat_aug_5epochs/ckpt.269.pth
+  PREDICTIONS_FILE: data/checkpoints/enhanced/enhanced_b08_128_nav_reward_1_0_tr_enc_10l_dagger_it10_ep12_p0_75_pof_oat_aug_5epochs/evals/full_dt_b16_128_nav_reward_test_predictions.json
   FORMAT: r2r
 
 
