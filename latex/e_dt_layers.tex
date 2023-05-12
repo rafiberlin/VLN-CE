@@ -1,0 +1,16 @@
+\begin{table}
+\centering
+\caption{\label{tab:e_dt_layers}Influence of the GPT Layers. Subset of experiments' results for Enhanced Decision Transformer ('E-DT') agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+\textbf{\#} & \textbf{GPT Layers} & \multicolumn{6}{l}{\textbf{Val Seen}} & \multicolumn{6}{l}{\textbf{Val Unseen}} \\
+ \textbf{~} &          \textbf{~} &       \textbf{TL} & \textbf{NE} & \textbf{nDTW} &     \textbf{OS} & \textbf{SR} & \textbf{SPL} &         \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} &     \textbf{SR} & \textbf{SPL} \\
+\midrule
+         31 &                  10 &             8.191 &       8.464 &         0.462 &           0.308 &       0.228 &        0.212 &               7.732 &       9.241 &         0.408 &       0.256 &  \textbf{0.175} &        0.158 \\
+         33 &                  12 &             8.443 &       8.736 &         0.443 &           0.348 &       0.213 &        0.202 &               7.601 &       9.332 &         0.409 &       0.256 &           0.168 &        0.158 \\
+         46 &                   8 &             8.331 &       8.427 &         0.468 &           0.328 &       0.228 &        0.215 &               8.069 &       9.181 &         0.419 &       0.258 &           0.165 &        0.153 \\
+         94 &                   6 &             8.574 &       8.907 &         0.437 &           0.329 &       0.243 &        0.227 &               8.019 &        9.16 &         0.406 &       0.247 &           0.153 &        0.139 \\
+         95 &                   3 &             9.192 &        8.57 &          0.47 &  \textbf{0.391} &       0.252 &        0.236 &               8.383 &       9.686 &         0.401 &       0.245 &           0.153 &        0.139 \\
+\bottomrule
+\end{tabular}
+\end{table}

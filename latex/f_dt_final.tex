@@ -1,0 +1,13 @@
+\begin{table}
+\centering
+\caption{\label{tab:f_dt_final}Subset of experiments' results for Full Decision Transformer ('F-DT') agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+\textbf{\#} & \textbf{Training Details} & \multicolumn{6}{l}{\textbf{Val Seen}} & \multicolumn{6}{l}{\textbf{Val Unseen}} \\
+ \textbf{~} &                \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} & \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} \\
+\midrule
+          3 &  (AUG (5 epo.))*,train,DA &             7.809 &  \textbf{7.519} &  \textbf{0.524} &        0.36 &  \textbf{0.271} &  \textbf{0.259} &               6.566 &       8.305 &         0.457 &       0.227 &       0.192 &        0.185 \\
+         22 &                     train &             8.236 &           8.033 &           0.482 &       0.347 &           0.243 &           0.226 &               7.344 &       8.987 &         0.423 &       0.235 &       0.172 &        0.163 \\
+\bottomrule
+\end{tabular}
+\end{table}

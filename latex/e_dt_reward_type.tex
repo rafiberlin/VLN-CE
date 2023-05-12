@@ -1,0 +1,15 @@
+\begin{table}
+\centering
+\caption{\label{tab:e_dt_reward_type}Influence of the Reward Type. Subset of experiments' results for Enhanced Decision Transformer ('E-DT') agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+\textbf{\#} & \textbf{Reward Type} & \multicolumn{6}{l}{\textbf{Val Seen}} & \multicolumn{6}{l}{\textbf{Val Unseen}} \\
+ \textbf{~} &           \textbf{~} &       \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} \\
+\midrule
+         42 &                   PG &             7.833 &        8.37 &         0.475 &       0.346 &            0.24 &           0.228 &                7.64 &       9.194 &         0.418 &       0.237 &       0.166 &        0.154 \\
+         51 &                   SP &             8.225 &       8.281 &         0.473 &       0.357 &  \textbf{0.261} &  \textbf{0.238} &               7.265 &        9.18 &         0.415 &       0.237 &       0.165 &        0.152 \\
+         74 &            No reward &             8.208 &       8.934 &         0.445 &       0.325 &           0.213 &             0.2 &               8.057 &        9.23 &         0.408 &       0.257 &       0.159 &        0.143 \\
+        160 &                   ND &            14.547 &       9.872 &          0.26 &       0.401 &           0.161 &           0.106 &              13.577 &       10.15 &          0.26 &       0.315 &       0.107 &        0.074 \\
+\bottomrule
+\end{tabular}
+\end{table}

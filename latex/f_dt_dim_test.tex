@@ -1,0 +1,14 @@
+\begin{table}
+\centering
+\caption{\label{tab:f_dt_dim_test}Influence of the GPT Embedding Dimension. Subset of experiments' results for Full Decision Transformer ('F-DT') agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+\textbf{\#} & \textbf{GPT Dim} & \multicolumn{6}{l}{\textbf{Val Seen}} & \multicolumn{6}{l}{\textbf{Val Unseen}} \\
+ \textbf{~} &       \textbf{~} &       \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &    \textbf{OS} & \textbf{SR} & \textbf{SPL} \\
+\midrule
+         67 &              512 &             9.096 &       8.704 &         0.445 &       0.335 &       0.224 &         0.21 &               8.332 &           9.631 &           0.396 &  \textbf{0.26} &       0.158 &        0.146 \\
+         82 &              256 &             5.827 &       8.473 &         0.465 &       0.201 &       0.177 &        0.173 &               5.839 &  \textbf{8.876} &  \textbf{0.415} &          0.177 &       0.145 &        0.141 \\
+        115 &              128 &             8.202 &       8.431 &         0.468 &       0.311 &       0.247 &        0.229 &               7.413 &            9.59 &           0.396 &          0.216 &       0.146 &        0.133 \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,15 @@
+\begin{table}
+\centering
+\caption{\label{tab:dt_dagger_pe_oa}DAGGER, influence of the Teacher Learning Type. Subset of experiments' results for Decision Transformer ('DT') agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+\textbf{\#} & \textbf{ Use of Oracle Action / Successful Episode Only} & \multicolumn{6}{l}{\textbf{Val Seen}} & \multicolumn{6}{l}{\textbf{Val Unseen}} \\
+ \textbf{~} &                                               \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} \\
+\midrule
+          2 &                                              y / n &             7.123 &  \textbf{7.374} &  \textbf{0.524} &  \textbf{0.316} &           0.247 &           0.231 &               6.335 &  \textbf{8.036} &  \textbf{0.477} &           0.243 &  \textbf{0.214} &  \textbf{0.206} \\
+         10 &                                              n / n &              6.98 &           8.036 &           0.486 &           0.274 &            0.22 &           0.202 &               6.641 &           8.864 &           0.437 &           0.227 &           0.184 &           0.173 \\
+         20 &                                              n / y &             6.512 &           7.548 &           0.516 &           0.274 &           0.231 &           0.218 &               5.963 &           8.225 &           0.464 &           0.206 &           0.173 &           0.163 \\
+         21 &                                              y / y &             7.599 &            8.04 &           0.494 &            0.31 &  \textbf{0.248} &  \textbf{0.233} &               7.167 &           8.938 &           0.423 &  \textbf{0.246} &           0.178 &           0.163 \\
+\bottomrule
+\end{tabular}
+\end{table}

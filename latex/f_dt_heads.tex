@@ -1,0 +1,13 @@
+\begin{table}
+\centering
+\caption{\label{tab:f_dt_heads}Influence of the GPT Heads. Subset of experiments' results for Full Decision Transformer ('F-DT') agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+\textbf{\#} & \textbf{GPT Heads} & \multicolumn{6}{l}{\textbf{Val Seen}} & \multicolumn{6}{l}{\textbf{Val Unseen}} \\
+ \textbf{~} &         \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} & \textbf{SR} & \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} \\
+\midrule
+         79 &                  8 &              8.08 &  \textbf{7.985} &  \textbf{0.487} &  \textbf{0.352} &       0.256 &        0.243 &               7.529 &  \textbf{8.845} &  \textbf{0.424} &        0.24 &       0.157 &        0.142 \\
+         81 &                 16 &             8.102 &           8.361 &            0.46 &           0.328 &       0.239 &        0.223 &               7.195 &           9.272 &           0.409 &       0.222 &       0.155 &        0.141 \\
+\bottomrule
+\end{tabular}
+\end{table}

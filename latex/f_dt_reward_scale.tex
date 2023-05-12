@@ -1,0 +1,15 @@
+\begin{table}
+\centering
+\caption{\label{tab:f_dt_reward_scale}Influence of the final Success Reward. Subset of experiments' results for Full Decision Transformer ('F-DT') agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+\textbf{\#} & \textbf{Success Reward } & \multicolumn{6}{l}{\textbf{Val Seen}} & \multicolumn{6}{l}{\textbf{Val Unseen}} \\
+ \textbf{~} &               \textbf{~} &       \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} &         \textbf{TL} &   \textbf{NE} &   \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} \\
+\midrule
+         27 &                      0.1 &             7.968 &       8.413 &         0.447 &       0.262 &       0.204 &        0.194 &               8.067 &         8.964 &           0.425 &       0.262 &       0.178 &         0.16 \\
+         41 &                      1.0 &             7.971 &       8.025 &         0.474 &       0.338 &       0.242 &        0.222 &                7.48 &  \textbf{8.7} &  \textbf{0.438} &       0.251 &       0.166 &        0.154 \\
+         70 &                     10.0 &             8.474 &       8.556 &         0.463 &       0.333 &       0.238 &        0.217 &               8.517 &         9.473 &           0.389 &       0.242 &       0.165 &        0.144 \\
+         91 &                      0.5 &             7.178 &       8.321 &         0.466 &        0.27 &       0.212 &        0.196 &               6.707 &         8.916 &           0.419 &       0.192 &       0.145 &        0.139 \\
+\bottomrule
+\end{tabular}
+\end{table}

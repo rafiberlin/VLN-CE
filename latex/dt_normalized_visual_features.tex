@@ -1,0 +1,14 @@
+\begin{table}
+\centering
+\caption{\label{tab:dt_normalized_visual_features}Subset of experiments' results for Decision Transformer ('DT') agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+\textbf{\#} & \textbf{Training Details} & \multicolumn{6}{l}{\textbf{Val Seen}} & \multicolumn{6}{l}{\textbf{Val Unseen}} \\
+ \textbf{~} &                \textbf{~} &       \textbf{TL} &     \textbf{NE} &  \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} \\
+\midrule
+        136 &                     train &             6.951 &           9.003 &          0.413 &           0.225 &           0.158 &           0.148 &               6.507 &  \textbf{9.445} &  \textbf{0.391} &  \textbf{0.184} &  \textbf{0.128} &  \textbf{0.122} \\
+        150 &                     train &             7.432 &  \textbf{8.575} &  \textbf{0.45} &  \textbf{0.294} &  \textbf{0.201} &  \textbf{0.189} &               6.716 &           9.911 &           0.386 &           0.162 &           0.121 &           0.114 \\
+        156 &                     train &             6.706 &           9.695 &          0.381 &           0.195 &           0.148 &           0.139 &               6.608 &           9.994 &           0.358 &           0.144 &           0.104 &           0.099 \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,13 @@
+\begin{table}
+\centering
+\caption{\label{tab:e_dt_heads}Influence of the GPT Heads. Subset of experiments' results for Enhanced Decision Transformer ('E-DT') agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+\textbf{\#} & \textbf{GPT Heads} & \multicolumn{6}{l}{\textbf{Val Seen}} & \multicolumn{6}{l}{\textbf{Val Unseen}} \\
+ \textbf{~} &         \textbf{~} &       \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} &         \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} \\
+\midrule
+         84 &                  8 &             8.359 &       8.913 &          0.44 &       0.312 &       0.212 &          0.2 &               8.065 &       9.644 &         0.395 &       0.228 &       0.152 &         0.14 \\
+         94 &                 16 &             8.574 &       8.907 &         0.437 &       0.329 &       0.243 &        0.227 &               8.019 &        9.16 &         0.406 &       0.247 &       0.153 &        0.139 \\
+\bottomrule
+\end{tabular}
+\end{table}

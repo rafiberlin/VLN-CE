@@ -1,0 +1,13 @@
+\begin{table}
+\centering
+\caption{\label{tab:dt_dagger_envdrop}Subset of experiments' results for Decision Transformer ('DT') agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+\textbf{\#} & \textbf{Training Details} & \multicolumn{6}{l}{\textbf{Val Seen}} & \multicolumn{6}{l}{\textbf{Val Unseen}} \\
+ \textbf{~} &                \textbf{~} &       \textbf{TL} & \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} \\
+\midrule
+          8 &  (AUG (5 epo.))*,train,DA &             8.431 &       7.534 &  \textbf{0.525} &  \textbf{0.382} &  \textbf{0.285} &  \textbf{0.268} &               7.711 &       8.478 &         0.454 &       0.256 &       0.191 &        0.178 \\
+         16 &           (AUG)*,train,DA &             8.096 &       7.543 &            0.52 &            0.35 &           0.261 &           0.246 &                7.73 &       8.411 &         0.448 &       0.251 &       0.183 &        0.165 \\
+\bottomrule
+\end{tabular}
+\end{table}

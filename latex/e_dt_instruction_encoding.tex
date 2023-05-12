@@ -1,0 +1,13 @@
+\begin{table}
+\centering
+\caption{\label{tab:e_dt_instruction_encoding}Instruction encoder comparison (DT and E-DT only). Subset of experiments' results for Enhanced Decision Transformer ('E-DT') agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+\textbf{\#} & \textbf{Instruction Encoder} & \multicolumn{6}{l}{\textbf{Val Seen}} & \multicolumn{6}{l}{\textbf{Val Unseen}} \\
+ \textbf{~} &                   \textbf{~} &       \textbf{TL} & \textbf{NE} & \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} & \textbf{NE} & \textbf{nDTW} &     \textbf{OS} & \textbf{SR} & \textbf{SPL} \\
+\midrule
+         51 &                        trans &             8.225 &       8.281 &         0.473 &  \textbf{0.357} &  \textbf{0.261} &  \textbf{0.238} &               7.265 &        9.18 &         0.415 &  \textbf{0.237} &       0.165 &        0.152 \\
+         80 &                         lstm &             7.788 &       8.505 &         0.459 &           0.297 &           0.224 &           0.207 &               7.158 &       9.074 &         0.409 &           0.225 &       0.156 &        0.142 \\
+\bottomrule
+\end{tabular}
+\end{table}
