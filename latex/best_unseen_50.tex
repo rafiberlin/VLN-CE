@@ -1,0 +1,16 @@
+\begin{table}
+\centering
+\caption{\label{tab:best}Subset of experiments' results, grouped by agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.     \newline The agents are based on Decision Transformer ('DT'), Enhanced Decision Transformer ('E-DT') or Full Decision Transformer ('F-DT').}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+\textbf{\#} & \textbf{Agent} & \textbf{Training Details} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+ \textbf{~} &     \textbf{~} &                \textbf{~} &       \textbf{TL} &    \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &    \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &    \textbf{SR} &    \textbf{SPL} \\
+          A &             Seq2Seq &                  train,DA &             8.732 &          7.959 &           0.504 &  \textbf{0.374} &  \textbf{0.27} &           0.249 &                8.34 &           8.608 &           0.446 &  \textbf{0.323} &  \textbf{0.23} &  \textbf{0.209} \\
+          B &           CMA &  (AUG (2 epo.))*,train,DA &             8.298 &          7.782 &           0.507 &           0.344 &          0.263 &           0.245 &               7.745 &           8.128 &           0.458 &           0.263 &          0.199 &           0.183 \\
+\midrule
+          1 &             DT &                  train,DA &             8.732 &          7.959 &           0.504 &  \textbf{0.374} &  \textbf{0.27} &           0.249 &                8.34 &           8.608 &           0.446 &  \textbf{0.323} &  \textbf{0.23} &  \textbf{0.209} \\
+          5 &           E-DT &  (AUG (2 epo.))*,train,DA &             8.298 &          7.782 &           0.507 &           0.344 &          0.263 &           0.245 &               7.745 &           8.128 &           0.458 &           0.263 &          0.199 &           0.183 \\
+          3 &           F-DT &  (AUG (2 epo.))*,train,DA &              7.43 &  \textbf{7.33} &  \textbf{0.532} &           0.316 &          0.266 &  \textbf{0.257} &                 6.4 &  \textbf{8.058} &  \textbf{0.484} &           0.233 &          0.199 &           0.189 \\
+\bottomrule
+\end{tabular}
+\end{table}
