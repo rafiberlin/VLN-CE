@@ -2,23 +2,23 @@
 # commit d04564df58ed2dd7c7e383dae58f334e887e0626
 BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task.yaml
 TRAINER_NAME: decision_transformer # recollect_trainer, dagger
-SIMULATOR_GPU_IDS: [1]
-TORCH_GPU_ID: 1
+SIMULATOR_GPU_IDS: [0]
+TORCH_GPU_ID: 0
 NUM_ENVIRONMENTS: 10 #Only use one environment for Decision Transformer! An this is probably not working with MUlti Sim GPU
-TENSORBOARD_DIR: /cache/tensorboard-logdir/full/full_08_d512_sparse_reward_to_go_0_1_enc_l8_dagger_it10_ep12_p0_75_pof_oat
-CHECKPOINT_FOLDER: data/checkpoints/full/full_08_d512_sparse_reward_to_go_0_1_enc_l8_dagger_it10_ep12_p0_75_pof_oat
-EVAL_CKPT_PATH_DIR: data/checkpoints/full/full_08_d512_sparse_reward_to_go_0_1_enc_l8_dagger_it10_ep12_p0_75_pof_oat
-RESULTS_DIR: data/checkpoints/full/full_08_d512_sparse_reward_to_go_0_1_enc_l8_dagger_it10_ep12_p0_75_pof_oat/evals
+TENSORBOARD_DIR: /cache/tensorboard-logdir/full/full_08_d512_sparse_reward_to_go_0_1_enc_l8
+CHECKPOINT_FOLDER: data/checkpoints/full/full_08_d512_sparse_reward_to_go_0_1_enc_l8
+EVAL_CKPT_PATH_DIR: data/checkpoints/full/full_08_d512_sparse_reward_to_go_0_1_enc_l8
+RESULTS_DIR: data/checkpoints/full/full_08_d512_sparse_reward_to_go_0_1_enc_l8/evals
 MULTIPROCESSING: forkserver  # default is forkserver, Set to 'spawn' when debugging with Pycharm,
 ENV_NAME: VLNCEDecisionTransformerEnv
-
+use_pbar: False
 
 INFERENCE:
   SPLIT: test
   USE_CKPT_CONFIG: False
   SAMPLE: False
-  CKPT_PATH: data/checkpoints/full/full_08_d512_sparse_reward_to_go_0_1_enc_l8_dagger_it10_ep12_p0_75_pof_oat/ckpt.269.pth # Change this
-  PREDICTIONS_FILE: data/checkpoints/full/full_08_d512_sparse_reward_to_go_0_1_enc_l8_dagger_it10_ep12_p0_75_pof_oat/evals/full_08_d512_sparse_reward_to_go_0_1_enc_l8_dagger_it10_ep12_p0_75_pof_oat_test_predictions.json
+  CKPT_PATH: data/checkpoints/full/full_08_d512_sparse_reward_to_go_0_1_enc_l8/ckpt.269.pth # Change this
+  PREDICTIONS_FILE: data/checkpoints/full/full_08_d512_sparse_reward_to_go_0_1_enc_l8/evals/full/full_08_d512_sparse_reward_to_go_0_1_enc_l8_test_predictions.json
   FORMAT: r2r
 
 
@@ -32,14 +32,14 @@ EVAL:
 IL:
   preload_dataloader_size: 200
   dataload_workers: 2
-  epochs: 12
+  epochs: 42
   batch_size: 8
   checkpoint_frequency: 1
-  mean_loss_to_save_checkpoint: 0.25
+  mean_loss_to_save_checkpoint: 0.30
+  mean_loss_to_stop_training: 0.07
   lr: 1.5e-4
   load_from_ckpt: False # To train from a previous checkpoint
-  continue_ckpt_naming: False
-  ckpt_to_load: data/checkpoints/full/full_08_d512_sparse_reward_to_go_0_1_enc_l8_aug_5epochs/ckpt.1.pth # REPLACE
+  ckpt_to_load: data/checkpoints/full/full_08_d512_sparse_reward_to_go_0_1_enc_l8/ckpt.38.pth # REPLACE
 
   RECOLLECT_TRAINER:
     gt_file:
@@ -47,8 +47,6 @@ IL:
   DECISION_TRANSFORMER:
     recompute_reward: True # allows to apply step penalty and end reward on the fly without recaching the whole dataset...
     sensor_uuid: distance_left
-    use_perfect_episode_only_for_dagger: False
-    use_oracle_actions: True
     POINT_GOAL_NAV_REWARD:
       step_penalty: -0.05
       success: 1.0
@@ -60,12 +58,12 @@ IL:
       success: 1.0
   DAGGER:
     repeat_dataset: 1
-    iterations: 10
-    update_size: 5000 # Original size: 10819, EnvDrop+Train: 157232
-    p: 0.75
+    iterations: 1
+    update_size: 10819 # Original size: 10819, EnvDrop+Train: 157232
+    p: 1.0
     preload_lmdb_features: False
     lmdb_commit_frequency: 500
-    lmdb_features_dir: data/trajectories_dirs/full_08_d512_sparse_reward_to_go_0_1_enc_l8_dagger_it10_ep12_p0_75_pof_oat/trajectories.lmdb
+    lmdb_features_dir: data/trajectories_dirs/_normal_gold_/trajectories.lmdb
 
 
 MODEL:
