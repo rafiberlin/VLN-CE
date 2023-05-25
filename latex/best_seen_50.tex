@@ -3,14 +3,15 @@
 \caption{\label{tab:best_seen_50}Subset of experiments' results, grouped by agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.     \newline The agents are based on Decision Transformer ('DT'), Enhanced Decision Transformer ('E-DT') or Full Decision Transformer ('F-DT').}
 \begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
 \toprule
-\textbf{\#} & \textbf{Agent} & \textbf{Training Details} & \multicolumn{6}{c}{\textbf{Val Seen 50}} & \multicolumn{6}{c}{\textbf{Val Seen 50+}} \\
- \textbf{~} &     \textbf{~} &                \textbf{~} &       \textbf{TL} &    \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &    \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &    \textbf{SR} &    \textbf{SPL} \\
-          A &             Seq2Seq &                  train,DA &             7.629 &          5.969 &           0.538 &  \textbf{ 0.528} &  \textbf{ 0.408} &           0.358 &                9.784 &           8.993 &           0.458 &  \textbf{0.301} &  0.228 &  0.218 \\
-          B &           CMA &  (AUG (2 epo.))*,train,DA &             7.534 &          5.360 &           0.587 &           0.595 &          0.453 &           0.403 &               9.92 &           8.162 &           0.485 &           0.338 &          0.266 &           0.256 \\
+\textbf{\#} & \textbf{Work} & \textbf{Agent} & \multicolumn{6}{c}{\textbf{Val Seen 50}} & \multicolumn{6}{c}{\textbf{Val Seen 50+}} \\
+\cmidrule(l){4-9}\cmidrule(l){10-15}\textbf{~} &     \textbf{~} &                \textbf{~} &       \textbf{TL} &    \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &    \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &    \textbf{SR} &    \textbf{SPL} \\
 \midrule
-          1 &             DT &                  train,DA &             7.708&          5.670 &           0.581 &   0.584 &  0.411 &           0.364 &                9.298 &     9.155      &    0.463       &  0.264 & 0.199  &  0.190 \\
-          5 &           E-DT &  (AUG (2 epo.))*,train,DA &             7.339 &          5.810 &           0.570 &           0.494 &       0.370    &       0.336     &              8.831 &           8.788 &           0.474 &           0.266 &          0.207 &           0.198 \\
-          3 &           F-DT &  (AUG (2 epo.))*,train,DA &              6.310 &  5.223 &  0.620 &        0.505    &        0.404   &    0.388 &               8.022 &  8.436 &  0.485 &       0.217      &          0.193 &           0.1885 \\
+          A &             \citet{VLNCE}  &                  Seq2Seq &             7.629 &          5.969 &           0.538 &  \textbf{ 0.528} &  \textbf{ 0.408} &           0.358 &                9.784 &           8.993 &           0.458 &  \textbf{0.301} &  0.228 &  0.218 \\
+          B &            &  CMA &             7.534 &          5.360 &           0.587 &           0.595 &          0.453 &           0.403 &               9.92 &           8.162 &           0.485 &           0.338 &          0.266 &           0.256 \\
+\midrule
+          1 &            Ours  &                  DT &             7.708&          5.670 &           0.581 &   0.584 &  0.411 &           0.364 &                9.298 &     9.155      &    0.463       &  0.264 & 0.199  &  0.190 \\
+          5 &            &  E-DT &             7.339 &          5.810 &           0.570 &           0.494 &       0.370    &       0.336     &              8.831 &           8.788 &           0.474 &           0.266 &          0.207 &           0.198 \\
+          3 &            &  F-DT &              6.310 &  5.223 &  0.620 &        0.505    &        0.404   &    0.388 &               8.022 &  8.436 &  0.485 &       0.217      &          0.193 &           0.1885 \\
 \bottomrule
 \end{tabular}
 \end{table}
