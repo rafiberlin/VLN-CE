@@ -1,0 +1,22 @@
+\begin{table}
+\centering
+\caption{\label{tab:f_dt_final}Subset of experiments' results, grouped by agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.     \newline The agents are based on Decision Transformer ('DT'), Enhanced Decision Transformer ('E-DT') or Full Decision Transformer ('F-DT').}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+\textbf{\#} & \textbf{Agent} & \textbf{Training Details} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+\cmidrule(l){4-9}\cmidrule(l){10-15} \textbf{~} &     \textbf{~} &                \textbf{~} &       \textbf{TL} &    \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &    \textbf{SR} &    \textbf{SPL} \\
+\midrule
+          D' & Seq2Seq & DA & 8.34 & 7.36 & 0.51 & 0.37 & 0.30 & 0.28 & 8.6 & 8.7 & 0.44 & 0.30 & 0.22 & 0.20 \\
+          \midrule
+          G' & CMA & (PM + AUG)* , DA  & 9.10 & \textbf{7.2} & \textbf{0.52} & \textbf{0.43} & \textbf{0.33} & \textbf{0.31} & 8.34 & \textbf{7.36} & \textbf{0.51} & \textbf{0.37} & \textbf{0.30} & \textbf{0.28} \\
+          \midrule
+          1 &             DT &                  DA &             8.732 &          7.959 &           0.504 &  0.374 &            0.27 &           0.249 &                8.34 &           8.608 &           0.446 &  0.323 &  0.23 &  0.209 \\
+         \midrule
+          5 &           E-DT &  (AUG (2 epo.))*, DA &             8.298 &          7.782 &           0.507 &           0.344 &           0.263 &           0.245 &               7.745 &           8.128 &           0.458 &           0.263 &          0.199 &           0.183 \\
+          \midrule
+          3 &           F-DT &  (AUG (2 epo.))*, DA &              7.43 &  7.33 &  0.532 &           0.316 &           0.266 &  0.257 &                 6.4 &  8.058 &  0.484 &           0.233 &          0.199 &           0.189 \\
+         19 &            &                  DA &             8.472 &          7.663 &           0.517 &           0.364 &  0.275 &           0.257 &               8.134 &           8.722 &            0.42 &           0.269 &          0.181 &           0.164 \\
+         23 &            &                     - &             8.236 &          8.033 &           0.482 &           0.347 &           0.243 &           0.226 &               7.344 &           8.987 &           0.423 &           0.235 &          0.172 &           0.163 \\
+\bottomrule
+\end{tabular}
+\end{table}
