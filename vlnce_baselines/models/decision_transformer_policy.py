@@ -84,9 +84,8 @@ class AbstractDecisionTransformerNet(Net):
             "TorchVisionResNet18",
             "TorchVisionResNet50",
         ]
-        assert model_config.DECISION_TRANSFORMER.reward_type in ["point_nav_reward_to_go", "sparse_reward_to_go",
-                                                                 "point_nav_reward", "sparse_reward", "ndtw_reward",
-                                                                 "ndtw_reward_to_go"]
+
+        assert model_config.DECISION_TRANSFORMER.reward_type in model_config.DECISION_TRANSFORMER.allowed_rewards
 
         n = self.initialize_transformer_step_size()
         self.set_transformer_step_size(n)
