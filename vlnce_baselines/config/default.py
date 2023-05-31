@@ -341,7 +341,7 @@ _C.MODEL.DECISION_TRANSFORMER.allowed_models = ["DecisionTransformerNet",
                                                 "DecisionTransformerEnhancedNet",
                                                 "FullDecisionTransformerNet",
                                                 "FullDecisionTransformerSingleVisionStateNet"]
-_C.MODEL.DECISION_TRANSFORMER.exclude_past_action_for_prediction = False
+_C.MODEL.DECISION_TRANSFORMER.exclude_past_action_for_prediction = True
 _C.MODEL.DECISION_TRANSFORMER.normalize_depth = False # Needs to be done during dataset creation
 _C.MODEL.DECISION_TRANSFORMER.normalize_rgb = False
 # dropout hyperparameters
