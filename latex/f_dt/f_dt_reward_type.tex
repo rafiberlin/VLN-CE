@@ -1,15 +1,15 @@
 \begin{table}
 \centering
-\caption{\label{tab:f_dt_reward_type}Influence of the Reward Type. Subset of experiments' results for Full Decision Transformer ('F-DT') agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\caption{\label{tab:f_dt_reward_type}Influence of the Reward Type. Subset of experiments' results for Full Decision Transformer ('F-DT') agent and ranked by descending SPL on the Validation Unseen split. \textbf{Bold} numbers indicates the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
 \begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
 \toprule
-\textbf{\#} & \textbf{Reward Type} & \multicolumn{6}{l}{\textbf{Val Seen}} & \multicolumn{6}{l}{\textbf{Val Unseen}} \\
- \textbf{~} &           \textbf{~} &       \textbf{TL} &     \textbf{NE} & \textbf{nDTW} &     \textbf{OS} & \textbf{SR} & \textbf{SPL} &         \textbf{TL} &   \textbf{NE} &   \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} \\
+                                  \textbf{\#} & \textbf{Reward Type} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+\cmidrule(l){3-8}\cmidrule(l){9-14}\textbf{~} &           \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &   \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} \\
 \midrule
-         44 &                   SP &             7.971 &  \textbf{8.025} &         0.474 &           0.338 &       0.242 &        0.222 &                7.48 &  \textbf{8.7} &  \textbf{0.438} &       0.251 &       0.166 &        0.154 \\
-         70 &            No reward &             6.886 &           8.079 &         0.479 &            0.27 &       0.212 &        0.199 &               6.445 &         8.779 &           0.421 &       0.191 &       0.156 &        0.147 \\
-        120 &                   PG &             8.202 &           8.431 &         0.468 &           0.311 &       0.247 &        0.229 &               7.413 &          9.59 &           0.396 &       0.216 &       0.146 &        0.133 \\
-        170 &                   ND &            18.017 &          11.054 &         0.179 &  \textbf{0.438} &       0.121 &        0.074 &              17.259 &        10.378 &           0.188 &       0.328 &       0.105 &        0.057 \\
+                                           44 &                   SP &             7.971 &  \textbf{8.025} &           0.474 &           0.338 &           0.242 &           0.222 &                7.48 &  \textbf{8.7} &  \textbf{0.438} &           0.251 &  \textbf{0.166} &  \textbf{0.154} \\
+                                           70 &            No reward &             6.886 &           8.079 &  \textbf{0.479} &            0.27 &           0.212 &           0.199 &               6.445 &         8.779 &           0.421 &           0.191 &           0.156 &           0.147 \\
+                                          120 &                   PG &             8.202 &           8.431 &           0.468 &           0.311 &  \textbf{0.247} &  \textbf{0.229} &               7.413 &          9.59 &           0.396 &           0.216 &           0.146 &           0.133 \\
+                                          170 &                   ND &            18.017 &          11.054 &           0.179 &  \textbf{0.438} &           0.121 &           0.074 &              17.259 &        10.378 &           0.188 &  \textbf{0.328} &           0.105 &           0.057 \\
 \bottomrule
 \end{tabular}
 \end{table}

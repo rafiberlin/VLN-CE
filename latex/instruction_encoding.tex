@@ -1,15 +1,15 @@
 \begin{table}
 \centering
-\caption{\label{tab:instruction_encoding}Subset of experiments' results, grouped by agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.     \newline The agents are based on Decision Transformer ('DT'), Enhanced Decision Transformer ('E-DT') or Full Decision Transformer ('F-DT').}
+\caption{\label{tab:instruction_encoding}Instruction encoder comparison (DT and E-DT only). Subset of experiments' results, grouped by agent and ranked by descending SPL on the Validation Unseen split. 	extbf{Bold} numbers indicates the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.     \newline The agents are based on Decision Transformer ('DT'), Enhanced Decision Transformer ('E-DT') or Full Decision Transformer ('F-DT').}
 \begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
 \toprule
-\textbf{\#} & \textbf{Agent} & \textbf{Training Details} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
-\cmidrule(l){4-9} \cmidrule(l){10-15} \textbf{~} &     \textbf{~} &                \textbf{~} &       \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} &         \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} \\
+\textbf{\#} & \textbf{Agent} & \textbf{Instruction Encoder} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+ \textbf{~} &     \textbf{~} &                   \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &   \textbf{SPL} \\
 \midrule
-         11 &             DT &                     train &             7.789 &       8.224 &         0.480 &       0.328 &       0.216 &        0.209 &               6.960 &       8.989 &         0.433 &       0.225 &       0.183 &        0.170 \\
-         42 &             DT &                     train &             7.309 &       8.095 &         0.482 &       0.314 &       0.213 &        0.203 &               6.737 &       9.035 &         0.424 &       0.203 &       0.163 &        0.153 \\
-         48 &           E-DT &                     train &             7.824 &       8.178 &         0.479 &       0.320 &       0.217 &        0.209 &               6.610 &       8.812 &         0.429 &       0.215 &       0.162 &        0.152 \\
-         73 &           E-DT &                     train &             8.697 &       8.677 &         0.448 &       0.352 &       0.234 &        0.217 &               7.791 &       9.368 &         0.409 &       0.237 &       0.155 &        0.143 \\
+         13 &             DT &                        trans &             7.789 &           8.224 &            0.48 &           0.328 &           0.216 &           0.209 &                6.96 &  \textbf{8.989} &  \textbf{0.433} &           0.225 &  \textbf{0.183} &  \textbf{0.17} \\
+         48 &             DT &                         lstm &             7.309 &  \textbf{8.095} &  \textbf{0.482} &           0.314 &           0.213 &           0.203 &               6.737 &           9.035 &           0.424 &           0.203 &           0.163 &          0.153 \\
+         55 &           E-DT &                        trans &             8.225 &           8.281 &           0.473 &  \textbf{0.357} &  \textbf{0.261} &  \textbf{0.238} &               7.265 &            9.18 &           0.415 &  \textbf{0.237} &           0.165 &          0.152 \\
+         85 &           E-DT &                         lstm &             7.788 &           8.505 &           0.459 &           0.297 &           0.224 &           0.207 &               7.158 &           9.074 &           0.409 &           0.225 &           0.156 &          0.142 \\
 \bottomrule
 \end{tabular}
 \end{table}

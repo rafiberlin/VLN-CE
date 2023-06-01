@@ -1,14 +1,14 @@
 \begin{table}
 \centering
-\caption{\label{tab:env_drop}Subset of experiments' results, grouped by agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.     \newline The agents are based on Decision Transformer ('DT'), Enhanced Decision Transformer ('E-DT') or Full Decision Transformer ('F-DT').}
+\caption{\label{tab:env_drop}Subset of experiments' results, grouped by agent and ranked by descending SPL on the Validation Unseen split. 	extbf{Bold} numbers indicates the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.     \newline The agents are based on Decision Transformer ('DT'), Enhanced Decision Transformer ('E-DT') or Full Decision Transformer ('F-DT').}
 \begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
 \toprule
 \textbf{\#} & \textbf{Agent} & \textbf{Training Details} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
-\cmidrule(l){4-9} \cmidrule(l){10-15} \textbf{~} &     \textbf{~} &                \textbf{~} &       \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} &         \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} \\
+ \textbf{~} &     \textbf{~} &                \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &    \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} \\
 \midrule
-        106 &             DT &                       AUG &             6.481 &       8.760 &         0.450 &       0.208 &       0.166 &        0.159 &               6.274 &       9.349 &         0.414 &       0.166 &       0.140 &        0.133 \\
-         44 &           E-DT &                       AUG &             7.731 &       8.217 &         0.471 &       0.341 &       0.260 &        0.247 &               7.321 &       8.983 &         0.414 &       0.237 &       0.166 &        0.153 \\
-         82 &           F-DT &                       AUG &             6.655 &       8.822 &         0.448 &       0.224 &       0.177 &        0.164 &               6.227 &       9.327 &         0.408 &       0.176 &       0.147 &        0.140 \\
+        121 &             DT &                       AUG &             6.481 &            8.76 &            0.45 &           0.208 &          0.166 &           0.159 &               6.274 &           9.349 &  \textbf{0.414} &           0.166 &            0.14 &           0.133 \\
+         50 &           E-DT &                       AUG &             7.731 &  \textbf{8.217} &  \textbf{0.471} &  \textbf{0.341} &  \textbf{0.26} &  \textbf{0.247} &               7.321 &  \textbf{8.983} &           0.414 &  \textbf{0.237} &  \textbf{0.166} &  \textbf{0.153} \\
+         94 &           F-DT &                       AUG &             6.655 &           8.822 &           0.448 &           0.224 &          0.177 &           0.164 &               6.227 &           9.327 &           0.408 &           0.176 &           0.147 &            0.14 \\
 \bottomrule
 \end{tabular}
 \end{table}

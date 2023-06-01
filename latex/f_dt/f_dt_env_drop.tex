@@ -1,12 +1,12 @@
 \begin{table}
 \centering
-\caption{\label{tab:f_dt_env_drop}Subset of experiments' results for Full Decision Transformer ('F-DT') agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\caption{\label{tab:f_dt_env_drop}Subset of experiments' results for Full Decision Transformer ('F-DT') agent and ranked by descending SPL on the Validation Unseen split. \textbf{Bold} numbers indicates the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
 \begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
 \toprule
-\textbf{\#} & \textbf{Training Details} & \multicolumn{6}{l}{\textbf{Val Seen}} & \multicolumn{6}{l}{\textbf{Val Unseen}} \\
- \textbf{~} &                \textbf{~} &       \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} &         \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} \\
+                                  \textbf{\#} & \textbf{Training Details} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+\cmidrule(l){3-8}\cmidrule(l){9-14}\textbf{~} &                \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &   \textbf{SPL} \\
 \midrule
-         94 &                       AUG &             6.655 &       8.822 &         0.448 &       0.224 &       0.177 &        0.164 &               6.227 &       9.327 &         0.408 &       0.176 &       0.147 &         0.14 \\
+                                           94 &                       AUG &             6.655 &  \textbf{8.822} &  \textbf{0.448} &  \textbf{0.224} &  \textbf{0.177} &  \textbf{0.164} &               6.227 &  \textbf{9.327} &  \textbf{0.408} &  \textbf{0.176} &  \textbf{0.147} &  \textbf{0.14} \\
 \bottomrule
 \end{tabular}
 \end{table}

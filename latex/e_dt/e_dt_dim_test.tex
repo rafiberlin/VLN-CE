@@ -1,14 +1,14 @@
 \begin{table}
 \centering
-\caption{\label{tab:e_dt_dim_test}Influence of the GPT Embedding Dimension. Subset of experiments' results for Enhanced Decision Transformer ('E-DT') agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\caption{\label{tab:e_dt_dim_test}Influence of the GPT Embedding Dimension. Subset of experiments' results for Enhanced Decision Transformer ('E-DT') agent and ranked by descending SPL on the Validation Unseen split. \textbf{Bold} numbers indicates the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
 \begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
 \toprule
-\textbf{\#} & \textbf{GPT Dim} & \multicolumn{6}{l}{\textbf{Val Seen}} & \multicolumn{6}{l}{\textbf{Val Unseen}} \\
- \textbf{~} &       \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} \\
+                                  \textbf{\#} & \textbf{GPT Dim} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+\cmidrule(l){3-8}\cmidrule(l){9-14}\textbf{~} &       \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} \\
 \midrule
-         82 &              128 &             8.697 &           8.677 &           0.448 &           0.352 &           0.234 &           0.217 &               7.791 &       9.368 &         0.409 &       0.237 &       0.155 &        0.143 \\
-         98 &              256 &             8.532 &           8.315 &           0.473 &            0.35 &            0.23 &           0.215 &               7.445 &       9.415 &         0.403 &       0.222 &       0.149 &        0.139 \\
-        103 &              512 &             8.355 &  \textbf{7.925} &  \textbf{0.493} &  \textbf{0.365} &  \textbf{0.254} &  \textbf{0.239} &               7.826 &       9.578 &          0.39 &        0.22 &        0.15 &        0.138 \\
+                                           82 &              128 &             8.697 &           8.677 &           0.448 &           0.352 &           0.234 &           0.217 &               7.791 &  \textbf{9.368} &  \textbf{0.409} &  \textbf{0.237} &  \textbf{0.155} &  \textbf{0.143} \\
+                                           98 &              256 &             8.532 &           8.315 &           0.473 &            0.35 &            0.23 &           0.215 &               7.445 &           9.415 &           0.403 &           0.222 &           0.149 &           0.139 \\
+                                          103 &              512 &             8.355 &  \textbf{7.925} &  \textbf{0.493} &  \textbf{0.365} &  \textbf{0.254} &  \textbf{0.239} &               7.826 &           9.578 &            0.39 &            0.22 &            0.15 &           0.138 \\
 \bottomrule
 \end{tabular}
 \end{table}

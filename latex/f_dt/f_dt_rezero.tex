@@ -1,12 +1,12 @@
 \begin{table}
 \centering
-\caption{\label{tab:f_dt_rezero}Subset of experiments' results for Full Decision Transformer ('F-DT') agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\caption{\label{tab:f_dt_rezero}Subset of experiments' results for Full Decision Transformer ('F-DT') agent and ranked by descending SPL on the Validation Unseen split. \textbf{Bold} numbers indicates the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
 \begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
 \toprule
-\textbf{\#} & \textbf{Training Details} & \multicolumn{6}{l}{\textbf{Val Seen}} & \multicolumn{6}{l}{\textbf{Val Unseen}} \\
- \textbf{~} &                \textbf{~} &       \textbf{TL} & \textbf{NE} & \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} & \textbf{NE} & \textbf{nDTW} &     \textbf{OS} & \textbf{SR} & \textbf{SPL} \\
+                                  \textbf{\#} & \textbf{Training Details} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+\cmidrule(l){3-8}\cmidrule(l){9-14}\textbf{~} &                \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} \\
 \midrule
-         66 &                     train &              8.26 &       8.703 &         0.452 &  \textbf{0.308} &  \textbf{0.235} &  \textbf{0.224} &               8.193 &       9.415 &         0.402 &  \textbf{0.251} &       0.162 &        0.148 \\
+                                           66 &                     train &              8.26 &  \textbf{8.703} &  \textbf{0.452} &  \textbf{0.308} &  \textbf{0.235} &  \textbf{0.224} &               8.193 &  \textbf{9.415} &  \textbf{0.402} &  \textbf{0.251} &  \textbf{0.162} &  \textbf{0.148} \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -1,14 +1,14 @@
 \begin{table}
 \centering
-\caption{\label{tab:dagger_prob}Subset of experiments' results, grouped by agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.     \newline The agents are based on Decision Transformer ('DT'), Enhanced Decision Transformer ('E-DT') or Full Decision Transformer ('F-DT').}
+\caption{\label{tab:dagger_prob}DAGGER. Inluence of the Probability for Oracle Action. Subset of experiments' results, grouped by agent and ranked by descending SPL on the Validation Unseen split. 	extbf{Bold} numbers indicates the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.     \newline The agents are based on Decision Transformer ('DT'), Enhanced Decision Transformer ('E-DT') or Full Decision Transformer ('F-DT').}
 \begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
 \toprule
-\textbf{\#} & \textbf{Agent} & \textbf{Training Details} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
-\cmidrule(l){4-9} \cmidrule(l){10-15} \textbf{~} &     \textbf{~} &                \textbf{~} &       \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} &         \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} \\
+\textbf{\#} & \textbf{Agent} & \textbf{Probability for Oracle Action} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+ \textbf{~} &     \textbf{~} &                             \textbf{~} &       \textbf{TL} &    \textbf{NE} &   \textbf{nDTW} &    \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} \\
 \midrule
-          8 &             DT &                  train,DA &             7.468 &       7.916 &         0.492 &       0.312 &       0.254 &        0.243 &               7.009 &       8.471 &         0.451 &       0.238 &       0.189 &        0.176 \\
-         16 &             DT &                  train,DA &             6.879 &       7.840 &         0.502 &       0.281 &       0.262 &        0.249 &               6.134 &       8.723 &         0.438 &       0.201 &       0.173 &        0.165 \\
-         40 &             DT &                  train,DA &             8.018 &       7.919 &         0.490 &       0.370 &       0.266 &        0.249 &               7.050 &       8.811 &         0.434 &       0.230 &       0.163 &        0.153 \\
+         10 &             DT &                                   0.75 &             7.468 &          7.916 &           0.492 &          0.312 &           0.254 &           0.243 &               7.009 &  \textbf{8.471} &  \textbf{0.451} &  \textbf{0.238} &  \textbf{0.189} &  \textbf{0.176} \\
+         18 &             DT &                                   0.85 &             6.879 &  \textbf{7.84} &  \textbf{0.502} &          0.281 &           0.262 &  \textbf{0.249} &               6.134 &           8.723 &           0.438 &           0.201 &           0.173 &           0.165 \\
+         46 &             DT &                                   0.95 &             8.018 &          7.919 &            0.49 &  \textbf{0.37} &  \textbf{0.266} &           0.249 &                7.05 &           8.811 &           0.434 &            0.23 &           0.163 &           0.153 \\
 \bottomrule
 \end{tabular}
 \end{table}

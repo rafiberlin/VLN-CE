@@ -1,14 +1,14 @@
 \begin{table}
 \centering
-\caption{\label{tab:normalized_visual_features}Subset of experiments' results, grouped by agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.     \newline The agents are based on Decision Transformer ('DT'), Enhanced Decision Transformer ('E-DT') or Full Decision Transformer ('F-DT').}
+\caption{\label{tab:normalized_visual_features}Subset of experiments' results, grouped by agent and ranked by descending SPL on the Validation Unseen split. 	extbf{Bold} numbers indicates the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.     \newline The agents are based on Decision Transformer ('DT'), Enhanced Decision Transformer ('E-DT') or Full Decision Transformer ('F-DT').}
 \begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
 \toprule
 \textbf{\#} & \textbf{Agent} & \textbf{Training Details} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
-\cmidrule(l){4-9} \cmidrule(l){10-15} \textbf{~} &     \textbf{~} &                \textbf{~} &       \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} &         \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} \\
+ \textbf{~} &     \textbf{~} &                \textbf{~} &       \textbf{TL} &     \textbf{NE} &  \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} \\
 \midrule
-        123 &             DT &                     train &             6.951 &       9.003 &         0.413 &       0.225 &       0.158 &        0.148 &               6.507 &       9.445 &         0.391 &       0.184 &       0.128 &        0.122 \\
-        135 &             DT &                     train &             7.432 &       8.575 &         0.450 &       0.294 &       0.201 &        0.189 &               6.716 &       9.911 &         0.386 &       0.162 &       0.121 &        0.114 \\
-        140 &             DT &                     train &             6.706 &       9.695 &         0.381 &       0.195 &       0.148 &        0.139 &               6.608 &       9.994 &         0.358 &       0.144 &       0.104 &        0.099 \\
+        141 &             DT &                     train &             6.951 &           9.003 &          0.413 &           0.225 &           0.158 &           0.148 &               6.507 &  \textbf{9.445} &  \textbf{0.391} &  \textbf{0.184} &  \textbf{0.128} &  \textbf{0.122} \\
+        155 &             DT &                     train &             7.432 &  \textbf{8.575} &  \textbf{0.45} &  \textbf{0.294} &  \textbf{0.201} &  \textbf{0.189} &               6.716 &           9.911 &           0.386 &           0.162 &           0.121 &           0.114 \\
+        162 &             DT &                     train &             6.706 &           9.695 &          0.381 &           0.195 &           0.148 &           0.139 &               6.608 &           9.994 &           0.358 &           0.144 &           0.104 &           0.099 \\
 \bottomrule
 \end{tabular}
 \end{table}

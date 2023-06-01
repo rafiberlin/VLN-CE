@@ -1,13 +1,13 @@
 \begin{table}
 \centering
-\caption{\label{tab:e_dt_split_training_50}Influence of a 2 phases training (1. phase on episodes shorter than 50 steps, 2. phase with the rest). Subset of experiments' results for Enhanced Decision Transformer ('E-DT') agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\caption{\label{tab:e_dt_split_training_50}Influence of a 2 phases training (1. phase on episodes shorter than 50 steps, 2. phase with the rest). Subset of experiments' results for Enhanced Decision Transformer ('E-DT') agent and ranked by descending SPL on the Validation Unseen split. \textbf{Bold} numbers indicates the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
 \begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
 \toprule
-\textbf{\#} & \textbf{Training Details} & \multicolumn{6}{l}{\textbf{Val Seen}} & \multicolumn{6}{l}{\textbf{Val Unseen}} \\
- \textbf{~} &                \textbf{~} &       \textbf{TL} & \textbf{NE} & \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} & \textbf{NE} & \textbf{nDTW} &     \textbf{OS} & \textbf{SR} & \textbf{SPL} \\
+                                  \textbf{\#} & \textbf{Training Details} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+\cmidrule(l){3-8}\cmidrule(l){9-14}\textbf{~} &                \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &    \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} \\
 \midrule
-         55 &                     train &             8.225 &       8.281 &         0.473 &  \textbf{0.357} &  \textbf{0.261} &  \textbf{0.238} &               7.265 &        9.18 &         0.415 &           0.237 &       0.165 &        0.152 \\
-        101 &     (train 50)*,train 50+ &             9.022 &       8.699 &         0.423 &           0.325 &           0.174 &           0.159 &               9.166 &       9.919 &         0.376 &  \textbf{0.285} &       0.156 &        0.139 \\
+                                           55 &                     train &             8.225 &  \textbf{8.281} &  \textbf{0.473} &  \textbf{0.357} &  \textbf{0.261} &  \textbf{0.238} &               7.265 &  \textbf{9.18} &  \textbf{0.415} &           0.237 &  \textbf{0.165} &  \textbf{0.152} \\
+                                          101 &     (train 50)*,train 50+ &             9.022 &           8.699 &           0.423 &           0.325 &           0.174 &           0.159 &               9.166 &          9.919 &           0.376 &  \textbf{0.285} &           0.156 &           0.139 \\
 \bottomrule
 \end{tabular}
 \end{table}

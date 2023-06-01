@@ -1,13 +1,13 @@
 \begin{table}
 \centering
-\caption{\label{tab:inflection_weights}Subset of experiments' results, grouped by agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.     \newline The agents are based on Decision Transformer ('DT'), Enhanced Decision Transformer ('E-DT') or Full Decision Transformer ('F-DT').}
+\caption{\label{tab:inflection_weights}Effect of Inflection weights. Subset of experiments' results, grouped by agent and ranked by descending SPL on the Validation Unseen split. 	extbf{Bold} numbers indicates the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.     \newline The agents are based on Decision Transformer ('DT'), Enhanced Decision Transformer ('E-DT') or Full Decision Transformer ('F-DT').}
 \begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
 \toprule
-\textbf{\#} & \textbf{Agent} & \textbf{Training Details} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
-\cmidrule(l){4-9} \cmidrule(l){10-15} \textbf{~} &     \textbf{~} &                \textbf{~} &       \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} &         \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} \\
+\textbf{\#} & \textbf{Agent} & \textbf{Inflection Weights} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+ \textbf{~} &     \textbf{~} &                  \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &    \textbf{SR} &    \textbf{SPL} \\
 \midrule
-         31 &             DT &                     train &             8.780 &       9.354 &         0.423 &       0.341 &       0.186 &        0.175 &               7.794 &       9.312 &         0.411 &       0.248 &       0.170 &        0.157 \\
-         57 &             DT &                     train &             8.394 &       8.379 &         0.465 &       0.321 &       0.201 &        0.187 &               8.149 &       9.674 &         0.396 &       0.238 &       0.165 &        0.149 \\
+         36 &             DT &                           y &              8.78 &           9.354 &           0.423 &  \textbf{0.341} &           0.186 &           0.175 &               7.794 &  \textbf{9.312} &  \textbf{0.411} &  \textbf{0.248} &  \textbf{0.17} &  \textbf{0.157} \\
+         65 &             DT &                           n &             8.394 &  \textbf{8.379} &  \textbf{0.465} &           0.321 &  \textbf{0.201} &  \textbf{0.187} &               8.149 &           9.674 &           0.396 &           0.238 &          0.165 &           0.149 \\
 \bottomrule
 \end{tabular}
 \end{table}

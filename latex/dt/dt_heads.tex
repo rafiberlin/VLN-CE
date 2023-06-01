@@ -1,13 +1,13 @@
 \begin{table}
 \centering
-\caption{\label{tab:dt_heads}Influence of the GPT Heads. Subset of experiments' results for Decision Transformer ('DT') agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\caption{\label{tab:dt_heads}Influence of the GPT Heads. Subset of experiments' results for Decision Transformer ('DT') agent and ranked by descending SPL on the Validation Unseen split. \textbf{Bold} numbers indicates the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
 \begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
 \toprule
-\textbf{\#} & \textbf{GPT Heads} & \multicolumn{6}{l}{\textbf{Val Seen}} & \multicolumn{6}{l}{\textbf{Val Unseen}} \\
- \textbf{~} &         \textbf{~} &       \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} & \textbf{NE} & \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} \\
+                                  \textbf{\#} & \textbf{GPT Heads} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+\cmidrule(l){3-8}\cmidrule(l){9-14}\textbf{~} &         \textbf{~} &       \textbf{TL} &    \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} \\
 \midrule
-         24 &                  8 &             7.968 &        8.04 &         0.483 &       0.337 &  \textbf{0.266} &  \textbf{0.249} &               7.428 &       9.156 &         0.415 &  \textbf{0.257} &  \textbf{0.172} &  \textbf{0.162} \\
-        118 &                 16 &             8.931 &       8.978 &         0.429 &       0.328 &           0.216 &           0.201 &               9.068 &       9.987 &         0.384 &           0.248 &           0.148 &           0.134 \\
+                                           24 &                  8 &             7.968 &  \textbf{8.04} &  \textbf{0.483} &  \textbf{0.337} &  \textbf{0.266} &  \textbf{0.249} &               7.428 &  \textbf{9.156} &  \textbf{0.415} &  \textbf{0.257} &  \textbf{0.172} &  \textbf{0.162} \\
+                                          118 &                 16 &             8.931 &          8.978 &           0.429 &           0.328 &           0.216 &           0.201 &               9.068 &           9.987 &           0.384 &           0.248 &           0.148 &           0.134 \\
 \bottomrule
 \end{tabular}
 \end{table}

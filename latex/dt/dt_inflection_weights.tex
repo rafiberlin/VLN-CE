@@ -1,13 +1,13 @@
 \begin{table}
 \centering
-\caption{\label{tab:dt_inflection_weights}Effect of Inflection weights. Subset of experiments' results for Decision Transformer ('DT') agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\caption{\label{tab:dt_inflection_weights}Effect of Inflection weights. Subset of experiments' results for Decision Transformer ('DT') agent and ranked by descending SPL on the Validation Unseen split. \textbf{Bold} numbers indicates the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
 \begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
 \toprule
-\textbf{\#} & \textbf{Inflection Weights} & \multicolumn{6}{l}{\textbf{Val Seen}} & \multicolumn{6}{l}{\textbf{Val Unseen}} \\
- \textbf{~} &                  \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &    \textbf{SR} &    \textbf{SPL} \\
+                                  \textbf{\#} & \textbf{Inflection Weights} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+\cmidrule(l){3-8}\cmidrule(l){9-14}\textbf{~} &                  \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &    \textbf{SR} &    \textbf{SPL} \\
 \midrule
-         36 &                           y &              8.78 &           9.354 &           0.423 &  \textbf{0.341} &           0.186 &           0.175 &               7.794 &  \textbf{9.312} &  \textbf{0.411} &  \textbf{0.248} &  \textbf{0.17} &  \textbf{0.157} \\
-         65 &                           n &             8.394 &  \textbf{8.379} &  \textbf{0.465} &           0.321 &  \textbf{0.201} &  \textbf{0.187} &               8.149 &           9.674 &           0.396 &           0.238 &          0.165 &           0.149 \\
+                                           36 &                           y &              8.78 &           9.354 &           0.423 &  \textbf{0.341} &           0.186 &           0.175 &               7.794 &  \textbf{9.312} &  \textbf{0.411} &  \textbf{0.248} &  \textbf{0.17} &  \textbf{0.157} \\
+                                           65 &                           n &             8.394 &  \textbf{8.379} &  \textbf{0.465} &           0.321 &  \textbf{0.201} &  \textbf{0.187} &               8.149 &           9.674 &           0.396 &           0.238 &          0.165 &           0.149 \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -1,14 +1,14 @@
 \begin{table}
 \centering
-\caption{\label{tab:e_dt_final}Subset of experiments' results for Enhanced Decision Transformer ('E-DT') agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\caption{\label{tab:e_dt_final}Subset of experiments' results for Enhanced Decision Transformer ('E-DT') agent and ranked by descending SPL on the Validation Unseen split. \textbf{Bold} numbers indicates the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
 \begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
 \toprule
-\textbf{\#} & \textbf{Training Details} & \multicolumn{6}{l}{\textbf{Val Seen}} & \multicolumn{6}{l}{\textbf{Val Unseen}} \\
- \textbf{~} &                \textbf{~} &       \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} &         \textbf{TL} & \textbf{NE} & \textbf{nDTW} & \textbf{OS} & \textbf{SR} & \textbf{SPL} \\
+                                  \textbf{\#} & \textbf{Training Details} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+\cmidrule(l){3-8}\cmidrule(l){9-14}\textbf{~} &                \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} \\
 \midrule
-          5 &  (AUG (2 epo.))*,train,DA &             8.298 &       7.782 &         0.507 &       0.344 &       0.263 &        0.245 &               7.745 &       8.128 &         0.458 &       0.263 &       0.199 &        0.183 \\
-          8 &                  train,DA &             8.057 &       7.403 &         0.521 &       0.366 &       0.262 &        0.246 &               7.163 &       8.571 &         0.436 &       0.248 &       0.188 &        0.178 \\
-         25 &                     train &             7.711 &       8.443 &         0.464 &       0.321 &       0.233 &        0.221 &               7.256 &       8.898 &         0.422 &       0.238 &       0.171 &        0.162 \\
+                                            5 &  (AUG (2 epo.))*,train,DA &             8.298 &           7.782 &           0.507 &           0.344 &  \textbf{0.263} &           0.245 &               7.745 &  \textbf{8.128} &  \textbf{0.458} &  \textbf{0.263} &  \textbf{0.199} &  \textbf{0.183} \\
+                                            8 &                  train,DA &             8.057 &  \textbf{7.403} &  \textbf{0.521} &  \textbf{0.366} &           0.262 &  \textbf{0.246} &               7.163 &           8.571 &           0.436 &           0.248 &           0.188 &           0.178 \\
+                                           25 &                     train &             7.711 &           8.443 &           0.464 &           0.321 &           0.233 &           0.221 &               7.256 &           8.898 &           0.422 &           0.238 &           0.171 &           0.162 \\
 \bottomrule
 \end{tabular}
 \end{table}
