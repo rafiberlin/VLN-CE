@@ -1,15 +1,15 @@
 \begin{table}
 \centering
-\caption{\label{tab:best_unseen_50}Subset of experiments' results, grouped by agent and ranked by descending SPL on the Validation Unseen data split. The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.     \newline The agents are based on Decision Transformer ('DT'), Enhanced Decision Transformer ('E-DT') or Full Decision Transformer ('F-DT').}
+\caption{\label{tab:best_unseen_50}Transformer based agents compared with R2R-CE baselines on the validation unseen split, split divided by episode length. For Transformer based agent: the rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
 \begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
 \toprule
 \textbf{\#} & \textbf{Work} & \textbf{Agent} & \multicolumn{6}{c}{\textbf{Val Unseen 50}} & \multicolumn{6}{c}{\textbf{Val Unseen 50+}} \\
  \textbf{~} &     \textbf{~} &                \textbf{~} &       \textbf{TL} &    \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &    \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &    \textbf{SR} &    \textbf{SPL} \\
 \midrule
-          A &             \citet{VLNCE} &                  Seq2Seq &             8.312 &          7.028 &           0.477 &  \textbf{0.449} &  \textbf{0.316} &           0.282 &                8.737 &           9.639 &           0.446 &  \textbf{0.221} &  \textbf{0.167} &  \textbf{0.1569} \\
-          B &           &  CMA &             7.746 &          5.717 &           0.561 &           0.535 &          0.429 &           0.393 &               8.646 &           8.291 &           0.482 &           0.280 &          0.230 &           0.219 \\
+          A &             \citet{VLNCE} &                  Seq2Seq &             8.312 &          7.028 &           0.477 &  0.449 &  0.316 &           0.282 &                8.737 &           9.639 &           0.446 &  0.221 &  0.167 &  0.1569 \\
+          B &           &  CMA &             7.746 &          \textbf{5.717} &           \textbf{0.561} &           \textbf{0.535} &          \textbf{0.429} &           \textbf{0.393} &               8.646 &           \textbf{8.291} &           \textbf{0.482} &           \textbf{0.280} &          \textbf{0.230} &           \textbf{0.219} \\
 \midrule
-          1 &             Our &                  DT &             8.189 &          6.90 &           0.493 &  0.473 &  0.324 &           0.286 &                8.493 &           9.527 &          0.420 &  0.25 &  0.178 &  0.166 \\
+          1 &             Ours &                  DT &             8.189 &          6.90 &           0.493 &  0.473 &  0.324 &           0.286 &                8.493 &           9.527 &          0.420 &  0.25 &  0.178 &  0.166 \\
           5 &            &  E-DT &             7.663 &          6.003 &           0.526 &           0.470 &          0.343 &           0.309 &               7.760 &           9.321 &           0.421 &           0.150 &          0.122 &           0.116 \\
           3 &            &  F-DT &              6.418 &  6.307 &  0.545 &           0.426 &          0.354 &  0.332 &                 6.4 &  9.046 &  0.447 &           0.126 &          0.113 &           0.108 \\
 \bottomrule
