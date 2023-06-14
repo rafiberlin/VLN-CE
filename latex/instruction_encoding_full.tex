@@ -1,9 +1,9 @@
 \begin{table}
 \centering
-\caption{\label{tab:instruction_encoding_full}Instruction Encoder with Transformer (F-DT only). Subset of experiments' results for Full Decision Transformer ('F-DT') agent and ranked by descending SPL on the Validation Unseen split. \textbf{Bold} numbers indicates the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\caption{\label{tab:instruction_encoding_full}Instruction Encoders with Transformer (F-DT only, see section \ref{sec:f_dt_agent_design} for details). Subset of results for Full Decision Transformer ('F-DT') agent (see table \ref{tab:all-results-final} for the complete set), ranked by descending SPL on the Validation Unseen split. \textbf{Bold} numbers indicate the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
 \begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
 \toprule
-                                  \textbf{\#} & \textbf{Layers} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+                                  \textbf{\#} & \textbf{Layers} & \multicolumn{6}{l}{\textbf{Val Seen}} & \multicolumn{6}{l}{\textbf{Val Unseen}} \\
 \cmidrule(l){3-8}\cmidrule(l){9-14}\textbf{~} &      \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &    \textbf{OS} &     \textbf{SR} &    \textbf{SPL} \\
 \midrule
                                            23 &               8 &             8.236 &           8.033 &           0.482 &           0.347 &           0.243 &           0.226 &               7.344 &           8.987 &           0.423 &          0.235 &  \textbf{0.172} &  \textbf{0.163} \\
