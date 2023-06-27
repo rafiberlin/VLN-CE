@@ -1,0 +1,19 @@
+\begin{table}
+\centering
+\caption{\label{tab:dt_final}DT agents compared with R2R-CE baselines on validation splits. Results grouped by agent and sorted by descending SPL on the Validation Unseen split. (*) is a visual
+cue to indicate pre-training. \textbf{Bold} numbers indicate the best results (except for TL). For Transformer based agent:  the rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+\textbf{\#} & \textbf{Agent} & \textbf{Training Details} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+  \cmidrule(l){4-9}\cmidrule(l){10-15}\textbf{~} &     \textbf{~} &                \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &    \textbf{SR} &    \textbf{SPL} \\
+\midrule
+          D' & Seq2Seq & DA & 8.34 & 7.36 & 0.51 & 0.37 & 0.30 & 0.28 & 8.6 & 8.7 & 0.44 & 0.30 & 0.22 & 0.20 \\
+          \midrule
+          G' & CMA & (PM + AUG)*, DA  & 9.10 & \textbf{7.2} & \textbf{0.52} & \textbf{0.43} & \textbf{0.33} & \textbf{0.31} & 8.34 & \textbf{7.36} & \textbf{0.51} & \textbf{0.37} & \textbf{0.30} & \textbf{0.28} \\
+          \midrule
+          1 &             DT &                  DA &             8.732 &           7.959 &           0.504 &           0.374 &            0.27 &           0.249 &                8.34 &           8.608 &           0.446 &  0.323 &  0.23 &  0.209 \\
+          7 &              &                    - &              8.16 &            7.96 &           0.493 &           0.364 &           0.256 &           0.241 &               7.846 &           9.093 &           0.435 &           0.272 &          0.194 &           0.182 \\
+          9 &              &  (AUG (2 epo.))*, DA &             8.431 &  7.534 &  0.525 &  0.382 &  0.285 &  0.268 &               7.711 &  8.478 &  0.454 &           0.256 &          0.191 &           0.178 \\
+\bottomrule
+\end{tabular}
+\end{table}

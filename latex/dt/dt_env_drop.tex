@@ -1,0 +1,13 @@
+\begin{table}
+\centering
+\caption{\label{tab:dt_env_drop}Augmented Data (referred as 'AUG', containing EnvDrop and train split episodes) experiment. Subset of results for Decision Transformer ('DT') agent (see table \ref{tab:all-results-final} for the complete set), ranked by descending SPL on the Validation Unseen split. \textbf{Bold} numbers indicate the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+                                  \textbf{\#} & \textbf{Training Details} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+\cmidrule(l){3-8}\cmidrule(l){9-14}\textbf{~} &                \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &    \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} \\
+\midrule
+                                           34 &                     train &             8.713 &  \textbf{8.346} &  \textbf{0.474} &  \textbf{0.368} &  \textbf{0.24} &  \textbf{0.227} &               8.084 &  \textbf{9.066} &  \textbf{0.415} &  \textbf{0.252} &  \textbf{0.173} &  \textbf{0.158} \\
+                                          121 &                       AUG &             6.481 &            8.76 &            0.45 &           0.208 &          0.166 &           0.159 &               6.274 &           9.349 &           0.414 &           0.166 &            0.14 &           0.133 \\
+\bottomrule
+\end{tabular}
+\end{table}

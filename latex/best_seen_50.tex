@@ -1,0 +1,17 @@
+\begin{table}
+\centering
+\caption{\label{tab:best_seen_50}Transformer based agents compared with R2R-CE baselines on the validation seen split, split divided by episode length. For Transformer based agent: the rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+\textbf{\#} & \textbf{Work} & \textbf{Agent} & \multicolumn{6}{c}{\textbf{Val Seen 50}} & \multicolumn{6}{c}{\textbf{Val Seen 50+}} \\
+\cmidrule(l){4-9}\cmidrule(l){10-15}\textbf{~} &     \textbf{~} &                \textbf{~} &       \textbf{TL} &    \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &    \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &    \textbf{SR} &    \textbf{SPL} \\
+\midrule
+          D' &             \citet{VLNCE}  &                  Seq2Seq &             7.629 &          5.969 &           0.538 &   0.528 &   0.408 &           0.358 &                9.784 &           8.993 &           0.458 &  0.301 &  0.228 &  0.218 \\
+          G' &            &  CMA &             7.534 &          \textbf{5.360} &           \textbf{0.587} &           \textbf{0.595} &          \textbf{0.453} &           \textbf{0.403} &               9.92 &           \textbf{8.162} &           \textbf{0.485} &           \textbf{0.338} &          \textbf{0.266} &           \textbf{0.256} \\
+\midrule
+          1 &            Ours  &                  DT &             7.708&          5.670 &           0.581 &   0.584 &  0.411 &           0.364 &                9.298 &     9.155      &    0.463       &  0.264 & 0.199  &  0.190 \\
+          5 &            &  E-DT &             7.339 &          5.810 &           0.570 &           0.494 &       0.370    &       0.336     &              8.831 &           8.788 &           0.474 &           0.266 &          0.207 &           0.198 \\
+          3 &            &  F-DT &              6.310 &  5.223 &  0.620 &        0.505    &        0.404   &    0.388 &               8.022 &  8.436 &  0.485 &       0.217      &          0.193 &           0.1885 \\
+\bottomrule
+\end{tabular}
+\end{table}

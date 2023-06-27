@@ -1,0 +1,13 @@
+\begin{table}
+\centering
+\caption{\label{tab:e_dt_heads}GPT Heads experiment. Subset of results for Enhanced Decision Transformer ('E-DT') agent (see table \ref{tab:all-results-final} for the complete set), ranked by descending SPL on the Validation Unseen split. \textbf{Bold} numbers indicate the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+                                  \textbf{\#} & \textbf{GPT Heads} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+\cmidrule(l){3-8}\cmidrule(l){9-14}\textbf{~} &         \textbf{~} &       \textbf{TL} &     \textbf{NE} &  \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &    \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &   \textbf{SPL} \\
+\midrule
+                                           89 &                  8 &             8.359 &           8.913 &  \textbf{0.44} &           0.312 &           0.212 &             0.2 &               8.065 &          9.644 &           0.395 &           0.228 &           0.152 &  \textbf{0.14} \\
+                                           99 &                 16 &             8.574 &  \textbf{8.907} &          0.437 &  \textbf{0.329} &  \textbf{0.243} &  \textbf{0.227} &               8.019 &  \textbf{9.16} &  \textbf{0.406} &  \textbf{0.247} &  \textbf{0.153} &          0.139 \\
+\bottomrule
+\end{tabular}
+\end{table}

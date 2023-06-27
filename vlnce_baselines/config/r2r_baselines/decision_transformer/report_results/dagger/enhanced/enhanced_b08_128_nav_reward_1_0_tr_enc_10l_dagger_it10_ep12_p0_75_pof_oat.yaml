@@ -1,0 +1,95 @@
+BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task.yaml
+TRAINER_NAME: decision_transformer # recollect_trainer, dagger
+SIMULATOR_GPU_IDS: [0]
+TORCH_GPU_ID: 0
+NUM_ENVIRONMENTS: 5 #Looks like the sweet spot for dataset creation is 6 envs. If you use more, we might wait too long to reload the next batch....
+TENSORBOARD_DIR: /cache/tensorboard-logdir/enhanced_b08_128_nav_reward_1_0_tr_enc_10l_dagger_it10_ep12_p0_75_pof_oat
+CHECKPOINT_FOLDER: data/checkpoints/enhanced/enhanced_b08_128_nav_reward_1_0_tr_enc_10l_dagger_it10_ep12_p0_75_pof_oat
+EVAL_CKPT_PATH_DIR: data/checkpoints/enhanced/enhanced_b08_128_nav_reward_1_0_tr_enc_10l_dagger_it10_ep12_p0_75_pof_oat
+RESULTS_DIR: data/checkpoints/enhanced/enhanced_b08_128_nav_reward_1_0_tr_enc_10l_dagger_it10_ep12_p0_75_pof_oat/evals/
+MULTIPROCESSING: forkserver  # default is forkserver, Set to 'spawn' when debugging with Pycharm,
+ENV_NAME: VLNCEDecisionTransformerEnv
+
+
+INFERENCE:
+  SPLIT: test
+  USE_CKPT_CONFIG: False
+  SAMPLE: False
+  CKPT_PATH: data/checkpoints/enhanced/enhanced_b08_128_nav_reward_1_0_tr_enc_10l_dagger_it10_ep12_p0_75_pof_oat/ckpt.269.pth
+  PREDICTIONS_FILE: data/checkpoints/enhanced/enhanced_b08_128_nav_reward_1_0_tr_enc_10l_dagger_it10_ep12_p0_75_pof_oat/evals/full_dt_b16_128_nav_reward_test_predictions.json
+  FORMAT: r2r
+
+
+
+EVAL:
+  USE_CKPT_CONFIG: False
+  SPLIT: debug # val_unseen
+  EPISODE_COUNT: -1
+  VAL_SEEN: val_seen
+  VAL_UNSEEN: val_unseen
+
+IL:
+  preload_dataloader_size: 200
+  dataload_workers: 2
+  epochs: 12
+  batch_size: 8
+  checkpoint_frequency: 1
+  mean_loss_to_save_checkpoint: 0.30
+  lr: 1.5e-4
+  load_from_ckpt: False # To train from a previous checkpoint
+  ckpt_to_load: data/checkpoints/enhanced/enhanced_b08_128_nav_reward_1_0_tr_enc_10l_dagger_it10_ep12_p0_75_pof_oat/ckpt.7.pth # REPLACE
+
+  RECOLLECT_TRAINER:
+    gt_file:
+      data/datasets/R2R_VLNCE_v1-3_preprocessed/{split}/{split}_gt.json.gz
+  DECISION_TRANSFORMER:
+    recompute_reward: True # allows to apply step penalty and end reward on the fly without recaching the whole dataset...
+    sensor_uuid: distance_left
+    use_perfect_episode_only_for_dagger: False
+    use_oracle_actions: True
+    POINT_GOAL_NAV_REWARD:
+      step_penalty: -0.05
+      success: 1.0
+    SPARSE_REWARD:
+      step_penalty: -0.05
+      success: 1.0
+    NDTW_REWARD:
+      step_penalty: -0.05
+      success: 1.0
+  DAGGER:
+    repeat_dataset: 1
+    iterations: 10
+    update_size: 5000 # Original size: 10819, EnvDrop+Train: 157232
+    p: 0.75
+    preload_lmdb_features: False
+    lmdb_commit_frequency: 500
+    lmdb_features_dir: data/trajectories_dirs/_normal_gold_/trajectories.lmdb
+
+
+MODEL:
+  DECISION_TRANSFORMER:
+    # Possible values: DecisionTransformerNet, DecisionTransformerfullNet
+    # DecisionTransformerWithAttendedInstructionsNet or  FullDecisionTransformerNet
+    net: DecisionTransformerEnhancedNet
+    use_extra_start_token: True
+    reward_type: point_nav_reward_to_go # point_nav_reward_to_go, sparse_reward_to_go, point_nav_reward, sparse_reward, ndtw_reward, ndtw_reward_to_go
+    n_layer: 10
+    n_head: 8
+    hidden_dim: 128 # The dimensions for the State, Reward and actions embeddings and in the GPT Backbne
+    use_transformer_encoded_instruction: True # only for DecisionTransformerNet, DecisionTransformerfullNet
+    activation_action_drop: 0.25
+    activation_instruction_drop: 0.01
+    activation_rgb_drop: 0.01
+    activation_depth_drop: 0.01
+    return_to_go_inference: 0.0
+    ENCODER: # only for FullDecisionTransformerNet
+      n_layer: 3
+      n_head: 8
+      use_output_rgb_instructions: True # different instructions for each time steps attended by RGB
+      use_output_depth_instructions: True # different instructions for each time steps attended by depth
+      use_output_rgb: True # global RGB attended by instruction
+      use_output_depth: True # global Depth attended by instruction
+  policy_name: DecisionTransformerPolicy
+  PROGRESS_MONITOR: # This is only used to create the datasets and the reward signals
+    use: True
+

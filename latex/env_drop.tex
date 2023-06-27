@@ -1,0 +1,17 @@
+\begin{table}
+\centering
+\caption{\label{tab:env_drop}Subset of experiments' results, grouped by agent and ranked by descending SPL on the Validation Unseen split. 	extbf{Bold} numbers indicates the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.     \newline The agents are based on Decision Transformer ('DT'), Enhanced Decision Transformer ('E-DT') or Full Decision Transformer ('F-DT').}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+\textbf{\#} & \textbf{Agent} & \textbf{Training Details} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+ \textbf{~} &     \textbf{~} &                \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &    \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} \\
+\midrule
+         34 &             DT &                     train &             8.713 &           8.346 &           0.474 &  \textbf{0.368} &           0.24 &           0.227 &               8.084 &           9.066 &           0.415 &  \textbf{0.252} &  \textbf{0.173} &           0.158 \\
+        121 &             DT &                       AUG &             6.481 &            8.76 &            0.45 &           0.208 &          0.166 &           0.159 &               6.274 &           9.349 &           0.414 &           0.166 &            0.14 &           0.133 \\
+         25 &           E-DT &                     train &             7.711 &           8.443 &           0.464 &           0.321 &          0.233 &           0.221 &               7.256 &  \textbf{8.898} &           0.422 &           0.238 &           0.171 &           0.162 \\
+         50 &           E-DT &                       AUG &             7.731 &           8.217 &           0.471 &           0.341 &  \textbf{0.26} &  \textbf{0.247} &               7.321 &           8.983 &           0.414 &           0.237 &           0.166 &           0.153 \\
+         23 &           F-DT &                     train &             8.236 &  \textbf{8.033} &  \textbf{0.482} &           0.347 &          0.243 &           0.226 &               7.344 &           8.987 &  \textbf{0.423} &           0.235 &           0.172 &  \textbf{0.163} \\
+         94 &           F-DT &                       AUG &             6.655 &           8.822 &           0.448 &           0.224 &          0.177 &           0.164 &               6.227 &           9.327 &           0.408 &           0.176 &           0.147 &            0.14 \\
+\bottomrule
+\end{tabular}
+\end{table}

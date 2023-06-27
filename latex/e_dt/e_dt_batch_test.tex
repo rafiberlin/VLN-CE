@@ -1,0 +1,15 @@
+\begin{table}
+\centering
+\caption{\label{tab:e_dt_batch_test}Batch Size experiment. Subset of results for Enhanced Decision Transformer ('E-DT') agent (see table \ref{tab:all-results-final} for the complete set), ranked by descending SPL on the Validation Unseen split. \textbf{Bold} numbers indicate the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+                                  \textbf{\#} & \textbf{Batch size} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+\cmidrule(l){3-8}\cmidrule(l){9-14}\textbf{~} &          \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} \\
+\midrule
+                                           82 &                   8 &             8.697 &  \textbf{8.677} &  \textbf{0.448} &  \textbf{0.352} &  \textbf{0.234} &  \textbf{0.217} &               7.791 &  \textbf{9.368} &  \textbf{0.409} &  \textbf{0.237} &  \textbf{0.155} &  \textbf{0.143} \\
+                                           83 &                  16 &             8.245 &           9.874 &           0.383 &           0.257 &           0.174 &           0.164 &               7.835 &           9.591 &           0.404 &           0.231 &           0.152 &           0.142 \\
+                                          133 &                  32 &             8.737 &          10.261 &           0.362 &            0.27 &           0.138 &           0.127 &               8.382 &           9.973 &           0.375 &           0.235 &           0.144 &           0.128 \\
+                                          134 &                  64 &             8.206 &           9.844 &           0.378 &           0.243 &           0.139 &           0.128 &               8.207 &           9.887 &           0.366 &           0.232 &           0.142 &           0.128 \\
+\bottomrule
+\end{tabular}
+\end{table}

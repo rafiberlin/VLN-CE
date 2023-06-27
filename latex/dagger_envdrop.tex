@@ -1,0 +1,19 @@
+\begin{table}
+\centering
+\caption{\label{tab:dagger_envdrop}Subset of experiments' results, grouped by agent and ranked by descending SPL on the Validation Unseen split. 	extbf{Bold} numbers indicates the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.     \newline The agents are based on Decision Transformer ('DT'), Enhanced Decision Transformer ('E-DT') or Full Decision Transformer ('F-DT').}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+\textbf{\#} & \textbf{Agent} & \textbf{Training Details} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+ \textbf{~} &     \textbf{~} &                \textbf{~} &       \textbf{TL} &    \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} \\
+\midrule
+          9 &             DT &  (AUG (2 epo.))*,train,DA &             8.431 &          7.534 &           0.525 &           0.382 &  \textbf{0.285} &  \textbf{0.268} &               7.711 &           8.478 &           0.454 &           0.256 &           0.191 &           0.178 \\
+         17 &             DT &           (AUG)*,train,DA &             8.096 &          7.543 &            0.52 &            0.35 &           0.261 &           0.246 &                7.73 &           8.411 &           0.448 &           0.251 &           0.183 &           0.165 \\
+          5 &           E-DT &  (AUG (2 epo.))*,train,DA &             8.298 &          7.782 &           0.507 &           0.344 &           0.263 &           0.245 &               7.745 &           8.128 &           0.458 &           0.263 &  \textbf{0.199} &           0.183 \\
+          6 &           E-DT &           (AUG)*,train,DA &             7.863 &          7.811 &           0.503 &           0.325 &           0.256 &           0.242 &               7.302 &           8.552 &           0.441 &           0.245 &           0.196 &           0.182 \\
+        156 &           E-DT &  (AUG (2 epo.))*,train,DA &            13.134 &          7.847 &           0.378 &  \textbf{0.451} &           0.197 &           0.137 &              11.459 &           8.318 &           0.362 &  \textbf{0.316} &           0.165 &           0.114 \\
+          3 &           F-DT &  (AUG (2 epo.))*,train,DA &              7.43 &  \textbf{7.33} &  \textbf{0.532} &           0.316 &           0.266 &           0.257 &                 6.4 &  \textbf{8.058} &  \textbf{0.484} &           0.233 &           0.199 &  \textbf{0.189} \\
+          4 &           F-DT &  (AUG (2 epo.))*,train,DA &             7.809 &          7.519 &           0.524 &            0.36 &           0.271 &           0.259 &               6.566 &           8.305 &           0.457 &           0.227 &           0.192 &           0.185 \\
+         16 &           F-DT &           (AUG)*,train,DA &             8.378 &           7.67 &           0.511 &            0.37 &           0.278 &           0.258 &                7.96 &           8.618 &           0.433 &           0.235 &           0.178 &           0.165 \\
+\bottomrule
+\end{tabular}
+\end{table}

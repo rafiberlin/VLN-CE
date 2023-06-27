@@ -1,0 +1,15 @@
+\begin{table}
+\centering
+\caption{\label{tab:f_dt_instruction_encoding_full}Instruction Encoders with Transformer (see section \ref{sec:f_dt_agent_design}). Subset of results for Full Decision Transformer ('F-DT') agent (see table \ref{tab:all-results-final} for the complete set), ranked by descending SPL on the Validation Unseen split. \textbf{Bold} numbers indicate the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+                                  \textbf{\#} & \textbf{Layers} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+\cmidrule(l){3-8}\cmidrule(l){9-14}\textbf{~} &      \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &    \textbf{OS} &     \textbf{SR} &    \textbf{SPL} \\
+\midrule
+                                           23 &               8 &             8.236 &           8.033 &           0.482 &           0.347 &           0.243 &           0.226 &               7.344 &           8.987 &           0.423 &          0.235 &  \textbf{0.172} &  \textbf{0.163} \\
+                                           59 &              10 &             8.007 &           8.185 &           0.476 &           0.332 &           0.239 &           0.226 &               7.416 &           9.187 &            0.41 &          0.237 &           0.165 &            0.15 \\
+                                           84 &               6 &              8.08 &  \textbf{7.985} &  \textbf{0.487} &  \textbf{0.352} &  \textbf{0.256} &  \textbf{0.243} &               7.529 &  \textbf{8.845} &  \textbf{0.424} &  \textbf{0.24} &           0.157 &           0.142 \\
+                                          113 &               3 &             7.709 &           8.471 &           0.453 &            0.31 &           0.224 &           0.211 &               7.205 &           9.063 &            0.41 &          0.219 &           0.146 &           0.136 \\
+\bottomrule
+\end{tabular}
+\end{table}

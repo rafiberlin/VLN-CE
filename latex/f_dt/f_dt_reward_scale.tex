@@ -1,0 +1,15 @@
+\begin{table}
+\centering
+\caption{\label{tab:f_dt_reward_scale}Final Success Reward experiment. Subset of results for Full Decision Transformer ('F-DT') agent (see table \ref{tab:all-results-final} for the complete set), ranked by descending SPL on the Validation Unseen split. \textbf{Bold} numbers indicate the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+                                  \textbf{\#} & \textbf{Final Success} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+\cmidrule(l){3-8}\cmidrule(l){9-14}\textbf{~} &             \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &   \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &   \textbf{SPL} \\
+\midrule
+                                           29 &                    0.1 &             7.968 &           8.413 &           0.447 &           0.262 &           0.204 &           0.194 &               8.067 &         8.964 &           0.425 &  \textbf{0.262} &  \textbf{0.178} &  \textbf{0.16} \\
+                                           44 &                    1.0 &             7.971 &  \textbf{8.025} &  \textbf{0.474} &  \textbf{0.338} &  \textbf{0.242} &  \textbf{0.222} &                7.48 &  \textbf{8.7} &  \textbf{0.438} &           0.251 &           0.166 &          0.154 \\
+                                           75 &                   10.0 &             8.474 &           8.556 &           0.463 &           0.333 &           0.238 &           0.217 &               8.517 &         9.473 &           0.389 &           0.242 &           0.165 &          0.144 \\
+                                           96 &                    0.5 &             7.178 &           8.321 &           0.466 &            0.27 &           0.212 &           0.196 &               6.707 &         8.916 &           0.419 &           0.192 &           0.145 &          0.139 \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,14 @@
+\begin{table}
+\centering
+\caption{\label{tab:f_dt_dagger_envdrop}Subset of experiments' results for Full Decision Transformer ('F-DT') agent and ranked by descending SPL on the Validation Unseen split. \textbf{Bold} numbers indicates the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+                                  \textbf{\#} & \textbf{Training Details} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+\cmidrule(l){3-8}\cmidrule(l){9-14}\textbf{~} &                \textbf{~} &       \textbf{TL} &    \textbf{NE} &   \textbf{nDTW} &    \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} \\
+\midrule
+                                            3 &  (AUG (2 epo.))*,train,DA &              7.43 &  \textbf{7.33} &  \textbf{0.532} &          0.316 &           0.266 &           0.257 &                 6.4 &  \textbf{8.058} &  \textbf{0.484} &           0.233 &  \textbf{0.199} &  \textbf{0.189} \\
+                                            4 &  (AUG (2 epo.))*,train,DA &             7.809 &          7.519 &           0.524 &           0.36 &           0.271 &  \textbf{0.259} &               6.566 &           8.305 &           0.457 &           0.227 &           0.192 &           0.185 \\
+                                           16 &           (AUG)*,train,DA &             8.378 &           7.67 &           0.511 &  \textbf{0.37} &  \textbf{0.278} &           0.258 &                7.96 &           8.618 &           0.433 &  \textbf{0.235} &           0.178 &           0.165 \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,13 @@
+\begin{table}
+\centering
+\caption{\label{tab:f_dt_dagger}Subset of experiments' results for Full Decision Transformer ('F-DT') agent and ranked by descending SPL on the Validation Unseen split. \textbf{Bold} numbers indicates the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+                                  \textbf{\#} & \textbf{Training Details} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+\cmidrule(l){3-8}\cmidrule(l){9-14}\textbf{~} &                \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &  \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} \\
+\midrule
+                                           19 &                  train,DA &             8.472 &  \textbf{7.663} &  \textbf{0.517} &           0.364 &  \textbf{0.275} &  \textbf{0.257} &               8.134 &  \textbf{8.722} &  \textbf{0.42} &  \textbf{0.269} &  \textbf{0.181} &  \textbf{0.164} \\
+                                           27 &                  train,DA &             8.289 &           7.849 &           0.505 &  \textbf{0.368} &           0.254 &            0.24 &               7.166 &           9.143 &          0.417 &           0.219 &           0.168 &           0.161 \\
+\bottomrule
+\end{tabular}
+\end{table}

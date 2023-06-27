@@ -1,0 +1,13 @@
+\begin{table}
+\centering
+\caption{\label{tab:f_dt_split_training_50}2-Phases Training (1. phase with episodes shorter than 50 steps, 2. phase with the rest) experiment. Subset of results for Full Decision Transformer ('F-DT') agent (see table \ref{tab:all-results-final} for the complete set), ranked by descending SPL on the Validation Unseen split. \textbf{Bold} numbers indicate the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+                                  \textbf{\#} & \textbf{Training Details} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+\cmidrule(l){3-8}\cmidrule(l){9-14}\textbf{~} &                \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &   \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} \\
+\midrule
+                                           44 &                     train &             7.971 &  \textbf{8.025} &  \textbf{0.474} &  \textbf{0.338} &  \textbf{0.242} &  \textbf{0.222} &                7.48 &  \textbf{8.7} &  \textbf{0.438} &           0.251 &  \textbf{0.166} &  \textbf{0.154} \\
+                                          109 &     (train 50)*,train 50+ &             9.069 &           9.023 &           0.414 &           0.316 &           0.184 &           0.167 &                8.14 &         9.399 &           0.399 &  \textbf{0.257} &           0.151 &           0.137 \\
+\bottomrule
+\end{tabular}
+\end{table}

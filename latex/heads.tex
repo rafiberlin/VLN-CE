@@ -1,0 +1,17 @@
+\begin{table}
+\centering
+\caption{\label{tab:heads}Influence of the GPT Heads. Subset of experiments' results, grouped by agent and ranked by descending SPL on the Validation Unseen split. 	extbf{Bold} numbers indicates the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.     \newline The agents are based on Decision Transformer ('DT'), Enhanced Decision Transformer ('E-DT') or Full Decision Transformer ('F-DT').}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+\textbf{\#} & \textbf{Agent} & \textbf{GPT Heads} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+ \textbf{~} &     \textbf{~} &         \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} \\
+\midrule
+         24 &             DT &                  8 &             7.968 &            8.04 &           0.483 &           0.337 &  \textbf{0.266} &  \textbf{0.249} &               7.428 &           9.156 &           0.415 &  \textbf{0.257} &  \textbf{0.172} &  \textbf{0.162} \\
+        118 &             DT &                 16 &             8.931 &           8.978 &           0.429 &           0.328 &           0.216 &           0.201 &               9.068 &           9.987 &           0.384 &           0.248 &           0.148 &           0.134 \\
+         89 &           E-DT &                  8 &             8.359 &           8.913 &            0.44 &           0.312 &           0.212 &             0.2 &               8.065 &           9.644 &           0.395 &           0.228 &           0.152 &            0.14 \\
+         99 &           E-DT &                 16 &             8.574 &           8.907 &           0.437 &           0.329 &           0.243 &           0.227 &               8.019 &            9.16 &           0.406 &           0.247 &           0.153 &           0.139 \\
+         84 &           F-DT &                  8 &              8.08 &  \textbf{7.985} &  \textbf{0.487} &  \textbf{0.352} &           0.256 &           0.243 &               7.529 &  \textbf{8.845} &  \textbf{0.424} &            0.24 &           0.157 &           0.142 \\
+         86 &           F-DT &                 16 &             8.102 &           8.361 &            0.46 &           0.328 &           0.239 &           0.223 &               7.195 &           9.272 &           0.409 &           0.222 &           0.155 &           0.141 \\
+\bottomrule
+\end{tabular}
+\end{table}

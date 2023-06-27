@@ -1,0 +1,26 @@
+\begin{table}
+\centering
+\caption{\label{tab:layers}Influence of the GPT Layers. Subset of experiments' results, grouped by agent and ranked by descending SPL on the Validation Unseen split. 	extbf{Bold} numbers indicates the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.     \newline The agents are based on Decision Transformer ('DT'), Enhanced Decision Transformer ('E-DT') or Full Decision Transformer ('F-DT').}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+\textbf{\#} & \textbf{Agent} & \textbf{GPT Layers} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+ \textbf{~} &     \textbf{~} &          \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &    \textbf{OS} &     \textbf{SR} &    \textbf{SPL} \\
+\midrule
+         34 &             DT &                   8 &             8.713 &           8.346 &           0.474 &           0.368 &            0.24 &           0.227 &               8.084 &           9.066 &           0.415 &          0.252 &           0.173 &  \textbf{0.158} \\
+         67 &             DT &                  10 &             8.579 &           8.194 &           0.477 &           0.332 &           0.251 &           0.238 &               8.239 &           9.575 &           0.392 &  \textbf{0.27} &           0.159 &           0.148 \\
+         93 &             DT &                   3 &             8.782 &           8.716 &           0.453 &           0.335 &           0.212 &           0.197 &               8.154 &            9.68 &            0.39 &           0.23 &           0.152 &            0.14 \\
+        118 &             DT &                   6 &             8.931 &           8.978 &           0.429 &           0.328 &           0.216 &           0.201 &               9.068 &           9.987 &           0.384 &          0.248 &           0.148 &           0.134 \\
+        153 &             DT &                  12 &             9.109 &           8.571 &           0.449 &           0.362 &           0.228 &           0.214 &               9.073 &          10.014 &           0.365 &           0.24 &           0.131 &           0.115 \\
+         33 &           E-DT &                  10 &             8.191 &           8.464 &           0.462 &           0.308 &           0.228 &           0.212 &               7.732 &           9.241 &           0.408 &          0.256 &  \textbf{0.175} &           0.158 \\
+         35 &           E-DT &                  12 &             8.443 &           8.736 &           0.443 &           0.348 &           0.213 &           0.202 &               7.601 &           9.332 &           0.409 &          0.256 &           0.168 &           0.158 \\
+         49 &           E-DT &                   8 &             8.331 &           8.427 &           0.468 &           0.328 &           0.228 &           0.215 &               8.069 &           9.181 &           0.419 &          0.258 &           0.165 &           0.153 \\
+         99 &           E-DT &                   6 &             8.574 &           8.907 &           0.437 &           0.329 &           0.243 &           0.227 &               8.019 &            9.16 &           0.406 &          0.247 &           0.153 &           0.139 \\
+        100 &           E-DT &                   3 &             9.192 &            8.57 &            0.47 &  \textbf{0.391} &           0.252 &           0.236 &               8.383 &           9.686 &           0.401 &          0.245 &           0.153 &           0.139 \\
+         56 &           F-DT &                   8 &             7.918 &           8.603 &           0.459 &           0.305 &           0.208 &           0.196 &               7.391 &  \textbf{8.983} &  \textbf{0.424} &          0.229 &           0.164 &           0.151 \\
+         63 &           F-DT &                   3 &             8.268 &  \textbf{7.839} &  \textbf{0.502} &           0.362 &  \textbf{0.266} &  \textbf{0.249} &               7.624 &           9.744 &           0.384 &          0.222 &            0.16 &            0.15 \\
+        102 &           F-DT &                  10 &             8.384 &           7.984 &            0.47 &           0.368 &           0.234 &           0.226 &                7.58 &           9.314 &           0.409 &          0.228 &            0.15 &           0.139 \\
+        106 &           F-DT &                   6 &              8.46 &           8.335 &           0.473 &           0.343 &           0.239 &           0.222 &               7.682 &           9.266 &           0.406 &          0.245 &            0.15 &           0.137 \\
+        140 &           F-DT &                  12 &             8.931 &            8.43 &           0.466 &            0.35 &           0.249 &           0.236 &               8.714 &           9.908 &           0.389 &          0.231 &           0.136 &           0.122 \\
+\bottomrule
+\end{tabular}
+\end{table}

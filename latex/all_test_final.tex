@@ -1,0 +1,24 @@
+\begin{table*}
+
+\caption{\label{table:all_test_final} Results from \citet{VLNCE}'s best model on test set. \textbf{Bold} numbers indicates the best results (except for TL)}
+\renewcommand{\arraystretch}{1.2}
+\centering
+% reduce fontsize and reduce space between columns: https://latex.org/forum/viewtopic.php?t=803
+\small\addtolength{\tabcolsep}{-2.3pt}
+\begin{tabular}{@{}lllccccc@{}}
+\toprule
+   \multirow{2}{*}{\textbf{\#}}
+  & \multirow{2}{*}{\textbf{Agent}}
+  & \multicolumn{5}{c}{\textbf{Test}} \\
+  \cmidrule(l){3-7}
+  & & \textbf{TL} & \textbf{NE} & \textbf{OS} & \textbf{SR} & \textbf{SPL} \\
+\midrule
+A & Best CMA (\citet{VLNCE})  & 8.85 & \textbf{7.91} & \textbf{0.36} & \textbf{0.28} & \textbf{0.25}  \\
+\midrule
+1 & Best DT  & 7.988 & 	9.913 & 0.208 & 0.139 & 0.124  \\
+3 & Best E-DT  & 7.471 & 	9.264 & 0.190 & 0.139 & 0.128  \\
+5 & Best F-DT  & 	6.317 & 		8.846 & 0.1971 & 0.157 & 0.150  \\
+
+\bottomrule
+\end{tabular}
+\end{table*}

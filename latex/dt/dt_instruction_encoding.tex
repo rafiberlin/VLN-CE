@@ -1,0 +1,13 @@
+\begin{table}
+\centering
+\caption{\label{tab:dt_instruction_encoding}Instruction Encoder experiment (DT and E-DT only). Subset of results for Decision Transformer ('DT') agent (see table \ref{tab:all-results-final} for the complete set), ranked by descending SPL on the Validation Unseen split. \textbf{Bold} numbers indicate the best results (except for TL). The rank in column \# is also used as a look up id in table \ref{tab:all-configs-final} to link the corresponding training configuration.}
+\begin{tabular}{@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c@{\hskip3pt}c}
+\toprule
+                                  \textbf{\#} & \textbf{Instruction Encoder} & \multicolumn{6}{c}{\textbf{Val Seen}} & \multicolumn{6}{c}{\textbf{Val Unseen}} \\
+\cmidrule(l){3-8}\cmidrule(l){9-14}\textbf{~} &                   \textbf{~} &       \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &    \textbf{SPL} &         \textbf{TL} &     \textbf{NE} &   \textbf{nDTW} &     \textbf{OS} &     \textbf{SR} &   \textbf{SPL} \\
+\midrule
+                                           13 &                        trans &             7.789 &           8.224 &            0.48 &  \textbf{0.328} &  \textbf{0.216} &  \textbf{0.209} &                6.96 &  \textbf{8.989} &  \textbf{0.433} &  \textbf{0.225} &  \textbf{0.183} &  \textbf{0.17} \\
+                                           48 &                         lstm &             7.309 &  \textbf{8.095} &  \textbf{0.482} &           0.314 &           0.213 &           0.203 &               6.737 &           9.035 &           0.424 &           0.203 &           0.163 &          0.153 \\
+\bottomrule
+\end{tabular}
+\end{table}

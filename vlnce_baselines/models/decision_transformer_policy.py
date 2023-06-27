@@ -84,9 +84,8 @@ class AbstractDecisionTransformerNet(Net):
             "TorchVisionResNet18",
             "TorchVisionResNet50",
         ]
-        assert model_config.DECISION_TRANSFORMER.reward_type in ["point_nav_reward_to_go", "sparse_reward_to_go",
-                                                                 "point_nav_reward", "sparse_reward", "ndtw_reward",
-                                                                 "ndtw_reward_to_go"]
+
+        assert model_config.DECISION_TRANSFORMER.reward_type in model_config.DECISION_TRANSFORMER.allowed_rewards
 
         n = self.initialize_transformer_step_size()
         self.set_transformer_step_size(n)
@@ -132,7 +131,7 @@ class AbstractDecisionTransformerNet(Net):
 
         self.dim_not_included_for_predictions = 2  # Action and reward
         self.exclude_past_action_for_prediction = model_config.DECISION_TRANSFORMER.exclude_past_action_for_prediction
-        if self.exclude_past_action_for_prediction:
+        if not self.exclude_past_action_for_prediction:
             self.dim_not_included_for_predictions = 1
         self.return_to_go_inference = model_config.DECISION_TRANSFORMER.return_to_go_inference
 
@@ -245,8 +244,9 @@ class AbstractDecisionTransformerNet(Net):
 
     @property
     def output_size(self):
-        return self.model_config.DECISION_TRANSFORMER.hidden_dim * (
-            self.transformer_step_size - self.dim_not_included_for_predictions)  # - 2 because we exclude reward / actions for categorical layer
+        steps = max(1, (self.transformer_step_size - self.dim_not_included_for_predictions))
+
+        return self.model_config.DECISION_TRANSFORMER.hidden_dim * steps  # - 2 because we exclude reward / actions for categorical layer
 
     def create_timesteps(self, sequence_length, batch_size):
 
@@ -300,11 +300,13 @@ class AbstractDecisionTransformerNet(Net):
         output = output.reshape(batch_size, seq_length, self.transformer_step_size, -1).permute(0, 2, 1, 3)
 
         start_dim = 1
-        if self.exclude_past_action_for_prediction:
+        if not self.exclude_past_action_for_prediction:
             start_dim = 0
 
+
+        end_dim = max(start_dim + 1, self.transformer_step_size - 1)
         # get predictions
-        action_preds = output[:, start_dim:self.transformer_step_size - 1].permute(0, 2, 1, 3).reshape(batch_size,
+        action_preds = output[:, start_dim:end_dim].permute(0, 2, 1, 3).reshape(batch_size,
                                                                                                        seq_length,
                                                                                                        -1)
 
