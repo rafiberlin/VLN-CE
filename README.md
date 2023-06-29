@@ -361,13 +361,24 @@ Both trainers inherit from `BaseVLNCETrainer`.
 Evaluation on validation splits can be done by running `python run.py --exp-config path/to/experiment_config.yaml --run-type eval`. If `EVAL.EPISODE_COUNT == -1`, all episodes will be evaluated. If `EVAL_CKPT_PATH_DIR` is a directory, each checkpoint will be evaluated one at a time.
 
 
-### Transformer Based Agents for R2R
+### Transformer-Based Agents for R2R
 
 In the file, vlnce_baselines/models/decision_transformer_policy.py, you need to subclass `AbstractDecisionTransformerNet`
 to add your own model. Moreover, you would to allow your model's creation by adding its name in `vlnce_baselines/config/default.py`
 in the variable `_C.MODEL.DECISION_TRANSFORMER.allowed_models`.
 
 The training is then done with the `DecisionTransformerTrainer` (`decision_transformer` in the config file).
+
+Pretrained models with corresponding training file under :
+
+
+[Decision Transformer Agent](https://drive.google.com/file/d/1-E1l5g7DM36m3HYx8b4b4CNBC8d-OS83/view?usp=sharing)
+
+[Enhanced Decision Transformer Agent](https://drive.google.com/file/d/1b2hpkHpiZIc2CBsaLzZWCa7qurfKDDsu/view?usp=sharing)
+
+[Full Decision Transformer Agent](https://drive.google.com/file/d/1rS2_yo9_z35zzaHW4CtByorZ-jpDpht_/view?usp=sharing)
+
+RemarK: `scripts/create_debug_split.py can be used to separate existing splits into smaller version based on episode length.
 
 ### Cuda
 
